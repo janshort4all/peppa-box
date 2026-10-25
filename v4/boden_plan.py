@@ -1,4 +1,7 @@
 """Draufsicht und Höhenschnitt des Bodens mit Elektronik (Bild für den Aufbau)."""
+import os as _os
+ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+
 import sys
 import numpy as np
 import matplotlib
@@ -6,11 +9,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle, Circle, Polygon, FancyArrowPatch
 from PIL import Image
-sys.path.insert(0, "/home/claude/musikbox/v3")
+sys.path.insert(0, _os.path.join(ROOT, "v3"))
 import model as M
 from concept3 import render
 
-OUT = "/home/claude/musikbox/v4/out"
+OUT = _os.path.join(ROOT, "v4/out")
 plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 9})
 BG = "#f5f1ea"
 INK = "#3a332c"
@@ -45,7 +48,7 @@ def top_view(ax, parts, ph):
     ax.text(70, 26, "Lautsprecherkammer\n(gehört zum Korpus, eigener Boden)", ha="center", va="center", color=INK, fontsize=8.5, bbox=LB)
     # Kragen
     lw, lh = M.LIP
-    ring = M.base_open().offset(-M.CLR) - M.base_open().offset(-M.CLR - lw)
+    ring = M.base_open().offset(-M.LIP_CLR) - M.base_open().offset(-M.LIP_CLR - lw)
     for p in cs_polys(ring):
         ax.add_patch(Polygon(p, closed=True, fc="#c9b99c", ec="none"))
     # Dome / Schrauben

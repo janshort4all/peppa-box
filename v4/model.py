@@ -31,7 +31,10 @@ R = par("R", 16.0, "festgelegt", "Eckradius außen")
 WALL = par("WALL", 3.0, "festgelegt", "Wandstärke (7 Linien à 0,42)")
 BASE_T = par("BASE_T", 4.0, "festgelegt", "Bodenplatte, abnehmbar, trägt die Elektronik; Korpus steht darauf")
 CH_FLOOR = par("CH_FLOOR", 2.4, "festgelegt", "eigener Boden der Lautsprecherkammer im Korpus (Kammer bleibt dicht)")
-SHADOW = par("SHADOW", 0.4, "festgelegt", "Bodenplatte außen so viel kleiner als der Korpus: Schattenfuge statt Versatz")
+SHADOW = par("SHADOW", 0.0, "festgelegt", "Bodenplatte außen exakt so groß wie der Korpus (bündig)")
+EDGE_V = par("EDGE_V", 0.8, "festgelegt", "Fase 45° an Korpus-Unterkante und Boden-Oberkante: bilden zusammen eine V-Fuge, kaschiert kleinen Versatz")
+BASE_CHAMF = par("BASE_CHAMF", 0.8, "festgelegt", "Fase an der Boden-Unterkante (Standkante, gegen Elefantenfuß)")
+LIP_CLR = par("LIP_CLR", 0.2, "Probedruck", "Spiel Zentrierkragen zur Innenwand je Seite (Coupon C8)")
 FLOOR = BASE_T
 CHAMF = par("CHAMF", 0.5, "festgelegt", "Fase Unterkante gegen Elefantenfuß (D2)")
 LID_T = par("LID_T", 6.0, "festgelegt", "Deckelstärke (Schrauben von unten brauchen Fleisch)")
@@ -125,7 +128,7 @@ STRAP_Z = par("STRAP_Z", 118.0, "festgelegt", "Riemenpunkt z")
 STRAP_HOLE = par("STRAP_HOLE", 5.2, "vorläufig", "Buchschraube noch nicht gekauft")
 
 # Boden (abnehmbar) – Schrauben von unten in Dome im Korpus
-BASE_BOSSES = par("BASE_BOSSES", [(8.2, 8.2), (131.8, 8.2), (7.7, 47.0), (132.3, 47.0), (8.2, 131.8), (131.8, 131.8)],
+BASE_BOSSES = par("BASE_BOSSES", [(8.6, 8.6), (131.4, 8.6), (7.7, 47.0), (132.3, 47.0), (8.6, 131.4), (131.4, 131.4)],
                   "festgelegt", "Bodenschrauben: 4 Ecken + 2 an der Kammerwand (vordere Dome stehen dicht in der Kammer)")
 BOSS_H = par("BOSS_H", 14.0, "festgelegt", "Höhe der Bodendome im Korpus; Kernloch 12 tief")
 CSK = par("CSK", (6.2, 3.4), "festgelegt", "Senkung für Kunststoffschraube 3,0 × 14 Senkkopf (Ø Kopf, Ø Loch)")
@@ -227,7 +230,7 @@ INN_SLAB = lambda z0, z1: slab(INN, z0, z1)
 
 def korpus():
     z0 = BASE_T
-    body = Manifold.batch_hull([slab(OUT.offset(-CHAMF, JoinType.Round), z0, z0 + 0.01), slab(OUT, z0 + CHAMF, HB - 1.0),
+    body = Manifold.batch_hull([slab(OUT.offset(-EDGE_V, JoinType.Round), z0, z0 + 0.01), slab(OUT, z0 + EDGE_V, HB - 1.0),
                                 slab(OUT.offset(-1.0, JoinType.Round), HB - 0.01, HB)])
     body = body - slab(INN, z0 - 1, HB + 1)                                  # unten offen
     add = []
@@ -584,14 +587,14 @@ def base_open():
 
 def boden():
     z = BASE_T
-    plate = Manifold.batch_hull([slab(OUT.offset(-SHADOW - CHAMF, JoinType.Round), 0, 0.01),
-                                 slab(OUT.offset(-SHADOW, JoinType.Round), CHAMF, z - 0.4),
-                                 slab(OUT.offset(-SHADOW - 0.4, JoinType.Round), z - 0.01, z)])
+    plate = Manifold.batch_hull([slab(OUT.offset(-SHADOW - BASE_CHAMF, JoinType.Round), 0, 0.01),
+                                 slab(OUT.offset(-SHADOW, JoinType.Round), BASE_CHAMF, z - EDGE_V),
+                                 slab(OUT.offset(-SHADOW - EDGE_V, JoinType.Round), z - 0.01, z)])
     add, cut = [], []
     # Zentrierkragen in der hinteren Öffnung, an den Domen ausgespart
     lw, lh = LIP
     op = base_open()
-    ring = op.offset(-CLR, JoinType.Round) - op.offset(-CLR - lw, JoinType.Round)
+    ring = op.offset(-LIP_CLR, JoinType.Round) - op.offset(-LIP_CLR - lw, JoinType.Round)
     lip = slab(ring, z - 0.01, z + lh)
     for (x, y) in BASE_BOSSES:
         lip = lip - cyl_z(x, y, z - 1, lh + 2, BOSS_D / 2 + 0.6)

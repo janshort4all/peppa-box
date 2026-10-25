@@ -98,3 +98,11 @@ In einem neuen Chat die Zip anhängen und sagen: „Entpacke nach /home/claude/m
 | `v4/out/` | aktuelle STL-Dateien, Bilder, PARAMETER.md, PRUEFBERICHT.md |
 
 Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
+
+## Nachtrag 25.10.2026 – Prototyp-Korpus ausgewertet, Fuge Boden/Korpus
+
+- Prototyp (0,28 mm, 2 Wände, 10 %) gedruckt: Maße und Einbau des Bodens mit Stapel passen. Sichtbar: Schichtlinien, Naht hinten, raue 45°-Schrägen oben an Rahmen-Vertiefung und Lautsprecher-Mulde, „X“-Kratzspur auf der Kammerdecke (fehlender Z-Hop), Reste der Umrandung an der Unterkante.
+- Entscheidung: Boden bleibt unter dem Korpus (kein eingelassener Boden).
+- Boden jetzt **exakt bündig** mit dem Korpus (vorher 0,4 mm kleiner). Fuge außen als **V-Fuge**: je 0,8 mm Fase an Korpus-Unterkante und Boden-Oberkante; Standkante des Bodens 0,8 mm gefast. Zentrierkragen mit 0,2 mm Spiel (vorher 0,3), per Coupon C8 prüfen. Eckdome dafür 0,4 mm nach innen gerückt.
+- Für den endgültigen Druck: keine Umrandung am Korpus, Elefantenfuß-Kompensation ca. 0,15 mm, Z-Hop 0,4 mm, Scarf Seam.
+- Skripte nutzen jetzt relative Pfade; das Repository läuft an beliebigem Ort.

@@ -1,5 +1,7 @@
+import os as _os
+ROOT2 = _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import sys, math
-sys.path.insert(0, "/home/claude/musikbox/v4"); sys.path.insert(0, "/home/claude/musikbox/v3")
+sys.path.insert(0, _os.path.join(ROOT2, "v4")); sys.path.insert(0, _os.path.join(ROOT2, "v3"))
 import model as M
 from manifold3d import CrossSection, Manifold
 from concept3 import render
@@ -54,4 +56,4 @@ d.text((40, 80), "A: Gitter orange, Logo beige eingelegt", fill=(70, 62, 54), fo
 d.text((830, 80), "B: alles orange, Logo als geschlossene Fläche", fill=(70, 62, 54), font=F)
 d.text((560, 860), "A von vorne", fill=(70, 62, 54), font=F)
 d.text((30, 1380), f"Löcher Ø 3,2 mm im Wabenraster 4,0 mm · offene Fläche ca. {round(open_frac*100)} % · Gitter 3,6 mm dick, mit Stiften gesteckt", fill=(90, 82, 74), font=F)
-cv.save("/home/claude/musikbox/v4/out/gitter_logo_varianten.png")
+cv.save(_os.path.join(ROOT2, "v4/out/gitter_logo_varianten.png"))

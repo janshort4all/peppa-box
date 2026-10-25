@@ -1,4 +1,7 @@
 """Erzeugt README, Parameterliste und Prüfbericht für das Druckpaket."""
+import os as _os
+ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+
 import os, zipfile, datetime
 import model as M
 import check as K
@@ -174,13 +177,13 @@ if __name__ == "__main__":
     open(os.path.join(OUT, "PARAMETER.md"), "w").write(parameter_md())
     open(os.path.join(OUT, "PRUEFBERICHT.md"), "w").write(pruefbericht_md(parts, ph))
     open(os.path.join(OUT, "README.md"), "w").write(readme_md())
-    zp = "/home/claude/musikbox/v4/musikbox_v4_druckpaket.zip"
+    zp = _os.path.join(ROOT, "v4/musikbox_v4_druckpaket.zip")
     with zipfile.ZipFile(zp, "w", zipfile.ZIP_DEFLATED) as z:
         for f in sorted(os.listdir(OUT)):
             if f.endswith((".stl", ".md", ".png")):
                 z.write(os.path.join(OUT, f), "musikbox_v4/" + f)
         for f in ("model.py", "check.py", "coupons.py", "boden_plan.py"):
-            z.write(os.path.join("/home/claude/musikbox/v4", f), "musikbox_v4/quellcode/" + f)
+            z.write(os.path.join(_os.path.join(ROOT, "v4"), f), "musikbox_v4/quellcode/" + f)
     print(zp, os.path.getsize(zp) // 1024, "KB")
     counts = {}
     for d in M.P.values():

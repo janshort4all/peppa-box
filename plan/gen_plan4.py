@@ -1,5 +1,8 @@
 """Verdrahtungsplan v4 (final): Pi 3A+ auf Akku-Board UPS HAT (D), Klemmen-Aufsatz, MAX98357A, Kopfhörer an der Pi-Klinke.
 Erzeugt verdrahtungsplan.html"""
+import os as _os
+ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+
 import html, re
 
 def esc(s): return html.escape(s, quote=True)
@@ -449,5 +452,5 @@ dtoverlay=hifiberry-dac</pre>
   render();
 }})();
 </script>'''
-open("/home/claude/musikbox/plan/verdrahtungsplan.html", "w").write(page)
+open(_os.path.join(ROOT, "plan/verdrahtungsplan.html"), "w").write(page)
 print("ok", len(page), "H", H, "total", total, "cables", ncab)

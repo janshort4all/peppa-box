@@ -1,4 +1,7 @@
 """Modifier-Körper für den Slicer: in diesen Bereichen KEIN Fuzzy Skin (Passungen und Löcher bleiben maßhaltig)."""
+import os as _os
+ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+
 import trimesh, numpy as np
 import model as M
 from model import box, cyl_x, cyl_y, U
@@ -22,5 +25,5 @@ def ohne_fuzzy():
 if __name__ == "__main__":
     m = ohne_fuzzy().to_mesh()
     t = trimesh.Trimesh(np.asarray(m.vert_properties)[:, :3], np.asarray(m.tri_verts))
-    t.export("/home/claude/musikbox/v4/out/01m_modifier_korpus_OHNE_fuzzy.stl")
+    t.export(_os.path.join(ROOT, "v4/out/01m_modifier_korpus_OHNE_fuzzy.stl"))
     print(t.bounds)

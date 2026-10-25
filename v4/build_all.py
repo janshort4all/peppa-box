@@ -1,15 +1,18 @@
 """Erzeugt Druckdateien, Coupons, Renderings, Parameterliste und Prüfbericht für Musikbox v4."""
+import os as _os
+ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+
 import os, sys, io, json, zipfile, datetime, math
 import numpy as np
 import trimesh
 from PIL import Image, ImageDraw, ImageFont
-sys.path.insert(0, "/home/claude/musikbox/v3")
+sys.path.insert(0, _os.path.join(ROOT, "v3"))
 import model as M
 import check as K
 import coupons as C
 from concept3 import render
 
-OUT = "/home/claude/musikbox/v4/out"
+OUT = _os.path.join(ROOT, "v4/out")
 os.makedirs(OUT, exist_ok=True)
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
 FONTB = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"

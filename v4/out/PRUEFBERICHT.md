@@ -28,8 +28,8 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | Abstand Kabel Klemmreihe links (Zone) ↔ Korpus | 4,5 |
 | Abstand Kabel Klemmreihe rechts (Zone) ↔ Drehgeber | 13,0 |
 | Abstand Kabel Klemmreihe hinten (Zone) ↔ USB-C-Einbaubuchse mit Kabel | 8,0 |
-| Abstand USB-C-Stecker am Akku-Board (Zone) ↔ Korpus | 4,6 |
-| Abstand WAGO GND A ↔ Korpus | 2,8 |
+| Abstand USB-C-Stecker am Akku-Board (Zone) ↔ Korpus | 4,5 |
+| Abstand WAGO GND A ↔ Korpus | 2,4 |
 | Abstand Verstärker ↔ Korpus | 5,0 |
 | Abstand Boden ↔ Korpus | 0,0 |
 | Abstand Lautsprecher ↔ Korpus | 0,0 |
@@ -49,7 +49,7 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | 02b_deckel_haut_beige.stl | 133 × 133 × 1 | – |
 | 03_deckelrahmen.stl | 127 × 128 × 17 | Boden Tasterhalter 12 mm |
 | 04_kartenfach.stl | 14 × 47 × 88 | Seitenwand über dem Kartenschlitz 5 mm |
-| 05_boden_traeger.stl | 139 × 139 × 8 | Decke der Senkbohrungen M2,5 (Ring 1,8 mm) |
+| 05_boden_traeger.stl | 140 × 140 × 8 | Decke der Senkbohrungen M2,5 (Ring 1,8 mm) |
 | 06_stoffrahmen.stl | 114 × 114 × 5 | – |
 | 07_drehknopf_orange.stl | 34 × 34 × 16 | – |
 | 08_ein_taste_orange.stl | 17 × 17 × 12 | – |

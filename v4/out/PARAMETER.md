@@ -31,10 +31,11 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `MAXB` | 19 / 18 / 8 | Verstärker-Klon L, B, Höhe mit Klemme |
 | `MPRB` | 25 / 20 / 4 | MPR121-Modul L, B, Höhe |
 
-## Mit Probedruck einstellen (7)
+## Mit Probedruck einstellen (8)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
+| `LIP_CLR` | 0,2 | Spiel Zentrierkragen zur Innenwand je Seite (Coupon C8) |
 | `GAP_LID` | 0,4 | Spalt Deckel–Wand je Seite |
 | `CLR` | 0,3 | Spiel für Passungen |
 | `PILOT` | 2,5 | Kernloch für 3-mm-Kunststoffschraube in PETG |
@@ -68,7 +69,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (60)
+## Gestaltung festgelegt (62)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -78,7 +79,9 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WALL` | 3 | Wandstärke (7 Linien à 0,42) |
 | `BASE_T` | 4 | Bodenplatte, abnehmbar, trägt die Elektronik; Korpus steht darauf |
 | `CH_FLOOR` | 2,4 | eigener Boden der Lautsprecherkammer im Korpus (Kammer bleibt dicht) |
-| `SHADOW` | 0,4 | Bodenplatte außen so viel kleiner als der Korpus: Schattenfuge statt Versatz |
+| `SHADOW` | 0 | Bodenplatte außen exakt so groß wie der Korpus (bündig) |
+| `EDGE_V` | 0,8 | Fase 45° an Korpus-Unterkante und Boden-Oberkante: bilden zusammen eine V-Fuge, kaschiert kleinen Versatz |
+| `BASE_CHAMF` | 0,8 | Fase an der Boden-Unterkante (Standkante, gegen Elefantenfuß) |
 | `CHAMF` | 0,5 | Fase Unterkante gegen Elefantenfuß (D2) |
 | `LID_T` | 6 | Deckelstärke (Schrauben von unten brauchen Fleisch) |
 | `LID_SINK` | 1,2 | Deckel liegt so tief unter der Kante |
@@ -116,7 +119,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `JK_Z` | 24 | Klinke z |
 | `STRAP_Y` | 104 | Riemenpunkt y |
 | `STRAP_Z` | 118 | Riemenpunkt z |
-| `BASE_BOSSES` | 8,2 / 8,2 / 131,8 / 8,2 / 7,7 / 47 / 132,3 / 47 / 8,2 / 131,8 / 131,8 / 131,8 | Bodenschrauben: 4 Ecken + 2 an der Kammerwand (vordere Dome stehen dicht in der Kammer) |
+| `BASE_BOSSES` | 8,6 / 8,6 / 131,4 / 8,6 / 7,7 / 47 / 132,3 / 47 / 8,6 / 131,4 / 131,4 / 131,4 | Bodenschrauben: 4 Ecken + 2 an der Kammerwand (vordere Dome stehen dicht in der Kammer) |
 | `BOSS_H` | 14 | Höhe der Bodendome im Korpus; Kernloch 12 tief |
 | `CSK` | 6,2 / 3,4 | Senkung für Kunststoffschraube 3,0 × 14 Senkkopf (Ø Kopf, Ø Loch) |
 | `LIP` | 1,6 / 3 | Zentrierkragen der Bodenplatte im hinteren Teil (Breite, Höhe) |

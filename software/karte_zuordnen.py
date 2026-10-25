@@ -2,6 +2,7 @@
 """Karte anlernen: Karte auflegen, Spotify-Link einfuegen, fertig.
 Start: python3 ~/peppa-box/software/karte_zuordnen.py      Beenden: Strg+C
 Den Link bekommst du in der Spotify-App: Playlist -> ... -> Teilen -> Link kopieren.
+Laeuft der Dienst peppa-player, vorher stoppen (sudo systemctl stop peppa-player) – oder einfach die Einstellungsseite nutzen.
 """
 import time
 

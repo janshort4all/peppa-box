@@ -3,7 +3,7 @@
 
 Anschluss: SPI0 / CE0 (Klemme E). RST liegt fest an 3,3 V, deshalb Soft-Reset per Befehl.
 Voraussetzung: dtparam=spi=on in /boot/firmware/config.txt, Paket python3-spidev.
-Start: python3 rc522_test.py   Diagnose: python3 rc522_test.py --debug   Beenden: Strg+C
+Start: python3 rc522_test.py   Diagnose: python3 rc522_test.py --debug [--gain=0..7]   Beenden: Strg+C
 """
 import sys
 import time
@@ -16,6 +16,10 @@ MODE, TXCTRL, TXASK = 0x11, 0x14, 0x15
 TMODE, TPRESC, TRELH, TRELL, VERSION = 0x2A, 0x2B, 0x2C, 0x2D, 0x37
 RFCFG, COLL = 0x26, 0x0E
 DEBUG = "--debug" in sys.argv
+GAIN = None                           # Empfangsverstaerkung 0..7 (Standard des Chips: 4 = 33 dB)
+for a in sys.argv:
+    if a.startswith("--gain="):
+        GAIN = int(a.split("=")[1])
 last_diag = ""
 
 spi = spidev.SpiDev()
@@ -47,7 +51,8 @@ def init():
     w(TRELL, 30); w(TRELH, 0)
     w(TXASK, 0x40)                    # 100 % ASK
     w(MODE, 0x3D)                     # CRC-Startwert 0x6363
-    w(RFCFG, 0x70)                    # Empfangsverstaerkung maximal (48 dB)
+    if GAIN is not None:
+        w(RFCFG, (GAIN & 0x07) << 4)  # Empfangsverstaerkung setzen
     setb(TXCTRL, 0x03)                # Antenne an
     time.sleep(0.01)
 
@@ -74,7 +79,7 @@ def transceive(data, bits=0):
     err = r(ERR)
     n = r(FIFOLVL)
     data = [r(FIFO) for _ in range(n)]
-    last_diag = f"Antwort {n} Byte {data} (Error 0x{err:02X})"
+    last_diag = f"Antwort {n} Byte {[hex(x) for x in data]} (Error 0x{err:02X}, ComIrq 0x{irq:02X}, Control 0x{r(0x0C):02X})"
     if err & 0x1B:
         return None
     return data
@@ -124,7 +129,7 @@ def main():
     if v in (0x00, 0xFF):
         print(f"Keine Antwort vom RC522 (Version 0x{v:02X}). Kabel und SPI pruefen.")
         sys.exit(1)
-    print(f"RC522 gefunden (Version 0x{v:02X}). Karte auflegen, Beenden mit Strg+C.")
+    print(f"RC522 gefunden (Version 0x{v:02X}). Verstaerkung 0x{r(RFCFG):02X}. Karte auflegen, Beenden mit Strg+C.")
     last, miss = None, 0
     while True:
         uid = read_uid()

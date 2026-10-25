@@ -98,8 +98,8 @@ RC_T = par("RC_T", 1.6, "vorläufig", "RC522 Platinendicke")
 RC_ANT = par("RC_ANT", 20.0, "gemessen", "Antennenmitte ab Platinenende (Antennenseite; 40 mm bis Lötlochende)")
 RC_COMP = par("RC_COMP", 5.0, "gemessen", "Bauteilhöhe auf der Rückseite (Quarz, höchstes Bauteil)")
 RC_PIN_OUT = par("RC_PIN_OUT", 6.0, "gemessen", "Überstand der 90°-Stifte über die Platinenkante")
-RC_DUPONT_L = par("RC_DUPONT_L", 14.0, "vorläufig", "Länge Steckkabel-Buchse (Kunststoffhülse)")
-RC_BEND = par("RC_BEND", 7.0, "vorläufig", "Platz für den Kabelbogen hinter den Buchsen bis zur Innenwand (Kabel biegen direkt nach unten ab)")
+RC_PLUG_OUT = par("RC_PLUG_OUT", 14.0, "gemessen", "Platinenkante bis Ende Steckkabel-Hülse (gesteckt, Buchse sitzt bis an die Leiste)")
+RC_BEND = par("RC_BEND", 8.0, "vorläufig", "Platz für den Kabelbogen hinter den Buchsen")
 
 # Ein-Taste
 BTN_X = par("BTN_X", 124.5, "festgelegt", "Ein-Taste x (hinten rechts)")
@@ -542,7 +542,7 @@ def rc522_stecker_zone():
     """90°-Stiftleiste mit 8 Steckkabeln am Lötlochende, flach in der Platinenebene, plus Kabelbogen."""
     u0, u1, v0, v1, w0, w1 = rc_local()
     vm = (v0 + v1) / 2
-    return to_world(box(u1 - 2.5, vm - 11.5, w1 - 0.5, u1 + RC_PIN_OUT + RC_DUPONT_L + RC_BEND, vm + 11.5, w1 + 4.0))   # Buchse 2,54 mm um den Stift, Stiftmitte ca. 1,3 mm über der Platine
+    return to_world(box(u1 - 2.5, vm - 11.5, w1 - 0.5, u1 + RC_PLUG_OUT + RC_BEND, vm + 11.5, w1 + 4.0))   # Buchse 2,54 mm um den Stift, Stiftmitte ca. 1,3 mm über der Platine
 
 
 def karte_world():

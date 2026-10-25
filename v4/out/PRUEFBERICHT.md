@@ -35,7 +35,7 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | Abstand Lautsprecher ↔ Korpus | 0,0 |
 | Abstand Kurzhubtaster ↔ Kartenfach | 4,2 |
 | Abstand RC522 ↔ Deckelrahmen | 2,0 |
-| Abstand RC522-Stecker (Zone) ↔ Korpus | 0,0 |
+| Abstand RC522-Stecker (Zone) ↔ Korpus | 5,0 |
 | Abstand RC522-Stecker (Zone) ↔ Deckelrahmen | 0,8 |
 | Abstand RC522-Stecker (Zone) ↔ Kartenfach | 1,7 |
 | Abstand Touch-Modul MPR121 ↔ Kartenfach | 13,6 |

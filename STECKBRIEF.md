@@ -111,5 +111,5 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 
 - RC522 gemessen: 60 × 40 mm, Antennenmitte 20 mm vom Antennenende (40 mm bis zum Lötlochende), Quarz 5 mm hoch (Modell vorher 3 mm). Prüfung ok, Abstand zum Deckelrahmen 2,0 mm.
 - Stiftleiste **gewinkelt (90°)**, Kunststoffleiste auf der Bauteilseite, Stifte flach in Platinenebene zur rechten Seitenwand, Überstand 6 mm. Neue Zone „RC522-Stecker“ im Modell (Stiftleiste + Steckkabel-Buchsen + Kabelbogen).
-- Platz von der Platinenkante bis zur Innenwand: ca. 27 mm. Bedarf: 6 mm Stifte + 14 mm Buchse (vorläufig, nicht gemessen) + 7 mm Bogen. Knapp, ohne Reserve; Kabel müssen direkt nach unten abbiegen. **Offen:** Länge der Steckkabel-Buchse messen.
+- Platz von der Platinenkante bis zur Innenwand: ca. 27 mm. Gesteckte Kabel enden 14 mm hinter der Platinenkante (gemessen), es bleiben ca. 13 mm für den Kabelbogen. Prüfung ok.
 - MAX98357A: SD an Pin 36 (GPIO 16) hat beim Start den internen Pull-down des Pi → Verstärker stumm. Programm muss GPIO 16 als Eingang **ohne** Pull setzen (`pinctrl set 16 ip pn`). Noch nicht im Verdrahtungsplan.

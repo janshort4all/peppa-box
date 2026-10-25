@@ -2,7 +2,7 @@
 
 Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Modell alles neu: Löcher, Halter, Kollisionsprüfung.
 
-## Vorläufig – am echten Teil messen (22)
+## Vorläufig – am echten Teil messen (21)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -11,8 +11,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `SPK_PITCH` | 58,5 | Lochabstand (Zeichnungswert ohne Beschriftung) |
 | `NFC_T` | 0,4 | NFC-Aufkleber Dicke |
 | `RC_T` | 1,6 | RC522 Platinendicke |
-| `RC_DUPONT_L` | 14 | Länge Steckkabel-Buchse (Kunststoffhülse) |
-| `RC_BEND` | 7 | Platz für den Kabelbogen hinter den Buchsen bis zur Innenwand (Kabel biegen direkt nach unten ab) |
+| `RC_BEND` | 8 | Platz für den Kabelbogen hinter den Buchsen |
 | `SW_H` | 7,3 | Tasterhöhe gesamt (Quellen: 7,3 bzw. 6,5) |
 | `ENC_WALL` | 2 | Wand am Drehgeber (Gewindelänge unbekannt) |
 | `ENC_OUT` | 14 | Achse ragt so weit aus der Wand |
@@ -42,7 +41,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `PAD_POCKET` | 2 | Tasche unter dem Feld → 3,3 mm Kunststoff über dem Kupfer |
 | `ENC_HOLE` | 7,4 | Loch für M7-Gewinde |
 
-## Von dir gemessen (9)
+## Von dir gemessen (10)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -51,6 +50,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `RC_ANT` | 20 | Antennenmitte ab Platinenende (Antennenseite; 40 mm bis Lötlochende) |
 | `RC_COMP` | 5 | Bauteilhöhe auf der Rückseite (Quarz, höchstes Bauteil) |
 | `RC_PIN_OUT` | 6 | Überstand der 90°-Stifte über die Platinenkante |
+| `RC_PLUG_OUT` | 14 | Platinenkante bis Ende Steckkabel-Hülse (gesteckt, Buchse sitzt bis an die Leiste) |
 | `ACRYL` | 85 / 55 | Acrylplatte unter dem Stapel (von dir gemessen) |
 | `STACK_H` | 70 | Acrylplatte bis Oberkante graue Klemmen, ohne Kabel |
 | `PINS_H` | 60 | Acrylplatte bis Spitzen der gelben Stifte |

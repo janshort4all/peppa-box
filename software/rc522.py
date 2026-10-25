@@ -240,6 +240,14 @@ class RC522:
         karte = self.read_card(mit_link=False)
         return karte[0] if karte else None
 
+    def antenne(self, an):
+        """Funkfeld ein/aus. Aus zwischen den Abfragen spart Strom und vermeidet Stoerungen."""
+        if an:
+            self.setb(TXCTRL, 0x03)
+            time.sleep(0.005)                  # Karte braucht einen Moment Energie zum Starten
+        else:
+            self.clrb(TXCTRL, 0x03)
+
     def close(self):
         self.spi.close()
 

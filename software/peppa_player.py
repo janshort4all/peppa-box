@@ -13,7 +13,8 @@ import webui
 from rc522 import RC522
 
 GERAET = "Peppa Box"          # Name in /etc/raspotify/conf (LIBRESPOT_NAME)
-WEG_NACH = 1.0                # Sekunden ohne Karte, bis "entfernt" gilt
+ABFRAGE = 1.0                 # Sekunden zwischen zwei Abfragen des Lesers
+WEG_NACH = 1.5                # Sekunden ohne Karte, bis "entfernt" gilt (= zwei verpasste Abfragen)
 PORT = 8080
 
 
@@ -58,13 +59,16 @@ def main():
     log("Bereit. Karte auflegen.")
     aktuell, zuletzt, letzte_sicht = None, None, 0.0
     while True:
+        beginn = time.time()
         try:
+            leser.antenne(True)
             aktuell, zuletzt, letzte_sicht, dev = schritt(leser, aktuell, zuletzt, letzte_sicht, dev)
         except Exception as e:                  # Netz- oder Spotify-Fehler: melden, weiterlaufen
             log(f"Fehler: {e!r} – laufe weiter")
-            time.sleep(1)
+        finally:
+            leser.antenne(False)                # Funkfeld zwischen den Abfragen aus
         webui.ZUSTAND["karte"] = aktuell
-        time.sleep(0.1)
+        time.sleep(max(0.05, ABFRAGE - (time.time() - beginn)))
 
 
 def link_lesen(leser):

@@ -1,0 +1,158 @@
+<title>Einkaufsliste Musikbox</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: eine Spalte, je Shop eine Karte mit großen Zeilen zum Antippen; Summen oben */
+:root {
+  --bg: #f3f1ec; --panel: #ffffff; --fg: #23201b; --muted: #6b655b; --line: #dedad2;
+  --accent: #c8642a; --accent-ink: #ffffff; --ok: #2f7a4e; --warn: #b4561f; --warnbg: #fbefe5; --donebg: #eef5f0;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #171512; --panel: #211e1a; --fg: #ece7de; --muted: #a59d90; --line: #36312a;
+  --accent: #e5874f; --accent-ink: #1a1410; --ok: #6cc391; --warn: #f0a070; --warnbg: #3a2a1e; --donebg: #1e2b23; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #171512; --panel: #211e1a; --fg: #ece7de; --muted: #a59d90; --line: #36312a;
+  --accent: #e5874f; --accent-ink: #1a1410; --ok: #6cc391; --warn: #f0a070; --warnbg: #3a2a1e; --donebg: #1e2b23; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 17px; line-height: 1.45; margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px }
+.wrap { max-width: 760px; margin: 0 auto; display: grid; gap: 20px }
+h1 { font-size: clamp(1.6rem, 5vw, 2.1rem); margin: 0; line-height: 1.15; text-wrap: balance }
+h2 { font-size: 1.15rem; margin: 0; text-wrap: balance }
+p { margin: 0 }
+.lead { color: var(--muted) }
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 2px }
+.tile .lbl { font-size: .8rem; color: var(--muted); letter-spacing: .04em; text-transform: uppercase }
+.tile .val { font-family: var(--f-mono); font-size: 1.35rem; font-variant-numeric: tabular-nums }
+.alert { background: var(--warnbg); border-left: 4px solid var(--warn); border-radius: 8px; padding: 12px 14px }
+.shop { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden }
+.shop header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 14px 16px 10px; flex-wrap: wrap }
+.shop header .sum { font-family: var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums }
+.shop header p { flex-basis: 100%; color: var(--muted); font-size: .92rem }
+ul { list-style: none; margin: 0; padding: 0 }
+li.item { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 4px 12px; align-items: start; padding: 12px 16px; border-top: 1px solid var(--line) }
+li.item.done { background: var(--donebg) }
+li.item.done a.name { color: var(--muted); text-decoration: line-through }
+li.item input { width: 22px; height: 22px; margin: 3px 0 0; accent-color: var(--ok) }
+li.item input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+a.name { color: var(--fg); font-weight: 700; text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; text-decoration-thickness: 2px }
+a.name:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px }
+.meta { grid-column: 2 / 4; color: var(--muted); font-size: .92rem }
+.meta a { color: var(--accent) }
+.price { font-family: var(--f-mono); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums }
+.qty { color: var(--accent); font-weight: 700 }
+.tag { display: inline-block; font-size: .78rem; font-weight: 700; color: var(--warn); background: var(--warnbg); border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: 1px }
+.tag.ok { color: var(--ok); background: var(--donebg) }
+footer { color: var(--muted); font-size: .9rem }
+@media (prefers-reduced-motion: no-preference) { li.item { transition: background .15s } }
+</style>
+<div class="wrap">
+  <div>
+    <h1>Einkaufsliste Musikbox</h1>
+    <p class="lead">Stand 21.10.2026. Jeder Name öffnet das Produkt direkt im Shop. Häkchen setzen, was bestellt ist; sie bleiben in diesem Browser gespeichert.</p>
+  </div>
+
+  <div class="summary" aria-label="Summen">
+    <div class="tile"><span class="lbl">Gesamt</span><span class="val" id="t-all">–</span></div>
+    <div class="tile"><span class="lbl">Noch offen</span><span class="val" id="t-open">–</span></div>
+    <div class="tile"><span class="lbl">Bestellt</span><span class="val" id="t-done">–</span></div>
+  </div>
+
+  <div class="alert"><b>Zuerst bestellen:</b> das Akku-Board bei BerryBase, dort ist nur noch 1 Stück da. Falls weg: <a href="https://eckstein-shop.de/WaveShare-UPS-HAT-D-for-Raspberry-Pi-5V-Pogo-Pins-Connector-EN" target="_blank" rel="noopener">Eckstein</a>, 29,95 €, ab 26.10.</div>
+
+  <div id="shops"></div>
+
+  <section class="shop">
+    <header><h2>Schon erledigt</h2></header>
+    <ul><li class="item done"><input type="checkbox" checked disabled aria-label="erledigt"><span class="name" style="font-weight:700">Raspberry Pi 3 Model A+</span><span class="price">38,99 €</span><span class="meta">Amazon, gekauft</span></li></ul>
+  </section>
+
+  <footer>Preise inkl. MwSt., zzgl. Versand, Stand 21.10.2026. Beim Bestellen kurz prüfen. Werkzeug ist nicht in den Summen enthalten.</footer>
+</div>
+<script>
+const SHOPS = [
+  { id: "reichelt", name: "Reichelt", note: "Bestellt am 21.10.2026.", done: true, items: [
+    { id: "spk", n: "Lautsprecher Visaton FRS 8, 4 Ω", q: 1, p: 13.60, u: "https://www.reichelt.de/de/de/shop/produkt/breitbandlautsprecher_frs_8_30_w_4_ohm-22437", m: "Nur noch wenige auf Lager" },
+    { id: "dac", n: "Kopfhörer-Ausgang HiFiBerry DAC+ Zero – entfällt", q: 0, p: 21.50, u: "https://www.reichelt.de/de/de/shop/produkt/raspberry_pi_shield_-_hifiberry_dac_zero-191039", m: "Nicht mehr nötig: Kopfhörer laufen über die Klinke des Pi. Bei Reichelt stornieren (21,50 € gespart)" },
+    { id: "jack", n: "Kopfhörerbuchse Lumberg 1503-09", q: 1, p: 1.60, u: "https://www.reichelt.de/de/de/shop/produkt/klinkeneinbaubuchse_3_5_mm_stereo_3-pol-116187", m: "Mit Schaltkontakt, erkennt den Stecker" },
+    { id: "mpr", n: "Touch-Modul Adafruit MPR121", q: 1, p: 10.70, u: "https://www.reichelt.de/de/de/shop/produkt/entwicklerboards_-_platine_fuer_kapazitive_beruehrungssensoren_mp-235516" },
+    { id: "enc", n: "Drehgeber ALPS STEC11B03", q: 1, p: 4.65, u: "https://www.reichelt.de/de/de/shop/produkt/drehimpulsegeber_15_impulse_30_rastungen_vertikal-73913" },
+    { id: "btn", n: "Kurzhubtaster 12 × 12 mm, DIP DTS-24R", q: 2, p: 0.25, u: "https://www.reichelt.de/de/de/shop/produkt/kurzhubtaster_printmontage_1_schliesser_12_x_12_x_7_3_mm-424574", m: "Innen hinter der gedruckten orangen Ein-Taste, einer als Ersatz" },
+    { id: "sd", n: "microSD 32 GB SanDisk Ultra, A1", q: 1, p: 16.95, u: "https://www.reichelt.de/de/de/shop/produkt/microsdhc-speicherkarte_32gb_sandisk_ultra-297179", m: "Nicht nötig: Die SanDisk Ultra 128 GB A1, die du schon hast, passt. Wenn noch nicht verschickt, bei Reichelt stornieren (16,95 € gespart)" },
+    { id: "w5", n: "Hebelklemme WAGO 221-425, 5-fach", q: 4, p: 0.99, u: "https://www.reichelt.de/de/de/shop/produkt/compact-anschlussklemme_serie_221_-_the_same_in_green_-355730", m: "Für GND, 3,3 V und 5 V, eine als Reserve" },
+    { id: "w3", n: "Hebelklemme WAGO 221-423, 3-fach", q: 3, p: 0.77, u: "https://www.reichelt.de/de/de/shop/produkt/compact-anschlussklemme_serie_221_-_the_same_in_green_-355729", m: "Verteilen die Tonleitungen auf zwei Module" },
+    { id: "elko", n: "Kondensator 1000 µF / 10 V", q: 1, p: 0.14, u: "https://www.reichelt.de/de/de/shop/produkt/elko_radial_1000_f_10_v_105_rm_5-359138" },
+    { id: "rca", n: "Cinch-Kabel Goobay 50025 – entfällt", q: 0, p: 1.50, u: "https://www.reichelt.de/de/de/shop/suche/goobay%2050025", m: "War für den DAC. Mit stornieren (1,50 € gespart)" },
+    { id: "shr", n: "Schrumpfschlauch-Sortiment", q: 1, p: 3.35, u: "https://www.reichelt.de/de/de/shop/produkt/schrumpfschlauch-sortiment_2_1_15cm_18st_-17419" },
+  ]},
+  { id: "berrybase", name: "BerryBase", note: "Bestellt am 21.10.2026, Lieferung 22.–24.10.", done: true, items: [
+    { id: "ups", n: "Akku-Board Waveshare UPS HAT (D)", q: 1, p: 24.90, u: "https://www.berrybase.de/waveshare-ups-hat-d-fuer-raspberry-pi-i2c-ueberwachung-pogo-pin-type-c-ueberstromschutz-5v", m: "Laden, Schutzschaltung, Akkustand", t: "nur 1 Stück" },
+    { id: "cell", n: "Akkuzelle BAK N21700CG50, 5000 mAh", q: 2, p: 3.85, u: "https://www.berrybase.de/search?search=BAK+N21700CG50", m: "Link führt zur Suche; Standardzellen, die Schutzschaltung steckt im Board" },
+    { id: "hat", n: "Klemmen-Aufsatz für den Pi", q: 1, p: 7.30, u: "https://www.berrybase.de/gpio-breakout-hat-mit-federkraftklemmen-fuer-raspberry-pi" },
+    { id: "nfc", n: "NFC-Aufkleber NTAG215, 25 mm, 10 Stück", q: 2, p: 4.40, u: "https://www.berrybase.de/rfid-nfc-tags-ntag215-25mm-selbstklebend-weiss-10-stueck", m: "2 Packungen für 20 Karten" },
+    { id: "cu", n: "Kupferband mit leitfähigem Kleber, 5 mm", q: 1, p: 6.80, u: "https://www.berrybase.de/kupfer-klebeband-leitfaehiger-kleber-5mm-15m", m: "Für die 4 Touchfelder" },
+    { id: "cab2", n: "Steckkabel Buchse–Buchse, 40 Stück, 50 cm", q: 1, p: 2.20, u: "https://www.berrybase.de/40pin-jumper-dupont-kabel-female-female-trennbar", m: "Wird halbiert, ergibt 80 Kabel mit je einer Buchse" },
+  ]},
+  { id: "amazon", name: "Amazon", note: "Bestellt am 21.10.2026.", done: true, items: [
+    { id: "rc2", n: "NFC-Leser RC522, 3er-Set mit Testkarten", q: 1, p: 8.99, u: "https://www.amazon.de/s?k=RC522+RFID+3+St%C3%BCck", m: "Zwei Leser als Reserve. Stiftleiste lose, also 8 Lötstellen" },
+  ]},
+  { id: "amazon2", name: "Amazon, Verstärker", note: "Bestellt am 21.10.2026. Ersetzt Antratek.", done: true, items: [
+    { id: "max2", n: "Verstärker MAX98357A, 2 Stück mit 20 Dupont-Kabeln", q: 1, p: 7.39, u: "https://www.amazon.de/s?k=MAX98357A+2+St%C3%BCck+Dupont", m: "Gleiche Belegung wie das Adafruit-Board, einer als Reserve. Stiftleiste und Lautsprecherklemme werden angelötet" },
+  ]},
+  { id: "offen", name: "Noch offen", note: "Neu seit dem Umbau auf den Boden-Träger (24.10.) und ohne DAC (25.10.). Die USB-C-Einbaubuchse kommt dazu, sobald das Produkt feststeht.", items: [
+    { id: "jackcab", n: "Klinkenkabel 3,5 mm stereo, ein Stecker 90° gewinkelt, 0,5 m (Goobay 67782)", q: 1, p: 1.43, u: "https://www.berrybase.de/en/jack-audio-cable-stereo-1x-3.5mm-jack-plug-1x-3.5mm-jack-plug-900-angled-black", m: "Wird halbiert: der gewinkelte Stecker kommt in die Klinke des Pi, die drei Adern an die Buchse in der Wand. Allein lohnt die Bestellung wegen des Versands nicht, besser mit den Schrauben zusammen" },
+  ]},
+  { id: "tools", name: "Werkzeug, falls noch nicht vorhanden", note: "Nicht in den Summen enthalten.", tools: true, items: [
+    { id: "t-kit", n: "Lötübungsset „Voice Recorder“", q: 1, p: 9.40, u: "https://www.reichelt.de/de/de/shop/produkt/loetbausatz_voice_recorder-418741", m: "Eine Stunde üben, bevor es an die Module geht" },
+    { id: "t-st", n: "Lötstation (Auswahl bei Reichelt)", u: "https://www.reichelt.de/de/de/shop/kategorie/diverse_loetstationen-555", m: "Temperaturgeregelt, 60–80 W, ca. 50–100 €" },
+    { id: "t-sn", n: "Lötzinn 0,8 mm mit Flussmittel", u: "https://www.reichelt.de/de/de/shop/suche/l%C3%B6tzinn%200,8", m: "Suche" },
+    { id: "t-ab", n: "Abisolierzange", u: "https://www.reichelt.de/de/de/shop/suche/abisolierzange", m: "Suche" },
+    { id: "t-sc", n: "Seitenschneider", u: "https://www.reichelt.de/de/de/shop/suche/seitenschneider", m: "Suche" },
+    { id: "t-mm", n: "Multimeter", u: "https://www.reichelt.de/de/de/shop/suche/multimeter", m: "Für die Kurzschluss-Prüfung vor dem Einschalten" },
+    { id: "t-hk", n: "Heißklebepistole", u: "https://www.reichelt.de/de/de/shop/suche/hei%C3%9Fklebepistole", m: "Sichert die Steckkabel" },
+  ]},
+];
+const KEY = "musikbox-einkauf";
+let state = {};
+try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
+const eur = v => v.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function render() {
+  const root = document.getElementById("shops");
+  root.innerHTML = "";
+  let all = 0, done = 0;
+  SHOPS.forEach(s => {
+    let sum = 0;
+    const lis = s.items.map(it => {
+      const line = it.p ? it.q * it.p : 0;
+      const isDone = it.id in state ? !!state[it.id] : !!s.done;
+      if (!s.tools) { sum += line; all += line; if (isDone) done += line; }
+      const qty = it.q > 1 ? `<span class="qty">${it.q} ×</span> ` : "";
+      const tag = it.t ? `<span class="tag">${esc(it.t)}</span>` : "";
+      const extra = it.mu ? ` · <a href="${it.mu}" target="_blank" rel="noopener">${esc(it.ml)}</a>` : "";
+      const meta = it.m ? `<span class="meta">${esc(it.m)}${extra}</span>` : "";
+      const price = it.p ? `<span class="price">${qty}${eur(it.p)}</span>` : `<span class="price"></span>`;
+      return `<li class="item${isDone ? " done" : ""}"><input type="checkbox" id="c-${it.id}" data-id="${it.id}"${isDone ? " checked" : ""} aria-label="${esc(it.n)} bestellt"><a class="name" href="${it.u}" target="_blank" rel="noopener">${esc(it.n)}</a>${tag}${price}${meta}</li>`;
+    }).join("");
+    const sec = document.createElement("section");
+    sec.className = "shop";
+    sec.innerHTML = `<header><h2>${esc(s.name)}</h2>${s.tools ? "" : `<span class="sum">${eur(sum)}</span>`}<p>${esc(s.note)}</p></header><ul>${lis}</ul>`;
+    root.appendChild(sec);
+  });
+  document.getElementById("t-all").textContent = eur(all);
+  document.getElementById("t-open").textContent = eur(all - done);
+  document.getElementById("t-done").textContent = eur(done);
+  root.querySelectorAll("input[data-id]").forEach(cb => cb.addEventListener("change", () => {
+    state[cb.dataset.id] = cb.checked;
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+    render();
+    const again = document.getElementById("c-" + cb.dataset.id);
+    if (again) again.focus();
+  }));
+}
+render();
+</script>

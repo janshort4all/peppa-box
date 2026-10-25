@@ -1,0 +1,75 @@
+== Deckelteile von oben (Volumen außerhalb der Auflage, soll 0) ==
+  deckelrahmen: 0.0 mm³
+  kartenfach: 0.0 mm³
+  ein_taste: 0.0 mm³
+  RC522: 0.0 mm³
+  Kurzhubtaster: 0.0 mm³
+  WAGO GND B: 0.0 mm³
+  WAGO 3,3 V: 0.0 mm³
+  WAGO SCL: 0.0 mm³
+  Touch-Modul MPR121: 0.0 mm³
+== Boden von unten (Hubweg, soll 0) ==
+  boden (Aufbauten): 0.0 mm³
+  Akku-Board mit Zellen: 0.0 mm³
+  Pi + Klemmen-Aufsatz: 0.0 mm³
+  Steckkabel auf gelben Stiften (Zone): 0.0 mm³
+  Kabel Klemmreihe links (Zone): 0.0 mm³
+  Kabel Klemmreihe rechts (Zone): 0.0 mm³
+  Kabel Klemmreihe hinten (Zone): 0.0 mm³
+  USB-C-Stecker am Akku-Board (Zone): 0.0 mm³
+  WAGO GND A: 0.0 mm³
+  WAGO 5 V: 0.0 mm³
+  Verstärker: 0.0 mm³
+== Kollisionen ==
+== Abstände ==
+  Oberkante Klemmen (z): 77.5
+  Oberkante Steckkabel auf den Stiften (z): 90.5
+  Unterkante Kartenfach (z): 86.8
+  Unterkante Klemmen im Deckel (z): 117.4
+  Abstand Pi + Klemmen-Aufsatz ↔ kartenfach: 9.8
+  Abstand Pi + Klemmen-Aufsatz ↔ RC522: 12.8
+  Abstand Steckkabel auf gelben Stiften (Zone) ↔ deckelrahmen: 38.6
+  Abstand Pi + Klemmen-Aufsatz ↔ WAGO GND B: 39.9
+  Abstand Pi + Klemmen-Aufsatz ↔ Touch-Modul MPR121: 40.0
+  Abstand Akku-Board mit Zellen ↔ korpus: 4.1
+  Abstand Kabel Klemmreihe links (Zone) ↔ korpus: 4.5
+  Abstand Kabel Klemmreihe rechts (Zone) ↔ Drehgeber: 13.0
+  Abstand Kabel Klemmreihe hinten (Zone) ↔ USB-C-Einbaubuchse mit Kabel: 8.0
+  Abstand USB-C-Stecker am Akku-Board (Zone) ↔ korpus: 4.6
+  Abstand WAGO GND A ↔ korpus: 2.8
+  Abstand Verstärker ↔ korpus: 5.0
+  Abstand boden ↔ korpus: 0.0
+  Abstand Lautsprecher ↔ korpus: 0.0
+  Abstand Kurzhubtaster ↔ kartenfach: 4.2
+  Abstand RC522 ↔ deckelrahmen: 2.2
+  Abstand Touch-Modul MPR121 ↔ kartenfach: 13.6
+== Druck ==
+  korpus: 140.0 × 140.0 × 136.0 mm, Überhang 5688 mm²
+      z= 118.0   5388.7 mm²  Bereich 134.0 × 44.1
+      z= 103.5     84.7 mm²  Bereich 28.2 × 3.0
+      z=  38.0     29.4 mm²  Bereich 60.1 × 9.0
+      z=  96.5     29.4 mm²  Bereich 60.1 × 9.0
+      z=  12.0     29.4 mm²  Bereich 127.1 × 126.1
+      z=  62.0     25.2 mm²  Bereich 33.3 × 3.0
+  deckel_orange: 133.2 × 133.2 × 5.3 mm, Überhang 1483 mm²
+      z=   2.0   1443.3 mm²  Bereich 100.0 × 56.0
+      z=   4.5     39.2 mm²  Bereich 121.7 × 121.7
+  deckel_beige: 133.2 × 133.2 × 0.7 mm, Überhang 0 mm²
+  deckelrahmen: 127.4 × 127.8 × 17.3 mm, Überhang 90 mm²
+      z=  14.5     85.6 mm²  Bereich 12.4 × 15.5
+      z=   3.0      4.3 mm²  Bereich 18.3 × 18.6
+  kartenfach: 13.6 × 46.7 × 88.5 mm, Überhang 533 mm²
+      z=  80.0    174.9 mm²  Bereich 4.8 × 36.8
+      z=   7.5    119.8 mm²  Bereich 7.1 × 35.1
+      z=   7.0     52.9 mm²  Bereich 7.8 × 35.3
+      z=  55.0     40.0 mm²  Bereich 2.0 × 20.0
+      z=  87.5     35.2 mm²  Bereich 3.1 × 22.3
+      z=  34.0     26.9 mm²  Bereich 1.4 × 19.2
+  boden: 139.2 × 139.2 × 10.0 mm, Überhang 102 mm²
+      z=   2.0    102.1 mm²  Bereich 64.4 × 55.4
+  stoffrahmen: 114.2 × 114.2 × 5.4 mm, Überhang 0 mm²
+  drehknopf: 34.0 × 34.0 × 16.0 mm, Überhang 39 mm²
+      z=  14.5     26.2 mm²  Bereich 34.0 × 34.0
+      z=   0.5     12.6 mm²  Bereich 7.0 × 1.8
+  ein_taste: 17.0 × 17.0 × 11.5 mm, Überhang 1 mm²
+  riemen_gegenplatte: 18.0 × 24.0 × 4.0 mm, Überhang 0 mm²

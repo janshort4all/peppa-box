@@ -29,32 +29,43 @@ def main():
     log("Bereit. Karte auflegen.")
     aktuell, zuletzt, letzte_sicht = None, None, 0.0
     while True:
-        uid = leser.read_uid()
-        jetzt = time.time()
-        if uid:
-            letzte_sicht = jetzt
-            if uid != aktuell:
-                aktuell = uid
-                eintrag = karten.laden().get(uid)
-                if not eintrag:
-                    log(f"Unbekannte Karte {uid}. Zuordnen mit: python3 ~/peppa-box/software/karte_zuordnen.py")
-                else:
-                    dev = spotify.geraet_id(GERAET) or dev
-                    if uid == zuletzt:
-                        status, _ = spotify.fortsetzen(dev)
-                        log(f"Weiter: {eintrag.get('name') or eintrag['uri']} (Spotify {status})")
-                    else:
-                        status, data = spotify.abspielen(dev, eintrag["uri"])
-                        log(f"Spiele: {eintrag.get('name') or eintrag['uri']} (Spotify {status})")
-                        if status >= 300:
-                            log(f"  Fehler: {data}")
-                    zuletzt = uid
-        elif aktuell and jetzt - letzte_sicht > WEG_NACH:
-            if karten.laden().get(aktuell):
-                status, _ = spotify.pause(dev)
-                log(f"Karte weg, Pause (Spotify {status})")
-            aktuell = None
+        try:
+            aktuell, zuletzt, letzte_sicht, dev = schritt(leser, aktuell, zuletzt, letzte_sicht, dev)
+        except Exception as e:                  # Netz- oder Spotify-Fehler: melden, weiterlaufen
+            log(f"Fehler: {e!r} – laufe weiter")
+            time.sleep(1)
         time.sleep(0.1)
+
+
+def schritt(leser, aktuell, zuletzt, letzte_sicht, dev):
+    """Ein Durchlauf: Karte lesen und bei Wechsel Spotify steuern. Gibt den neuen Zustand zurueck."""
+    uid = leser.read_uid()
+    jetzt = time.time()
+    if uid:
+        letzte_sicht = jetzt
+        if uid != aktuell:
+            aktuell = uid
+            eintrag = karten.laden().get(uid)
+            if not eintrag:
+                log(f"Unbekannte Karte {uid}. Zuordnen mit: python3 ~/peppa-box/software/karte_zuordnen.py")
+            else:
+                dev = spotify.geraet_id(GERAET) or dev
+                name = eintrag.get("name") or eintrag["uri"]
+                if uid == zuletzt:
+                    status, data = spotify.fortsetzen(dev)
+                    log(f"Weiter: {name} (Spotify {status})")
+                else:
+                    status, data = spotify.abspielen(dev, eintrag["uri"])
+                    log(f"Spiele: {name} (Spotify {status})")
+                if status >= 300:
+                    log(f"  Fehler: {data}")
+                zuletzt = uid
+    elif aktuell and jetzt - letzte_sicht > WEG_NACH:
+        if karten.laden().get(aktuell):
+            status, _ = spotify.pause(dev)
+            log(f"Karte weg, Pause (Spotify {status})")
+        aktuell = None
+    return aktuell, zuletzt, letzte_sicht, dev
 
 
 if __name__ == "__main__":

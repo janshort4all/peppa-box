@@ -106,14 +106,19 @@ def api(method, path, body=None, params=None):
                                           "Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
-            raw = resp.read()
-            return resp.status, (json.loads(raw) if raw else None)
+            return resp.status, _json_oder_none(resp.read())
     except urllib.error.HTTPError as e:
-        raw = e.read()
-        try:
-            return e.code, json.loads(raw)
-        except ValueError:
-            return e.code, None
+        return e.code, _json_oder_none(e.read())
+
+
+def _json_oder_none(raw):
+    """Spotify antwortet bei manchen Befehlen (z. B. Pause) ohne oder mit Nicht-JSON-Inhalt."""
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except ValueError:
+        return None
 
 
 def geraete():

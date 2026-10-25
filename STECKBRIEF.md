@@ -127,3 +127,10 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - Zweites RC522-Modul eingebaut: liest Karten (`software/rc522_test.py`, z. B. UID 7B:6E:CD:55). Noch prüfen: Lesen durch ca. 5 mm Kunststoff/Pappe, stabile Erkennung bei ruhig liegender Karte.
 - **Korrektur RC522:** Mit sicher steckenden Kabeln liest das zweite Modul fehlerfrei (z. B. 47:82:C6:2E bei ruhiger Karte jede Abfrage). Die Aussetzer kamen von einem Draht, der halb aus einer Federklemme gerutscht war. Das erste Modul ist daher vermutlich **nicht** defekt; vor einer Reklamation mit sicherer Verkabelung erneut testen (`--stat`). Regel: Drähte verzinnen, bis Anschlag einstecken, Zugtest; beim Einbau Zugentlastung.
 - **RC522 abgeschlossen:** Karte 19:81:15:20 (per Handy-NFC geprüft) bei 3 cm Abstand durch 2–3 mm Plexiglas bei jeder Abfrage fehlerfrei gelesen. Reichweite für das Kartenfach ausreichend.
+
+## Nachtrag 25.10.2026 – Spotify-Grundfunktion (Test)
+
+- Recherche: Raspotify 0.48.4 (22.10.2026) unterstützt Debian 13 Trixie/arm64; Anmeldung nur noch über Zeroconf (Spotify-App im selben WLAN) oder OAuth, kein Passwort. Spotify-Entwickler-App: Inhaber braucht seit Feb. 2026 Premium; Redirect-URI `http://127.0.0.1:8888/callback` (localhost verboten); Entwicklungsmodus max. 5 Testnutzer.
+- Raspotify-Einstellungen: `LIBRESPOT_NAME="Peppa Box"`, Zugangsdaten-Cache **an** (Zeile `LIBRESPOT_DISABLE_CREDENTIAL_CACHE=` auskommentieren), damit die Box nach Neustart ohne App in der Geräteliste der Web API erscheint. Ausgabe vorerst Pi-Klinke.
+- Neue Programme in `software/`: `rc522.py` (Lesemodul), `spotify.py` (PKCE-Anmeldung, Web API, nur Standardbibliothek), `spotify_login.py`, `karte_zuordnen.py`, `peppa_player.py` (Karte auf = spielen, weg = Pause, gleiche Karte = weiter).
+- Zugangsdaten und Kartenliste liegen nur auf dem Pi unter `~/.config/peppa-box/` (config.json, spotify_token.json, karten.json), nicht im Repository.

@@ -12,7 +12,7 @@ import spidev
 
 # Register des MFRC522
 CMD, COMIRQ, ERR, FIFO, FIFOLVL, BITFRAME = 0x01, 0x04, 0x06, 0x09, 0x0A, 0x0D
-MODE, TXCTRL, TXASK = 0x11, 0x14, 0x15
+MODE, RXMODE, TXCTRL, TXASK = 0x11, 0x13, 0x14, 0x15
 TMODE, TPRESC, TRELH, TRELL, VERSION = 0x2A, 0x2B, 0x2C, 0x2D, 0x37
 RFCFG, COLL = 0x26, 0x0E
 DEBUG = "--debug" in sys.argv
@@ -51,6 +51,8 @@ def init():
     w(TRELL, 30); w(TRELH, 0)
     w(TXASK, 0x40)                    # 100 % ASK
     w(MODE, 0x3D)                     # CRC-Startwert 0x6363
+    if "--no-rxnoerr" not in sys.argv:
+        setb(RXMODE, 0x08)            # RxNoErr: Stoerimpulse unter 4 Bit ignorieren, weiter empfangen
     if GAIN is not None:
         w(RFCFG, (GAIN & 0x07) << 4)  # Empfangsverstaerkung setzen
     setb(TXCTRL, 0x03)                # Antenne an
@@ -129,7 +131,7 @@ def main():
     if v in (0x00, 0xFF):
         print(f"Keine Antwort vom RC522 (Version 0x{v:02X}). Kabel und SPI pruefen.")
         sys.exit(1)
-    print(f"RC522 gefunden (Version 0x{v:02X}). Verstaerkung 0x{r(RFCFG):02X}. Karte auflegen, Beenden mit Strg+C.")
+    print(f"RC522 gefunden (Version 0x{v:02X}). Verstaerkung 0x{r(RFCFG):02X}, RxMode 0x{r(RXMODE):02X}. Karte auflegen, Beenden mit Strg+C.")
     last, miss = None, 0
     while True:
         uid = read_uid()

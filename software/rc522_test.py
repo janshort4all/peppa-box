@@ -3,7 +3,7 @@
 
 Anschluss: SPI0 / CE0 (Klemme E). RST liegt fest an 3,3 V, deshalb Soft-Reset per Befehl.
 Voraussetzung: dtparam=spi=on in /boot/firmware/config.txt, Paket python3-spidev.
-Start: python3 rc522_test.py   Beenden: Strg+C
+Start: python3 rc522_test.py   Diagnose: python3 rc522_test.py --debug   Beenden: Strg+C
 """
 import sys
 import time
@@ -14,6 +14,9 @@ import spidev
 CMD, COMIRQ, ERR, FIFO, FIFOLVL, BITFRAME = 0x01, 0x04, 0x06, 0x09, 0x0A, 0x0D
 MODE, TXCTRL, TXASK = 0x11, 0x14, 0x15
 TMODE, TPRESC, TRELH, TRELL, VERSION = 0x2A, 0x2B, 0x2C, 0x2D, 0x37
+RFCFG, COLL = 0x26, 0x0E
+DEBUG = "--debug" in sys.argv
+last_diag = ""
 
 spi = spidev.SpiDev()
 spi.open(0, 0)
@@ -44,7 +47,9 @@ def init():
     w(TRELL, 30); w(TRELH, 0)
     w(TXASK, 0x40)                    # 100 % ASK
     w(MODE, 0x3D)                     # CRC-Startwert 0x6363
+    w(RFCFG, 0x70)                    # Empfangsverstaerkung maximal (48 dB)
     setb(TXCTRL, 0x03)                # Antenne an
+    time.sleep(0.01)
 
 
 def transceive(data, bits=0):
@@ -55,6 +60,7 @@ def transceive(data, bits=0):
     w(BITFRAME, bits)
     w(CMD, 0x0C)                      # Transceive
     setb(BITFRAME, 0x80)              # Senden starten
+    global last_diag
     t0 = time.time()
     while True:
         irq = r(COMIRQ)
@@ -62,11 +68,16 @@ def transceive(data, bits=0):
             break
         if irq & 0x01 or time.time() - t0 > 0.05:   # Zeit abgelaufen: keine Karte
             clrb(BITFRAME, 0x80)
+            last_diag = f"keine Antwort (ComIrq 0x{irq:02X}, TxControl 0x{r(TXCTRL):02X})"
             return None
     clrb(BITFRAME, 0x80)
-    if r(ERR) & 0x1B:
+    err = r(ERR)
+    n = r(FIFOLVL)
+    data = [r(FIFO) for _ in range(n)]
+    last_diag = f"Antwort {n} Byte {data} (Error 0x{err:02X})"
+    if err & 0x1B:
         return None
-    return [r(FIFO) for _ in range(r(FIFOLVL))]
+    return data
 
 
 def crc_a(data):
@@ -82,10 +93,17 @@ def read_uid():
     """Weckt die Karte, liest die UID (4, 7 oder 10 Byte) und legt die Karte wieder schlafen."""
     atqa = transceive([0x52], 7)      # WUPA: weckt auch schlafende Karten
     if not atqa or len(atqa) != 2:
+        if DEBUG:
+            print("  WUPA:", last_diag)
         return None
     uid = []
+    if DEBUG:
+        print("  WUPA:", last_diag)
     for sel in (0x93, 0x95, 0x97):
+        clrb(COLL, 0x80)
         part = transceive([sel, 0x20])
+        if DEBUG:
+            print(f"  Antikollision 0x{sel:02X}:", last_diag)
         if not part or len(part) != 5 or part[0] ^ part[1] ^ part[2] ^ part[3] != part[4]:
             return None
         frame = [sel, 0x70] + part
@@ -120,7 +138,7 @@ def main():
             if last and miss >= 3:
                 print("Karte entfernt")
                 last = None
-        time.sleep(0.1)
+        time.sleep(0.5 if DEBUG else 0.1)
 
 
 if __name__ == "__main__":

@@ -75,7 +75,15 @@ def transceive(data, bits=0):
             break
         if irq & 0x01 or time.time() - t0 > 0.05:   # Zeit abgelaufen: keine Karte
             clrb(BITFRAME, 0x80)
-            last_diag = f"keine Antwort (ComIrq 0x{irq:02X}, TxControl 0x{r(TXCTRL):02X})"
+            if irq & 0x02:            # Fehler beim Empfang: Karte hat geantwortet, aber gestoert
+                err = r(ERR)
+                n = r(FIFOLVL)
+                bits = r(0x0C) & 0x07
+                data = [hex(r(FIFO)) for _ in range(n)]
+                last_diag = (f"GESTOERTE Antwort: Error 0x{err:02X} ({fehlertext(err)}), "
+                             f"{n} Byte {data}, letzte Bits {bits}, Coll 0x{r(COLL):02X}")
+            else:
+                last_diag = f"keine Antwort (ComIrq 0x{irq:02X}, TxControl 0x{r(TXCTRL):02X})"
             return None
     clrb(BITFRAME, 0x80)
     err = r(ERR)
@@ -85,6 +93,12 @@ def transceive(data, bits=0):
     if err & 0x1B:
         return None
     return data
+
+
+def fehlertext(err):
+    namen = [(0x01, "Protokoll"), (0x02, "Paritaet"), (0x04, "CRC"), (0x08, "Kollision"),
+             (0x10, "Puffer voll"), (0x40, "Temperatur"), (0x80, "Schreibfehler")]
+    return ", ".join(t for b, t in namen if err & b) or "keiner"
 
 
 def crc_a(data):

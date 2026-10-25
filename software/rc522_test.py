@@ -3,7 +3,7 @@
 
 Anschluss: SPI0 / CE0 (Klemme E). RST liegt fest an 3,3 V, deshalb Soft-Reset per Befehl.
 Voraussetzung: dtparam=spi=on in /boot/firmware/config.txt, Paket python3-spidev.
-Start: python3 rc522_test.py   Diagnose: python3 rc522_test.py --debug [--gain=0..7]   Beenden: Strg+C
+Start: python3 rc522_test.py   Diagnose: python3 rc522_test.py --debug [--gain=0..7]   Zaehlung: --stat   Beenden: Strg+C
 """
 import sys
 import time
@@ -146,6 +146,17 @@ def main():
         print(f"Keine Antwort vom RC522 (Version 0x{v:02X}). Kabel und SPI pruefen.")
         sys.exit(1)
     print(f"RC522 gefunden (Version 0x{v:02X}). Verstaerkung 0x{r(RFCFG):02X}, RxMode 0x{r(RXMODE):02X}. Karte auflegen, Beenden mit Strg+C.")
+    if "--stat" in sys.argv:
+        print("Zaehlung: Karte ruhig liegen lassen. Je 20 Versuche eine Zeile.")
+        while True:
+            ok, nummern = 0, set()
+            for _ in range(20):
+                uid = read_uid()
+                if uid:
+                    ok += 1
+                    nummern.add(":".join(f"{b:02X}" for b in uid))
+                time.sleep(0.05)
+            print(f"{ok:2d}/20 gelesen  {' '.join(sorted(nummern))}")
     last, miss = None, 0
     while True:
         uid = read_uid()

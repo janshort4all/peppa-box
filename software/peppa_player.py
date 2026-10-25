@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Peppa Box – Grundfunktion: Karte auflegen = Playlist spielt, Karte weg = Pause,
+"""Peppa Box – Grundfunktion: Karte auflegen = Spotify-Link auf der Karte spielt, Karte weg = Pause,
 dieselbe Karte wieder auflegen = weiter, andere Karte = neue Playlist.
-Dazu die Einstellungsseite fuers Handy: http://peppabox.local:8080
+Den Link schreibt man mit einer Handy-App (z. B. NFC Tools: Schreiben -> URL) auf die Karte.
+Statusseite: http://peppabox.local:8080
 Start von Hand: python3 ~/peppa-box/software/peppa_player.py   (laeuft sonst als Dienst peppa-player)
 """
 import socket
 import time
 
-import karten
 import spotify
 import webui
 from rc522 import RC522
@@ -53,14 +53,11 @@ def main():
     leser = RC522()
     log(f"RC522 Version 0x{leser.version():02X}.")
     webui.starten(PORT)
-    log(f"Einstellungsseite: http://{socket.gethostname()}.local:{PORT}  oder  http://{eigene_ip()}:{PORT}")
+    log(f"Statusseite: http://{socket.gethostname()}.local:{PORT}  oder  http://{eigene_ip()}:{PORT}")
     dev = warte_auf_geraet()
     log("Bereit. Karte auflegen.")
     aktuell, zuletzt, letzte_sicht = None, None, 0.0
     while True:
-        if webui.NEU_LADEN.is_set():           # Karte wurde gerade auf der Webseite zugeordnet
-            webui.NEU_LADEN.clear()
-            aktuell, zuletzt = None, None
         try:
             aktuell, zuletzt, letzte_sicht, dev = schritt(leser, aktuell, zuletzt, letzte_sicht, dev)
         except Exception as e:                  # Netz- oder Spotify-Fehler: melden, weiterlaufen
@@ -70,6 +67,16 @@ def main():
         time.sleep(0.1)
 
 
+def link_lesen(leser):
+    """Link von der aufgelegten Karte, mit ein paar Versuchen (Lesen kann mal haken)."""
+    for _ in range(5):
+        karte = leser.read_card()
+        if karte and karte[1]:
+            return karte[1]
+        time.sleep(0.05)
+    return None
+
+
 def schritt(leser, aktuell, zuletzt, letzte_sicht, dev):
     """Ein Durchlauf: Karte lesen und bei Wechsel Spotify steuern. Gibt den neuen Zustand zurueck."""
     uid = leser.read_uid()
@@ -77,27 +84,38 @@ def schritt(leser, aktuell, zuletzt, letzte_sicht, dev):
     if uid:
         letzte_sicht = jetzt
         if uid != aktuell:
+            vorher = aktuell
             aktuell = uid
-            eintrag = karten.laden().get(uid)
-            if not eintrag:
-                log(f"Unbekannte Karte {uid}. Zuordnen auf der Einstellungsseite.")
+            link = link_lesen(leser)
+            webui.ZUSTAND["link"] = link
+            uri = None
+            if not link:
+                log(f"Karte {uid}: kein Link gefunden. Mit NFC Tools eine Spotify-URL auf die Karte schreiben.")
             else:
+                try:
+                    uri = spotify.link_zu_uri(link)
+                except ValueError:
+                    log(f"Karte {uid}: Link ist kein Spotify-Link: {link}")
+            if uri:
                 dev = spotify.geraet_id(GERAET) or dev
-                name = eintrag.get("name") or eintrag["uri"]
                 if uid == zuletzt:
                     status, data = spotify.fortsetzen(dev)
-                    log(f"Weiter: {name} (Spotify {status})")
+                    log(f"Weiter: {uri} (Spotify {status})")
                 else:
-                    status, data = spotify.abspielen(dev, eintrag["uri"])
-                    log(f"Spiele: {name} (Spotify {status})")
+                    status, data = spotify.abspielen(dev, uri)
+                    log(f"Spiele: {uri} (Spotify {status})")
                 if status >= 300:
                     log(f"  Fehler: {data}")
                 zuletzt = uid
+            elif vorher and vorher == zuletzt:      # Karte ohne Link ersetzt eine spielende Karte
+                status, _ = spotify.pause(dev)
+                log(f"Pause (Spotify {status})")
     elif aktuell and jetzt - letzte_sicht > WEG_NACH:
-        if karten.laden().get(aktuell):
+        if aktuell == zuletzt:
             status, _ = spotify.pause(dev)
             log(f"Karte weg, Pause (Spotify {status})")
         aktuell = None
+        webui.ZUSTAND["link"] = None
     return aktuell, zuletzt, letzte_sicht, dev
 
 

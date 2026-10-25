@@ -14,6 +14,8 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 - Listen mit anklickbaren Links.
 - Vor jedem Kauf prüfen, ob das Teil exakt passt.
 - Kein Maß einfach annehmen. Ist etwas nicht belegt, das sagen oder nachfragen.
+- Vor jeder Anschlussanleitung die Produktseite bzw. das Datenblatt des Bauteils prüfen (Jumper, Lötbrücken, Spannung, Pinbelegung) und die Quelle nennen. Nicht geprüfte Aussagen ausdrücklich als Vermutung kennzeichnen.
+- Bei der Fehlersuche zuerst den Aufbau der beteiligten Platinen prüfen, dann Kabel und Lötstellen.
 - Slicer ist ElegooSlicer (nicht SatelLite, das ist für Harz).
 
 ## Aktueller Stand
@@ -118,3 +120,5 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - Pi holt das Repository jetzt selbst: Klon unter `~/peppa-box`, Lesezugang per Deploy Key (nur lesen). Aktualisieren mit `cd ~/peppa-box && git pull`. Testprogramm RC522: `software/rc522_test.py`.
 - **Klemmen-Aufsatz verstanden:** Je Zeile zwei gelbe Stifte. Die Reihe zur Pi-Seite ist mit dem Pi verbunden, die andere mit der Federklemme. Verbindung erst durch einen **Jumper** (24 Stück im Lieferumfang). Ohne Jumper sind die Klemmen tot – das war die Ursache der Fehlersuche am 25.10. Für RC522 Jumper in A, B, C, D, E, G.
 - Pi am 25.10. neu aufgesetzt (SD-Karte nach Absturz beim Umstecken unter Spannung und hartem Ausschalten defekt). Regel: Kabel nur bei ausgeschaltetem Pi umstecken, vorher `sudo poweroff`.
+- RC522-Test am 25.10. erfolgreich über die Federklemmen (Jumper A, B, C, D, E, G, I; RST an Klemme I = 3,3 V).
+- Offen: Verdrahtungsplan um Jumper-Belegung des Aufsatzes ergänzen; übrige Module (MAX98357A, MPR121, UPS HAT D) gegen Produktseiten/Datenblätter prüfen.

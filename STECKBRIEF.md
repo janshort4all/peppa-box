@@ -106,3 +106,10 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - Boden jetzt **exakt bündig** mit dem Korpus (vorher 0,4 mm kleiner). Fuge außen als **V-Fuge**: je 0,8 mm Fase an Korpus-Unterkante und Boden-Oberkante; Standkante des Bodens 0,8 mm gefast. Zentrierkragen mit 0,2 mm Spiel (vorher 0,3), per Coupon C8 prüfen. Eckdome dafür 0,4 mm nach innen gerückt.
 - Für den endgültigen Druck: keine Umrandung am Korpus, Elefantenfuß-Kompensation ca. 0,15 mm, Z-Hop 0,4 mm, Scarf Seam.
 - Skripte nutzen jetzt relative Pfade; das Repository läuft an beliebigem Ort.
+
+## Nachtrag 25.10.2026 – RC522 gemessen, Stiftleiste gewinkelt
+
+- RC522 gemessen: 60 × 40 mm, Antennenmitte 20 mm vom Antennenende (40 mm bis zum Lötlochende), Quarz 5 mm hoch (Modell vorher 3 mm). Prüfung ok, Abstand zum Deckelrahmen 2,0 mm.
+- Stiftleiste **gewinkelt (90°)**, Kunststoffleiste auf der Bauteilseite, Stifte flach in Platinenebene zur rechten Seitenwand, Überstand 6 mm. Neue Zone „RC522-Stecker“ im Modell (Stiftleiste + Steckkabel-Buchsen + Kabelbogen).
+- Platz von der Platinenkante bis zur Innenwand: ca. 27 mm. Bedarf: 6 mm Stifte + 14 mm Buchse (vorläufig, nicht gemessen) + 7 mm Bogen. Knapp, ohne Reserve; Kabel müssen direkt nach unten abbiegen. **Offen:** Länge der Steckkabel-Buchse messen.
+- MAX98357A: SD an Pin 36 (GPIO 16) hat beim Start den internen Pull-down des Pi → Verstärker stumm. Programm muss GPIO 16 als Eingang **ohne** Pull setzen (`pinctrl set 16 ip pn`). Noch nicht im Verdrahtungsplan.

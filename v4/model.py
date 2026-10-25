@@ -92,11 +92,14 @@ SLOT_Y = par("SLOT_Y", 116.0, "festgelegt", "Schlitzmitte auf dem Deckel")
 TILT = par("TILT", 8.0, "festgelegt", "Neigung der Karte nach hinten")
 NFC_D = par("NFC_D", 25.0, "belegt", "NFC-Aufkleber Ø")
 NFC_T = par("NFC_T", 0.4, "vorläufig", "NFC-Aufkleber Dicke")
-RC_L = par("RC_L", 60.0, "vorläufig", "RC522 Platine Länge")
-RC_B = par("RC_B", 40.0, "vorläufig", "RC522 Platine Breite")
+RC_L = par("RC_L", 60.0, "gemessen", "RC522 Platine Länge")
+RC_B = par("RC_B", 40.0, "gemessen", "RC522 Platine Breite")
 RC_T = par("RC_T", 1.6, "vorläufig", "RC522 Platinendicke")
-RC_ANT = par("RC_ANT", 20.0, "vorläufig", "Antennenmitte ab Platinenende")
-RC_COMP = par("RC_COMP", 3.0, "vorläufig", "Bauteilhöhe auf der Rückseite")
+RC_ANT = par("RC_ANT", 20.0, "gemessen", "Antennenmitte ab Platinenende (Antennenseite; 40 mm bis Lötlochende)")
+RC_COMP = par("RC_COMP", 5.0, "gemessen", "Bauteilhöhe auf der Rückseite (Quarz, höchstes Bauteil)")
+RC_PIN_OUT = par("RC_PIN_OUT", 6.0, "gemessen", "Überstand der 90°-Stifte über die Platinenkante")
+RC_DUPONT_L = par("RC_DUPONT_L", 14.0, "vorläufig", "Länge Steckkabel-Buchse (Kunststoffhülse)")
+RC_BEND = par("RC_BEND", 7.0, "vorläufig", "Platz für den Kabelbogen hinter den Buchsen bis zur Innenwand (Kabel biegen direkt nach unten ab)")
 
 # Ein-Taste
 BTN_X = par("BTN_X", 124.5, "festgelegt", "Ein-Taste x (hinten rechts)")
@@ -535,6 +538,13 @@ def rc522_placeholder():
     return to_world(box(u0, v0, w0, u1, v1, w1) + box(u0 + 3, v0 + 2.5, w1, u1 - 3, v1 - 2.5, w1 + RC_COMP))
 
 
+def rc522_stecker_zone():
+    """90°-Stiftleiste mit 8 Steckkabeln am Lötlochende, flach in der Platinenebene, plus Kabelbogen."""
+    u0, u1, v0, v1, w0, w1 = rc_local()
+    vm = (v0 + v1) / 2
+    return to_world(box(u1 - 2.5, vm - 11.5, w1 - 0.5, u1 + RC_PIN_OUT + RC_DUPONT_L + RC_BEND, vm + 11.5, w1 + 4.0))   # Buchse 2,54 mm um den Stift, Stiftmitte ca. 1,3 mm über der Platine
+
+
 def karte_world():
     return to_world(box(-CARD_W / 2, -(CARD_H - CARD_IN), -CARD_T / 2 + 0.4, CARD_W / 2, CARD_IN, CARD_T / 2 + 0.4))   # von der Zunge an die Rückwand gedrückt
 
@@ -707,6 +717,7 @@ def placeholders():
     ph["Klinkenbuchse"] = box(W - JK_WALL - 15, JK_Y - 6, JK_Z - 6, W - JK_WALL, JK_Y + 6, JK_Z + 6)
     ph["Kurzhubtaster"] = box(BTN_X - SW / 2, BTN_Y - SW / 2, act_top() - SW_H, BTN_X + SW / 2, BTN_Y + SW / 2, act_top())
     ph["RC522"] = rc522_placeholder()
+    ph["RC522-Stecker (Zone)"] = rc522_stecker_zone()
     ph["Karte (gesteckt)"] = karte_world()
     return ph
 

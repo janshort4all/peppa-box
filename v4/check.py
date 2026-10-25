@@ -18,7 +18,7 @@ def inter_vol(a, b):
 def collisions(parts, ph):
     items = [(k, v, "Druckteil") for k, v in parts.items()] + [(k, v, "Bauteil") for k, v in ph.items()]
     allowed = {frozenset(p) for p in [("deckel_orange", "deckel_beige"), ("deckel_orange", "ein_taste"), ("deckel_beige", "ein_taste"),
-                                       ("deckelrahmen", "ein_taste"),
+                                       ("deckelrahmen", "ein_taste"), ("RC522", "RC522-Stecker (Zone)"),
                                        ("Klinkenstecker am Pi (Zone)", "USB-C-Stecker am Akku-Board (Zone)"),
                                        ("Klinkenstecker am Pi (Zone)", "Kabel Klemmreihe hinten (Zone)")]}
     out = []
@@ -42,7 +42,7 @@ def gaps(ph, parts):
                  ("Akku-Board mit Zellen", "korpus"), ("Kabel Klemmreihe links (Zone)", "korpus"), ("Kabel Klemmreihe rechts (Zone)", "Drehgeber"),
                  ("Kabel Klemmreihe hinten (Zone)", "USB-C-Einbaubuchse mit Kabel"), ("USB-C-Stecker am Akku-Board (Zone)", "korpus"),
                  ("WAGO GND A", "korpus"), ("Verstärker", "korpus"), ("boden", "korpus"), ("Lautsprecher", "korpus"),
-                 ("Kurzhubtaster", "kartenfach"), ("RC522", "deckelrahmen"), ("Touch-Modul MPR121", "kartenfach")):
+                 ("Kurzhubtaster", "kartenfach"), ("RC522", "deckelrahmen"), ("RC522-Stecker (Zone)", "korpus"), ("RC522-Stecker (Zone)", "deckelrahmen"), ("RC522-Stecker (Zone)", "kartenfach"), ("Touch-Modul MPR121", "kartenfach")):
         A = ph.get(a, parts.get(a)); B = ph.get(b, parts.get(b))
         g[f"Abstand {a} ↔ {b}"] = A.min_gap(B, 40.0)
     return g

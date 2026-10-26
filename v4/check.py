@@ -49,12 +49,26 @@ def gaps(ph, parts):
 
 
 # --- Druckausrichtung ---
+
+
+def handedness(name):
+    """+1 = Druckausrichtung ist eine reine Drehung, -1 = Spiegelung (Teil käme seitenverkehrt aus dem Drucker).
+    Prüfkörper: vier verschieden große Würfel an bekannten Stellen, nach orient() wiedergefunden."""
+    sizes = (1.0, 2.0, 3.0, 4.0)
+    pos = ((0, 0, 0), (30, 0, 0), (0, 30, 0), (0, 0, 30))
+    probe = M.U([M.box(x, y, z, x + s, y + s, z + s) for s, (x, y, z) in zip(sizes, pos)])
+    comps = sorted(orient(name, probe).decompose(), key=lambda c: c.volume())
+    c = [np.array(k.bounding_box()[:3]) + np.array(k.bounding_box()[3:]) for k in comps]
+    c0 = [np.array(p) * 2 + s for s, p in zip(sizes, pos)]
+    d1 = np.linalg.det(np.array([c[i] - c[0] for i in (1, 2, 3)]))
+    d0 = np.linalg.det(np.array([c0[i] - c0[0] for i in (1, 2, 3)]))
+    return int(np.sign(d1 * d0))
 def orient(name, m):
     """Gibt das Teil so zurück, wie es auf der Platte liegt (z=0 unten)."""
     if name in ("korpus", "boden", "deckel_orange", "deckel_beige", "riemen_gegenplatte_flat"):
         pass
     if name == "deckelrahmen":
-        m = m.mirror([0, 0, 1])                       # Deckelseite nach unten
+        m = m.rotate([180, 0, 0])                     # Deckelseite nach unten (gedreht, NICHT gespiegelt)
     elif name == "kartenfach":
         # Vorderwand auf die Platte: lokale -w nach unten
         F = M.card_frame()
@@ -67,7 +81,7 @@ def orient(name, m):
     elif name == "drehknopf":
         m = m.rotate([0, 90, 0])                         # Stirnfläche nach unten
     elif name == "ein_taste":
-        m = m.mirror([0, 0, 1])                          # Kopf nach unten
+        m = m.rotate([180, 0, 0])                        # Kopf nach unten (gedreht, nicht gespiegelt)
     elif name == "riemen_gegenplatte":
         m = m.rotate([0, 90, 0])
     bb = m.bounding_box()
@@ -140,6 +154,9 @@ if __name__ == "__main__":
     print("== Abstände ==")
     for k, v in gaps(ph, parts).items():
         print(f"  {k}: {v:.1f}")
+    print("== Druckausrichtung ohne Spiegelung (soll überall +1) ==")
+    bad = [k for k in parts if handedness(k) < 0]
+    print("  ok" if not bad else "  GESPIEGELT: " + ", ".join(bad))
     print("== Druck ==")
     for k, m in parts.items():
         o = orient(k, m)

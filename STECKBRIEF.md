@@ -153,3 +153,11 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - Ausprobiert im Probelauf (`PEPPA_WEB_TROCKEN=1`, sudo-Befehle werden nur angezeigt): Update, Abbruch bei geänderten Dateien, Rückweg, alle Box-Aktionen, Seite hell/dunkel auf Handygröße. **Am Pi noch zu prüfen:** sudo-Freigabe, Port 80, Akkuanzeige, WLAN-Name (nmcli).
 - Handy: Seite ist als Web-App vorbereitet (Manifest, Symbol). Über `http://` im Heimnetz legt Chrome nur eine Verknüpfung an (öffnet mit Adressleiste); als echte App ohne Adressleiste erst mit HTTPS.
 - Plan unterwegs/Urlaub: **Tailscale** (Personal-Tarif kostenlos, privates Netz zwischen Box und Handys, ohne Portfreigabe im Router). `tailscale serve` liefert dabei HTTPS mit gültigem Zertifikat → echte Web-App. Noch nicht eingerichtet. Ebenfalls später: WLAN der Box umschalten (z. B. Urlaubs-WLAN, Handy-Hotspot); Systempakete (apt) über die Seite aktualisieren; Stufe 2 (Lautstärkegrenzen, Schlummer-Timer, Abendmodus, Auto-Aus).
+
+## Nachtrag 26.10.2026 – Deckelrahmen war seitenverkehrt (Fehler behoben)
+
+- Befund am Druck: Unter der Ein-Taste liegt der Rahmen statt des Tasterhalters, die vier Schrauben vorne/hinten passen nicht, nur die beiden seitlichen in der Rahmenmitte.
+- Ursache: Fehler in der Druckausrichtung, nicht im Modell. `check.py/orient()` hat den Deckelrahmen für den Druck mit `mirror([0, 0, 1])` umgedreht. Eine Spiegelung ist keine Drehung → das STL `03_deckelrahmen.stl` war spiegelbildlich. Die seitlichen Schrauben (y 68 / 70) liegen fast auf der Mitte und passten deshalb trotzdem.
+- Behoben: Deckelrahmen, Ein-Taste und die Coupons C2 (Rahmenecke) und C3 (Halter, Kappe) werden jetzt mit `rotate([180, 0, 0])` gedreht. Neue Prüfung in `check.py`: „Druckausrichtung ohne Spiegelung“ für alle Teile (Prüfkörper, Gegenprobe mit Spiegelung schlägt an). Neues STL gegen die Einbaulage geprüft: deckungsgleich.
+- Deckel, Boden, Korpus, Kartenfach waren nicht betroffen. Ein-Taste ist rund und war nur formal betroffen; der alte Druck ist brauchbar.
+- **Zu tun:** `03_deckelrahmen.stl` neu drucken. Coupons C2/C3, falls schon gedruckt, ebenfalls neu.

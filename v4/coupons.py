@@ -29,7 +29,7 @@ def c2_deckelecke():
     lo, lb = M.deckel()
     lid = (lo + lb) ^ box(0, 95, 0, 45, M.W, M.HB)
     ring = M.deckelrahmen() ^ box(0, 95, 0, 45, M.W, M.HB)
-    return base_at_zero(corner), base_at_zero(lid), base_at_zero(ring.mirror([0, 0, 1]))
+    return base_at_zero(corner), base_at_zero(lid), base_at_zero(ring.rotate([180, 0, 0]))
 
 
 def c3_taste():
@@ -39,7 +39,7 @@ def c3_taste():
     holder = M.deckelrahmen() ^ box(M.BTN_X - s, M.BTN_Y - s, 0, M.BTN_X + s, M.BTN_Y + s, M.HB)
     cap = M.taste()
     holder = max(holder.decompose(), key=lambda p: p.volume())      # dünne Schnittreste am Rand weglassen
-    return base_at_zero(lid), base_at_zero(holder.mirror([0, 0, 1])), base_at_zero(cap.mirror([0, 0, 1]))
+    return base_at_zero(lid), base_at_zero(holder.rotate([180, 0, 0])), base_at_zero(cap.rotate([180, 0, 0]))
 
 
 def c4_rahmenstifte():

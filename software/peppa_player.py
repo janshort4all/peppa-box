@@ -2,39 +2,44 @@
 """Peppa Box – Grundfunktion: Karte auflegen = Spotify-Link auf der Karte spielt, Karte weg = Pause,
 dieselbe Karte wieder auflegen = weiter, andere Karte = neue Playlist.
 Den Link schreibt man mit einer Handy-App (z. B. NFC Tools: Schreiben -> URL) auf die Karte.
-Statusseite: http://peppabox.local:8080
+Zustand (Karte, Link, Spotify bereit) schreibt der Player nach /dev/shm/peppa-box-status.json;
+die Eltern-Seite (Dienst peppa-web, peppa_web.py) zeigt ihn an.
 Start von Hand: python3 ~/peppa-box/software/peppa_player.py   (laeuft sonst als Dienst peppa-player)
 """
-import socket
+import json
+import os
 import time
 
 import spotify
-import webui
 from rc522 import RC522
 
 GERAET = "Peppa Box"          # Name in /etc/raspotify/conf (LIBRESPOT_NAME)
 ABFRAGE = 1.0                 # Sekunden zwischen zwei Abfragen des Lesers
 WEG_NACH = 1.5                # Sekunden ohne Karte, bis "entfernt" gilt (= zwei verpasste Abfragen)
-PORT = 8080
+STATUS_DATEI = "/dev/shm/peppa-box-status.json"    # im Arbeitsspeicher, schont die SD-Karte
+ZUSTAND = {"karte": None, "link": None, "spotify_bereit": False}
 
 
 def log(text):
     print(time.strftime("%H:%M:%S"), text, flush=True)
 
 
-def eigene_ip():
+def status_schreiben():
+    """Zustand fuer die Eltern-Seite ablegen (atomar: erst temporaere Datei, dann umbenennen)."""
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("192.0.2.1", 80))          # nur Routing-Abfrage, es wird nichts gesendet
-            return s.getsockname()[0]
+        tmp = STATUS_DATEI + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(dict(ZUSTAND, zeit=time.time()), f)
+        os.replace(tmp, STATUS_DATEI)
     except OSError:
-        return "?"
+        pass
 
 
 def warte_auf_geraet():
     """Wartet, bis Raspotify bei Spotify angemeldet ist (nach dem Einschalten dauert das etwas)."""
     gemeldet = False
     while True:
+        status_schreiben()
         try:
             dev = spotify.geraet_id(GERAET)
             if dev:
@@ -53,9 +58,9 @@ def warte_auf_geraet():
 def main():
     leser = RC522()
     log(f"RC522 Version 0x{leser.version():02X}.")
-    webui.starten(PORT)
-    log(f"Statusseite: http://{socket.gethostname()}.local:{PORT}  oder  http://{eigene_ip()}:{PORT}")
+    status_schreiben()
     dev = warte_auf_geraet()
+    ZUSTAND["spotify_bereit"] = True
     log("Bereit. Karte auflegen.")
     aktuell, zuletzt, letzte_sicht = None, None, 0.0
     while True:
@@ -67,7 +72,8 @@ def main():
             log(f"Fehler: {e!r} – laufe weiter")
         finally:
             leser.antenne(False)                # Funkfeld zwischen den Abfragen aus
-        webui.ZUSTAND["karte"] = aktuell
+        ZUSTAND["karte"] = aktuell
+        status_schreiben()
         time.sleep(max(0.05, ABFRAGE - (time.time() - beginn)))
 
 
@@ -91,7 +97,7 @@ def schritt(leser, aktuell, zuletzt, letzte_sicht, dev):
             vorher = aktuell
             aktuell = uid
             link = link_lesen(leser)
-            webui.ZUSTAND["link"] = link
+            ZUSTAND["link"] = link
             uri = None
             if not link:
                 log(f"Karte {uid}: kein Link gefunden. Mit NFC Tools eine Spotify-URL auf die Karte schreiben.")
@@ -119,7 +125,7 @@ def schritt(leser, aktuell, zuletzt, letzte_sicht, dev):
             status, _ = spotify.pause(dev)
             log(f"Karte weg, Pause (Spotify {status})")
         aktuell = None
-        webui.ZUSTAND["link"] = None
+        ZUSTAND["link"] = None
     return aktuell, zuletzt, letzte_sicht, dev
 
 

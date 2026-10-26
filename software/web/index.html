@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e8792b">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>Peppa Box</title>
+<style>
+:root { --bg:#fbf6ef; --karte:#fff; --text:#2b2420; --leise:#7a6d63; --orange:#e8792b; --orange-hell:#fde9d8;
+        --rand:#eadfd3; --gut:#3f8a4f; --warn:#b8720f; --rot:#c0392b; --rot-hell:#fbe3e0; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#1d1a17; --karte:#2a2622; --text:#f3ece4; --leise:#b5a89c; --rand:#3d3731;
+          --orange-hell:#4a3120; --gut:#6cc07c; --warn:#e0a446; --rot:#ef7b6e; --rot-hell:#4a2622; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:16px/1.45 system-ui, sans-serif;
+       -webkit-tap-highlight-color:transparent; }
+main { max-width:560px; margin:0 auto; padding:16px 16px 40px; }
+header { display:flex; align-items:baseline; justify-content:space-between; margin:8px 0 16px; }
+h1 { font-size:24px; margin:0; } h1 span { color:var(--orange); }
+h2 { font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--leise); margin:0 0 10px; }
+.box { background:var(--karte); border:1px solid var(--rand); border-radius:16px; padding:16px; margin-bottom:14px; }
+.leise { color:var(--leise); font-size:14px; }
+.uid { font-family:ui-monospace, monospace; font-size:18px; }
+.umbruch { word-break:break-all; }
+.punkt { display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--rand); margin-right:6px; vertical-align:1px; }
+.punkt.an { background:var(--orange); } .punkt.gut { background:var(--gut); } .punkt.warn { background:var(--warn); } .punkt.rot { background:var(--rot); }
+.raster { display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; }
+.wert { font-size:17px; font-weight:600; } .wert small { font-weight:400; color:var(--leise); font-size:14px; }
+.akku { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+.akku .zahl { font-size:34px; font-weight:700; line-height:1; min-width:3.2ch; }
+.balken { flex:1; height:14px; border-radius:7px; background:var(--rand); overflow:hidden; }
+.balken div { height:100%; width:0; background:var(--gut); transition:width .4s; }
+button { font:inherit; border:0; border-radius:12px; padding:13px 16px; width:100%; cursor:pointer;
+         background:var(--orange-hell); color:var(--text); font-weight:600; margin-top:10px; min-height:48px; }
+button.haupt { background:var(--orange); color:#fff; }
+button.gefahr { background:var(--rot-hell); color:var(--rot); }
+button:disabled { opacity:.5; cursor:default; }
+.reihe { display:flex; gap:10px; } .reihe button { flex:1; }
+ul.neu { margin:10px 0 0; padding-left:20px; } ul.neu li { margin:3px 0; }
+details summary { cursor:pointer; color:var(--leise); font-size:14px; padding:4px 0; }
+ol { padding-left:20px; margin:8px 0 0; } ol li { margin:4px 0; }
+pre { white-space:pre-wrap; word-break:break-word; font:12px/1.4 ui-monospace, monospace; max-height:320px;
+      overflow:auto; background:var(--bg); border-radius:10px; padding:10px; margin:10px 0 0; }
+.hinweis { border-radius:12px; padding:10px 12px; margin-top:10px; font-size:14px; background:var(--orange-hell); white-space:pre-wrap; }
+.hinweis.fehler { background:var(--rot-hell); color:var(--rot); }
+.versteckt { display:none !important; }
+#banner { position:sticky; top:0; z-index:5; margin:-16px -16px 12px; padding:10px 16px; background:var(--rot-hell);
+          color:var(--rot); font-size:14px; font-weight:600; }
+dialog { border:0; border-radius:18px; padding:20px; max-width:360px; width:calc(100% - 32px);
+         background:var(--karte); color:var(--text); }
+dialog::backdrop { background:rgba(0,0,0,.45); }
+dialog h3 { margin:0 0 8px; font-size:19px; }
+#voll { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center;
+        justify-content:center; text-align:center; padding:24px; z-index:10; }
+#voll .gross { font-size:22px; font-weight:700; margin-bottom:8px; }
+</style></head>
+<body><main>
+<div id="banner" class="versteckt">Keine Verbindung zur Box</div>
+<header><h1><span>Peppa</span> Box</h1><span class="leise" id="rechner"></span></header>
+
+<section class="box">
+  <h2>Karte</h2>
+  <div class="leise"><span id="kpunkt" class="punkt"></span><span id="ktext">keine Karte aufgelegt</span></div>
+  <div class="uid" id="uid"></div>
+  <div id="link" class="leise umbruch"></div>
+  <details style="margin-top:8px"><summary>Karte bespielen</summary>
+    <ol class="leise">
+      <li>Spotify: Playlist → ⋯ → Teilen → Link kopieren</li>
+      <li>NFC Tools: Schreiben → Datensatz hinzufügen → URL/URI → Link einfügen</li>
+      <li>Schreiben tippen, Karte hinten ans Handy halten</li>
+    </ol>
+  </details>
+</section>
+
+<section class="box">
+  <h2>Zustand</h2>
+  <div class="akku">
+    <div class="zahl" id="aproz">–</div>
+    <div style="flex:1"><div class="balken"><div id="abalken"></div></div>
+      <div class="leise" id="atext" style="margin-top:4px">Akku</div></div>
+  </div>
+  <div class="raster">
+    <div><div class="leise">Musik</div><div class="wert" id="musik">–</div></div>
+    <div><div class="leise">WLAN</div><div class="wert" id="wlan">–</div></div>
+    <div><div class="leise">Temperatur</div><div class="wert" id="temp">–</div></div>
+    <div><div class="leise">Speicher frei</div><div class="wert" id="platte">–</div></div>
+    <div><div class="leise">Stromversorgung</div><div class="wert" id="strom">–</div></div>
+    <div><div class="leise">Läuft seit</div><div class="wert" id="laufzeit">–</div></div>
+  </div>
+</section>
+
+<section class="box">
+  <h2>Software</h2>
+  <div class="wert" id="vtext">–</div>
+  <div class="leise" id="vdatum"></div>
+  <div id="uergebnis"></div>
+  <button id="bpruefen" onclick="pruefen()">Nach Updates suchen</button>
+  <button id="bupdate" class="haupt versteckt" onclick="frage('update')">Jetzt aktualisieren</button>
+  <button id="bzurueck" class="versteckt" onclick="frage('zurueck')">Zurück zur vorherigen Version</button>
+</section>
+
+<section class="box">
+  <h2>Box</h2>
+  <button onclick="frage('musik')">Musik neu starten</button>
+  <div class="leise" style="margin-top:6px">Hilft, wenn Spotify hängt. Die Box bleibt an.</div>
+  <div class="reihe">
+    <button onclick="frage('neustart')">Box neu starten</button>
+    <button class="gefahr" onclick="frage('aus')">Ausschalten</button>
+  </div>
+  <div id="bergebnis"></div>
+</section>
+
+<section class="box">
+  <details id="mdetails"><summary>Letzte Meldungen der Box</summary>
+    <pre id="mtext">wird geladen …</pre></details>
+</section>
+<div class="leise" id="probelauf" style="text-align:center"></div>
+</main>
+
+<dialog id="dlg"><h3 id="dtitel"></h3><div class="leise" id="dtext"></div>
+  <div class="reihe"><button onclick="dlg.close()">Abbrechen</button><button id="dok" class="haupt">OK</button></div>
+</dialog>
+
+<div id="voll" class="versteckt"><div class="gross" id="vtitel"></div><div class="leise" id="vtext2"></div></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const zeige = (el, an) => el.classList.toggle('versteckt', !an);
+let zuletztNeu = [];
+
+async function holen(pfad) {
+  const r = await fetch(pfad, {cache: 'no-store'});
+  return r.json();
+}
+async function senden(pfad) {
+  const r = await fetch(pfad, {method: 'POST', headers: {'X-Peppa-Box': '1'}});
+  return r.json();
+}
+function hinweis(ziel, erg) {
+  $(ziel).innerHTML = '';
+  const d = document.createElement('div');
+  d.className = 'hinweis' + (erg.ok ? '' : ' fehler');
+  d.textContent = erg.meldung || (erg.ok ? 'Erledigt.' : 'Fehlgeschlagen.');
+  $(ziel).appendChild(d);
+}
+function datum(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('de-DE') + ', ' + d.toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'});
+}
+function dauer(s) {
+  const t = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+  return t ? `${t} T ${h} Std` : h ? `${h} Std ${m} Min` : `${m} Min`;
+}
+function setze(id, text, klasse) {
+  $(id).innerHTML = (klasse ? `<span class="punkt ${klasse}"></span>` : '') + text;
+}
+
+async function karte() {
+  try {
+    const k = await holen('/api/karte');
+    zeige($('banner'), false);
+    const da = k.laeuft && k.karte;           // alte Angaben eines gestoppten Players nicht zeigen
+    $('kpunkt').className = 'punkt' + (!k.laeuft ? ' rot' : da ? ' an' : '');
+    $('ktext').textContent = !k.laeuft ? 'Player läuft nicht' : da ? 'Aufgelegt' : 'keine Karte aufgelegt';
+    $('uid').textContent = da ? k.karte : '';
+    $('link').textContent = da ? (k.link || 'Kein Link auf der Karte') : '';
+  } catch (e) { zeige($('banner'), true); }
+}
+
+async function zustand() {
+  let z;
+  try { z = await holen('/api/zustand'); } catch (e) { zeige($('banner'), true); return; }
+  zeige($('banner'), false);
+  $('rechner').textContent = z.rechner;
+  $('probelauf').textContent = z.probelauf ? 'Probelauf: Befehle werden nicht ausgeführt.' : '';
+
+  const a = z.akku;
+  if (a.fehler) {
+    $('aproz').textContent = '–'; $('abalken').style.width = '0'; $('atext').textContent = a.fehler;
+  } else {
+    $('aproz').textContent = a.prozent + ' %';
+    $('abalken').style.width = a.prozent + '%';
+    $('abalken').style.background = a.prozent < 15 ? 'var(--rot)' : a.prozent < 30 ? 'var(--warn)' : 'var(--gut)';
+    const r = {laedt: 'wird geladen', akku: 'Akkubetrieb', ruhend: 'kaum Strom'}[a.richtung];
+    $('atext').textContent = `${r} · ${a.spannung.toFixed(2).replace('.', ',')} V · Prozent geschätzt`;
+  }
+
+  const p = z.player, sp = z.dienste.raspotify === 'active';
+  if (!p.laeuft) setze('musik', 'Player aus', 'rot');
+  else if (!sp || !p.spotify_bereit) setze('musik', 'wartet auf Spotify', 'warn');
+  else setze('musik', 'bereit', 'gut');
+
+  const w = z.wlan;
+  if (w.dbm == null) setze('wlan', 'kein WLAN', 'rot');
+  else {
+    const k = w.dbm > -60 ? ['gut', 'gut'] : w.dbm > -70 ? ['mittel', 'warn'] : ['schwach', 'rot'];
+    setze('wlan', `${k[0]} <small>${w.name || ''}</small>`, k[1]);
+  }
+  if (z.temperatur != null) {
+    const t = z.temperatur;
+    setze('temp', t.toFixed(0) + ' °C', t < 65 ? 'gut' : t < 78 ? 'warn' : 'rot');
+  }
+  setze('platte', `${String(z.speicher_frei_gb).replace('.', ',')} GB`, z.speicher_frei_gb > 2 ? 'gut' : 'warn');
+  const s = z.strom;
+  if (!s.bekannt) setze('strom', 'unbekannt');
+  else if (s.jetzt) setze('strom', 'Unterspannung!', 'rot');
+  else if (s.seit_start) setze('strom', 'ok <small>(kurz zu wenig)</small>', 'warn');
+  else setze('strom', 'ok', 'gut');
+  $('laufzeit').textContent = dauer(z.laufzeit_s);
+
+  const v = z.version;
+  if (v.fehler) { $('vtext').textContent = 'Version unbekannt'; $('vdatum').textContent = v.fehler; }
+  else { $('vtext').textContent = v.text; $('vdatum').textContent = `Stand ${datum(v.datum)} · ${v.kurz}`; }
+  zeige($('bzurueck'), !!v.vorherige);
+}
+
+async function pruefen() {
+  $('bpruefen').disabled = true; $('bpruefen').textContent = 'Suche …';
+  try {
+    const e = await senden('/api/update/pruefen');
+    $('uergebnis').innerHTML = '';
+    if (!e.ok) hinweis('uergebnis', e);
+    else if (!e.neu.length) hinweis('uergebnis', {ok: true, meldung: 'Die Box ist auf dem neuesten Stand.'});
+    else {
+      zuletztNeu = e.neu;
+      const d = document.createElement('div'); d.className = 'hinweis';
+      d.textContent = e.neu.length === 1 ? '1 neue Änderung:' : `${e.neu.length} neue Änderungen:`;
+      const ul = document.createElement('ul'); ul.className = 'neu';
+      e.neu.forEach(n => { const li = document.createElement('li'); li.textContent = n.text; ul.appendChild(li); });
+      d.appendChild(ul); $('uergebnis').appendChild(d);
+    }
+    zeige($('bupdate'), e.ok && e.neu.length > 0);
+  } catch (x) { hinweis('uergebnis', {ok: false, meldung: 'Keine Verbindung zur Box.'}); }
+  $('bpruefen').disabled = false; $('bpruefen').textContent = 'Nach Updates suchen';
+}
+
+const FRAGEN = {
+  update:   ['Jetzt aktualisieren?', 'Die Musik stoppt kurz und startet neu.', '/api/update/starten', 'uergebnis', 'Aktualisieren'],
+  zurueck:  ['Zurück zur vorherigen Version?', 'Die Musik stoppt kurz und startet neu.', '/api/update/zurueck', 'uergebnis', 'Zurück'],
+  musik:    ['Musik neu starten?', 'Spotify und Player starten neu, das dauert etwa 10 Sekunden.', '/api/musik-neustart', 'bergebnis', 'Neu starten'],
+  neustart: ['Box neu starten?', 'Die Box ist etwa eine Minute nicht erreichbar.', '/api/neustart', 'bergebnis', 'Neu starten'],
+  aus:      ['Box ausschalten?', 'Wieder einschalten mit der Ein-Taste an der Box oder über den Schalter am Akku-Board.', '/api/ausschalten', 'bergebnis', 'Ausschalten', 'gefahr'],
+};
+function frage(was) {
+  const [titel, text, pfad, ziel, knopf, art] = FRAGEN[was];
+  $('dok').textContent = knopf; $('dok').className = art || 'haupt';
+  $('dtitel').textContent = titel; $('dtext').textContent = text;
+  $('dok').onclick = () => { $('dlg').close(); ausfuehren(was, pfad, ziel); };
+  $('dlg').showModal();
+}
+function vollbild(titel, text) {
+  $('vtitel').textContent = titel; $('vtext2').textContent = text; zeige($('voll'), true);
+}
+async function warteBisZurueck() {
+  await new Promise(r => setTimeout(r, 3000));
+  for (let i = 0; i < 90; i++) {
+    try { await holen('/api/karte'); zeige($('voll'), false); zustand(); return; } catch (e) {}
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  $('vtext2').textContent = 'Die Box meldet sich nicht. Ist sie an und im WLAN?';
+}
+async function ausfuehren(was, pfad, ziel) {
+  let e;
+  try { e = await senden(pfad); }
+  catch (x) { hinweis(ziel, {ok: false, meldung: 'Keine Verbindung zur Box.'}); return; }
+  hinweis(ziel, e);
+  if (!e.ok) return;
+  if (was === 'aus') {
+    vollbild('Die Box fährt herunter', 'Nach etwa 20 Sekunden ist sie aus. Erst dann Kabel umstecken oder den Schalter am Akku-Board betätigen.');
+  } else if (was === 'neustart') {
+    vollbild('Die Box startet neu', 'Diese Seite verbindet sich danach von selbst wieder.');
+    warteBisZurueck();
+  } else if (e.neustart_seite) {
+    zeige($('bupdate'), false);
+    if (!(await holen('/api/zustand').then(z => z.probelauf).catch(() => false))) {
+      vollbild('Update eingespielt', e.meldung);
+      warteBisZurueck();
+    } else zustand();
+  } else setTimeout(zustand, 4000);
+}
+
+$('mdetails').addEventListener('toggle', async () => {
+  if (!$('mdetails').open) return;
+  try { const m = await holen('/api/meldungen'); $('mtext').textContent = m.text || '(keine Meldungen)'; }
+  catch (e) { $('mtext').textContent = 'Keine Verbindung zur Box.'; }
+});
+
+karte(); zustand();
+setInterval(() => { if (document.visibilityState === 'visible') karte(); }, 1000);
+setInterval(() => { if (document.visibilityState === 'visible') zustand(); }, 5000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { karte(); zustand(); } });
+if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {});
+</script>
+</body></html>

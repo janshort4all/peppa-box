@@ -116,9 +116,12 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 """
     for k, (fn, col, note) in DRUCK.items():
         t += f"| {fn} | {col} | {note} |\n"
-    t += """| 10_karte_orange.stl | Orange | flach, NFC-Tasche oben; Cover-Bild auf die Vorderseite kleben |
+    t += """| 02_deckel_einfarbig.stl | eine Farbe | Prototyp, gleiche Form wie 02a + 02b; Symbole 0,8 mm vertieft |
+| 10_karte_orange.stl | Orange | Rückseite unten (NFC-Tasche an der Platte), Einschubtasche oben; Cover auf Papier von oben einschieben |
 
-Die Dateien liegen bereits in Druckausrichtung. `02a` und `02b` gemeinsam laden („als ein Objekt mit mehreren Teilen“),
+Die Dateien liegen bereits in Druckausrichtung. Ausnahme Deckel: liegt mit der Oberseite nach oben; geplant ist der Druck
+kopfüber auf texturiertem PEI (erst Coupon C9 prüfen, dann im Slicer umdrehen). Nach dem Druck die Opferschicht im Tastenloch
+mit dem Cutter ausschneiden. `02a` und `02b` gemeinsam laden („als ein Objekt mit mehreren Teilen“),
 02a Orange und 02b Beige zuweisen – dann macht CANVAS genau einen Farbwechsel. Die beiden `ansicht_…`-Dateien nur zum Anschauen.
 
 Der Boden darf auch orange sein: Dann läuft unten ein schmaler oranger Sockelstreifen um die Box.

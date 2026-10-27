@@ -25,8 +25,8 @@ def tm(man):
 
 DRUCK = {   # Teil: (Datei, Farbe, Hinweis)
     "korpus": ("01_korpus_beige.stl", "Beige", "aufrecht, Boden auf der Platte; Naht hinten; Brücke Kammerdecke ca. 40 mm"),
-    "deckel_orange": ("02a_deckel_kern_orange.stl", "Orange", "Oberseite nach oben; zusammen mit 02b als ein Objekt laden"),
-    "deckel_beige": ("02b_deckel_haut_beige.stl", "Beige", "liegt passgenau auf 02a; Ironing an"),
+    "deckel_orange": ("02a_deckel_kern_orange.stl", "Orange", "Oberseite nach oben (kopfüber geplant, siehe C9); zusammen mit 02b als ein Objekt laden"),
+    "deckel_beige": ("02b_deckel_haut_beige.stl", "Beige", "liegt passgenau auf 02a; kopfüber auf texturiertem PEI, sonst Ironing an"),
     "deckelrahmen": ("03_deckelrahmen.stl", "Schwarz/Grau", "Deckelseite auf der Platte"),
     "kartenfach": ("04_kartenfach.stl", "Schwarz/Grau", "auf der Seite, Kartenschlitz senkrecht; Brim"),
     "boden": ("05_boden_traeger.stl", "Beige", "flach, Unterseite auf der Platte; trägt die ganze Elektronik"),
@@ -54,7 +54,7 @@ def export_parts(parts):
     # Karte
     card = M.karte_print()
     tm(card).export(os.path.join(OUT, "10_karte_orange.stl"))
-    files["10_karte_orange.stl"] = ("karte", "Orange", "flach, NFC-Tasche oben", card.bounding_box())
+    files["10_karte_orange.stl"] = ("karte", "Orange", "flach, Rückseite unten (NFC-Tasche an der Platte), Tasche oben; Vorderseite bügeln", card.bounding_box())
     # Ansicht Zusammenbau (nicht drucken)
     ph = M.placeholders()
     asm = M.U([parts[k] for k in parts] + [M.karte_world()])
@@ -88,9 +88,8 @@ def fabric_sheet():
 
 
 def card_cover():
-    # Cover als dünne Fläche auf der Kartenvorderseite (sichtbarer Teil)
-    a = M.to_world(M.box(-32, -(M.CARD_H - M.CARD_IN) + 3, -M.CARD_T / 2 + 0.4 - 0.3, 32, -(M.CARD_H - M.CARD_IN) + 67, -M.CARD_T / 2 + 0.4))
-    return a
+    # Papier-Cover in der Einschubtasche
+    return M.einleger_world()
 
 
 def renders(parts):

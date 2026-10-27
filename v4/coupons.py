@@ -26,16 +26,14 @@ def c1_wand_hinten():
 def c2_deckelecke():
     z0 = M.LID_BOT - 20
     corner = M.korpus() ^ box(0, 95, z0, 45, M.W, M.HB)
-    lo, lb = M.deckel()
-    lid = (lo + lb) ^ box(0, 95, 0, 45, M.W, M.HB)
+    lid = M.deckel(einfarbig=True) ^ box(0, 95, 0, 45, M.W, M.HB)
     ring = M.deckelrahmen() ^ box(0, 95, 0, 45, M.W, M.HB)
     return base_at_zero(corner), base_at_zero(lid), base_at_zero(ring.rotate([180, 0, 0]))
 
 
 def c3_taste():
     s = 17
-    lo, lb = M.deckel()
-    lid = (lo + lb) ^ box(M.BTN_X - s, M.BTN_Y - s, 0, M.BTN_X + s, M.BTN_Y + s, M.HB)
+    lid = M.deckel(einfarbig=True) ^ box(M.BTN_X - s, M.BTN_Y - s, 0, M.BTN_X + s, M.BTN_Y + s, M.HB)
     holder = M.deckelrahmen() ^ box(M.BTN_X - s, M.BTN_Y - s, 0, M.BTN_X + s, M.BTN_Y + s, M.HB)
     cap = M.taste()
     holder = max(holder.decompose(), key=lambda p: p.volume())      # dünne Schnittreste am Rand weglassen
@@ -112,6 +110,15 @@ def c8_bodenecke():
     return base_at_zero(k), base_at_zero(b)
 
 
+def c9_kopfueber():
+    """Deckel kopfüber (Oberseite auf der Platte), einfarbig: (a) Ecke vorne rechts mit Play, Vor, Kante und Kupfertaschen,
+    (b) Stück hinten rechts mit Ein-Taste-Mulde (Opferschicht), Ende des Kartenschlitzes mit Einführfase und Kante."""
+    lid = M.deckel(einfarbig=True)
+    a = lid ^ box(52, -1, 0, M.W + 1, 50, M.HB)
+    b = lid ^ box(95, 92, 0, M.W + 1, 124, M.HB)
+    return M.deckel_kopfueber(a), M.deckel_kopfueber(b)
+
+
 def all_coupons():
     out = {}
     out["C1_wand_rechts_drehgeber_klinke"] = c1_wand_rechts()
@@ -133,6 +140,9 @@ def all_coupons():
     a, b = c8_bodenecke()
     out["C8_bodenecke_korpus"] = a
     out["C8_bodenecke_boden"] = b
+    a, b = c9_kopfueber()
+    out["C9_deckel_kopfueber_felder"] = a
+    out["C9_deckel_kopfueber_taste_schlitz"] = b
     return out
 
 

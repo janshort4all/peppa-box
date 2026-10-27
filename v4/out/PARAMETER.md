@@ -29,7 +29,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `MAXB` | 19 / 18 / 8 | Verstärker-Klon L, B, Höhe mit Klemme |
 | `MPRB` | 25 / 20 / 4 | MPR121-Modul L, B, Höhe |
 
-## Mit Probedruck einstellen (8)
+## Mit Probedruck einstellen (9)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -40,6 +40,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `PILOT25` | 2,1 | Kernloch M2,5 (Akku-Board) |
 | `PIN_HOLE` | 4,1 | Loch für Rahmenstift (Coupon C4: 4,0 / 4,1 / 4,2) |
 | `PAD_POCKET` | 2 | Tasche unter dem Feld → 4 mm Kunststoff über dem Kupfer, unter den Symbolen 3,2 mm |
+| `INS_GAP` | 0,6 | Tasche: Spalt an der Außenwand (Einleger laminiert ca. 0,25–0,35 mm) |
 | `ENC_HOLE` | 7,4 | Loch für M7-Gewinde |
 
 ## Von dir gemessen (10)
@@ -73,7 +74,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (68)
+## Gestaltung festgelegt (79)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -113,6 +114,13 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `CARD_IN` | 42 | Einstecktiefe |
 | `SLOT_Y` | 116 | Schlitzmitte auf dem Deckel |
 | `TILT` | 8 | Neigung der Karte nach hinten |
+| `INS_LIP` | 1,5 | Lippe überdeckt den Einleger je Seite und unten; Unterseite 45°, druckbar ohne Stütze |
+| `INS_WALL` | 1,2 | Außenwand neben der Tasche |
+| `INS_FRONT` | 0,6 | Lippe an der Fensterkante mindestens so dick |
+| `INS_Y0` | 43,5 | Taschenunterkante ab Kartenunterkante (1,5 mm über dem Deckel) |
+| `INS_CLR` | 0,3 | Spiel Einleger zur Tasche je Seite |
+| `CARD_TOP_R` | 1,5 | Eckradius oben (Tasche ist oben offen und muss gerade bis zur Kante laufen) |
+| `GRIP_R` | 7 | Griffmulde oben Mitte in der Rückwand: Einleger von vorn und hinten greifbar |
 | `RC_DROP` | 5 | RC522 so viel tiefer (weg vom Deckel) als mittig hinter dem NFC-Aufkleber; Probedruck 27.10.: Steckkabel stießen an den Schraubblock des Deckelrahmens |
 | `RC_XTAL_FREE` | 18 | deckelseitige Schiene: Lippe auf so viel Länge vor dem Stiftleisten-Ende entfernt (Quarz; laut Foto ca. 12 mm lang) |
 | `BTN_X` | 124,5 | Ein-Taste x (hinten rechts) |
@@ -120,6 +128,10 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `BTN_D` | 12 | Tastenkopf-Ø |
 | `DISH_D` | 20 | Mulde um die Taste |
 | `DISH_DEPTH` | 1,5 | Taste liegt so tief (gegen versehentliches Drücken) |
+| `DISH_WALL` | 45 | Mulde um die Taste mit 45°-Wand (kopfüber druckbar, Boden Ø = DISH_D − 2 × DISH_DEPTH) |
+| `BTN_MEMBRANE` | 0,2 | Opferschicht über dem Tastenloch am Muldenboden (kopfüber wird der Muldenboden als Brücke gedruckt); nach dem Druck mit Cutter ausschneiden |
+| `LID_EDGE_CH` | 0,5 | Fase 45° an der Deckel-Oberkante (kopfüber: verdeckt den Elefantenfuß) |
+| `SLOT_CH` | 0,6 | Einführfase am Kartenschlitz oben |
 | `ENC_Y` | 84 | Drehgeber y |
 | `ENC_Z` | 60 | Drehgeber z |
 | `KNOB_D` | 34 | Knopf-Ø |

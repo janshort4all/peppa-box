@@ -61,9 +61,9 @@
       z=  96.5     29.4 mm²  Bereich 60.1 × 9.0
       z=  12.0     29.4 mm²  Bereich 127.1 × 125.3
       z=  62.0     25.2 mm²  Bereich 33.3 × 3.0
-  deckel_orange: 133.2 × 133.2 × 5.2 mm, Überhang 1483 mm²
+  deckel_orange: 133.2 × 133.2 × 5.2 mm, Überhang 1605 mm²
       z=   2.0   1443.3 mm²  Bereich 100.0 × 56.0
-      z=   4.5     39.2 mm²  Bereich 121.7 × 121.7
+      z=   4.5    161.8 mm²  Bereich 121.7 × 121.7
   deckel_beige: 133.2 × 133.2 × 0.8 mm, Überhang 0 mm²
   deckelrahmen: 127.4 × 127.8 × 17.3 mm, Überhang 90 mm²
       z=  14.5     85.6 mm²  Bereich 12.4 × 15.5

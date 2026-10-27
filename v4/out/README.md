@@ -35,8 +35,8 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | Datei | Farbe | Ausrichtung / Hinweis |
 | --- | --- | --- |
 | 01_korpus_beige.stl | Beige | aufrecht, Boden auf der Platte; Naht hinten; Brücke Kammerdecke ca. 40 mm |
-| 02a_deckel_kern_orange.stl | Orange | Oberseite nach oben; zusammen mit 02b als ein Objekt laden |
-| 02b_deckel_haut_beige.stl | Beige | liegt passgenau auf 02a; Ironing an |
+| 02a_deckel_kern_orange.stl | Orange | Oberseite nach oben (kopfüber geplant, siehe C9); zusammen mit 02b als ein Objekt laden |
+| 02b_deckel_haut_beige.stl | Beige | liegt passgenau auf 02a; kopfüber auf texturiertem PEI, sonst Ironing an |
 | 03_deckelrahmen.stl | Schwarz/Grau | Deckelseite auf der Platte |
 | 04_kartenfach.stl | Schwarz/Grau | auf der Seite, Kartenschlitz senkrecht; Brim |
 | 05_boden_traeger.stl | Beige | flach, Unterseite auf der Platte; trägt die ganze Elektronik |
@@ -44,9 +44,12 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | 07_drehknopf_orange.stl | Orange | Stirnfläche unten |
 | 08_ein_taste_orange.stl | Orange | Kopf unten |
 | 09_riemen_gegenplatte.stl | Schwarz/Grau | flach |
-| 10_karte_orange.stl | Orange | flach, NFC-Tasche oben; Cover-Bild auf die Vorderseite kleben |
+| 02_deckel_einfarbig.stl | eine Farbe | Prototyp, gleiche Form wie 02a + 02b; Symbole 0,8 mm vertieft |
+| 10_karte_orange.stl | Orange | Rückseite unten (NFC-Tasche an der Platte), Einschubtasche oben; Cover auf Papier von oben einschieben |
 
-Die Dateien liegen bereits in Druckausrichtung. `02a` und `02b` gemeinsam laden („als ein Objekt mit mehreren Teilen“),
+Die Dateien liegen bereits in Druckausrichtung. Ausnahme Deckel: liegt mit der Oberseite nach oben; geplant ist der Druck
+kopfüber auf texturiertem PEI (erst Coupon C9 prüfen, dann im Slicer umdrehen). Nach dem Druck die Opferschicht im Tastenloch
+mit dem Cutter ausschneiden. `02a` und `02b` gemeinsam laden („als ein Objekt mit mehreren Teilen“),
 02a Orange und 02b Beige zuweisen – dann macht CANVAS genau einen Farbwechsel. Die beiden `ansicht_…`-Dateien nur zum Anschauen.
 
 Der Boden darf auch orange sein: Dann läuft unten ein schmaler oranger Sockelstreifen um die Box.

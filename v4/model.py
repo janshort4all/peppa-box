@@ -93,6 +93,15 @@ CARD_T = par("CARD_T", 4.0, "festgelegt", "Karte Dicke")
 CARD_IN = par("CARD_IN", 42.0, "festgelegt", "Einstecktiefe")
 SLOT_Y = par("SLOT_Y", 116.0, "festgelegt", "Schlitzmitte auf dem Deckel")
 TILT = par("TILT", 8.0, "festgelegt", "Neigung der Karte nach hinten")
+# Einschubtasche für ein Papier-Cover (statt Aufkleber): von oben einschieben, Rahmen mit 45°-Lippen (Schwalbenschwanz)
+INS_GAP = par("INS_GAP", 0.6, "Probedruck", "Tasche: Spalt an der Außenwand (Einleger laminiert ca. 0,25–0,35 mm)")
+INS_LIP = par("INS_LIP", 1.5, "festgelegt", "Lippe überdeckt den Einleger je Seite und unten; Unterseite 45°, druckbar ohne Stütze")
+INS_WALL = par("INS_WALL", 1.2, "festgelegt", "Außenwand neben der Tasche")
+INS_FRONT = par("INS_FRONT", 0.6, "festgelegt", "Lippe an der Fensterkante mindestens so dick")
+INS_Y0 = par("INS_Y0", 43.5, "festgelegt", "Taschenunterkante ab Kartenunterkante (1,5 mm über dem Deckel)")
+INS_CLR = par("INS_CLR", 0.3, "festgelegt", "Spiel Einleger zur Tasche je Seite")
+CARD_TOP_R = par("CARD_TOP_R", 1.5, "festgelegt", "Eckradius oben (Tasche ist oben offen und muss gerade bis zur Kante laufen)")
+GRIP_R = par("GRIP_R", 7.0, "festgelegt", "Griffmulde oben Mitte in der Rückwand: Einleger von vorn und hinten greifbar")
 NFC_D = par("NFC_D", 25.0, "belegt", "NFC-Aufkleber Ø")
 NFC_T = par("NFC_T", 0.4, "vorläufig", "NFC-Aufkleber Dicke")
 RC_L = par("RC_L", 60.0, "gemessen", "RC522 Platine Länge")
@@ -113,6 +122,10 @@ BTN_Y = par("BTN_Y", 108.0, "festgelegt", "Ein-Taste y")
 BTN_D = par("BTN_D", 12.0, "festgelegt", "Tastenkopf-Ø")
 DISH_D = par("DISH_D", 20.0, "festgelegt", "Mulde um die Taste")
 DISH_DEPTH = par("DISH_DEPTH", 1.5, "festgelegt", "Taste liegt so tief (gegen versehentliches Drücken)")
+DISH_WALL = par("DISH_WALL", 45.0, "festgelegt", "Mulde um die Taste mit 45°-Wand (kopfüber druckbar, Boden Ø = DISH_D − 2 × DISH_DEPTH)")
+BTN_MEMBRANE = par("BTN_MEMBRANE", 0.2, "festgelegt", "Opferschicht über dem Tastenloch am Muldenboden (kopfüber wird der Muldenboden als Brücke gedruckt); nach dem Druck mit Cutter ausschneiden")
+LID_EDGE_CH = par("LID_EDGE_CH", 0.5, "festgelegt", "Fase 45° an der Deckel-Oberkante (kopfüber: verdeckt den Elefantenfuß)")
+SLOT_CH = par("SLOT_CH", 0.6, "festgelegt", "Einführfase am Kartenschlitz oben")
 SW = par("SW", 12.0, "belegt", "Kurzhubtaster 12 × 12")
 SW_H = par("SW_H", 7.3, "vorläufig", "Tasterhöhe gesamt (Quellen: 7,3 bzw. 6,5)")
 
@@ -446,19 +459,37 @@ def slot_cut():
     return to_world(box(-CARD_W / 2 - 0.75, -15, -CARD_T / 2 - 0.4, CARD_W / 2 + 0.75, 12, CARD_T / 2 + 0.4))
 
 
+def lid_plate():
+    """Deckelplatte mit 45°-Fase an der Oberkante."""
+    ch = LID_EDGE_CH
+    return Manifold.batch_hull([slab(LID_CS, LID_BOT, LID_TOP - ch),
+                                slab(LID_CS.offset(-ch, JoinType.Round, circular_segments=SEG), LID_TOP - 0.01, LID_TOP)])
+
+
+def slot_chamfer():
+    """Einführfase am Kartenschlitz: Schlitzumriss auf der Oberseite, 45° nach innen."""
+    top = (slot_cut() ^ slab(LID_CS, LID_TOP - 0.02, LID_TOP + 0.02)).project()
+    return Manifold.batch_hull([slab(top.offset(SLOT_CH, JoinType.Miter), LID_TOP, LID_TOP + 1),
+                                slab(top, LID_TOP - SLOT_CH, LID_TOP - SLOT_CH + 0.01)])
+
+
 def deckel(einfarbig=False):
+    """Deckel. Gedacht für den Druck kopfüber (Oberseite auf der Platte): Symbole, Ringnuten, Fasen, Muldenwand druckbar ohne Stützen."""
     sym = pad_symbols()
+    plate = lid_plate()
     if einfarbig:      # Prototyp: ein Körper, Symbole SKIN tief vertieft (ohne Vereinigung zweier Körper an einer gemeinsamen Fläche)
-        core = slab(LID_CS, LID_BOT, LID_TOP) - slab(sym, LID_TOP - SKIN, LID_TOP + 1)
+        core = plate - slab(sym, LID_TOP - SKIN, LID_TOP + 1)
         skin = None
     else:
-        core = slab(LID_CS, LID_BOT, LID_TOP - SKIN)
-        skin = slab(LID_CS, LID_TOP - SKIN, LID_TOP)
+        core = plate ^ box(-1, -1, LID_BOT - 1, W + 1, W + 1, LID_TOP - SKIN)
+        skin = plate ^ box(-1, -1, LID_TOP - SKIN, W + 1, W + 1, LID_TOP + 1)
         skin = skin - slab(sym, LID_TOP - SKIN - 0.05, LID_TOP + 1)
-    cut = [slot_cut()]
-    # Taste: Mulde und Bohrung
-    cut.append(cyl_z(BTN_X, BTN_Y, LID_TOP - DISH_DEPTH, 5, DISH_D / 2))
-    cut.append(cyl_z(BTN_X, BTN_Y, LID_BOT - 1, LID_T + 2, BTN_D / 2 + 0.25))
+    cut = [slot_cut(), slot_chamfer()]
+    # Taste: Mulde mit 45°-Wand, Bohrung endet unter einer Opferschicht am Muldenboden
+    rf = DISH_D / 2 - DISH_DEPTH / math.tan(math.radians(DISH_WALL))
+    cut.append(cyl_z(BTN_X, BTN_Y, LID_TOP - DISH_DEPTH, DISH_DEPTH + 1, rf, DISH_D / 2 + 1 / math.tan(math.radians(DISH_WALL))))
+    z_mem = LID_TOP - DISH_DEPTH - BTN_MEMBRANE
+    cut.append(cyl_z(BTN_X, BTN_Y, LID_BOT - 1, z_mem - (LID_BOT - 1), BTN_D / 2 + 0.25))
     # Taschen für Kupferband unter den Feldern (von unten)
     for (x, y, d) in PADS.values():
         cut.append(cyl_z(x, y, LID_BOT - 1, 1 + PAD_POCKET, d / 2 - 1.0))
@@ -469,6 +500,13 @@ def deckel(einfarbig=False):
     if einfarbig:
         return core - cu
     return core - cu, skin - cu
+
+
+def deckel_kopfueber(m):
+    """Deckel(-teil) für den Druck umdrehen: Oberseite auf die Platte (Drehung um x, keine Spiegelung)."""
+    m = m.rotate([180, 0, 0])
+    bb = m.bounding_box()
+    return m.translate([-bb[0], -bb[1], -bb[2]])
 
 
 def deckelrahmen():
@@ -603,18 +641,57 @@ def rc522_stecker_zone():
     return to_world(box(u1 - 2.5, vm - 11.5, w1 - 0.5, u1 + RC_PLUG_OUT + RC_BEND, vm + 11.5, w1 + 4.0))   # Buchse 2,54 mm um den Stift, Stiftmitte ca. 1,3 mm über der Platine
 
 
+def _karte_nach_kartenrahmen(m):
+    """Druckkoordinaten der Karte (x, y ab Unterkante, z ab Rückseite) → Kartenrahmen (u, v, w); Drehung 180° um x, keine Spiegelung."""
+    return m.rotate([180, 0, 0]).translate([-CARD_W / 2, CARD_IN, CARD_T / 2 + 0.4])
+
+
 def karte_world():
-    return to_world(box(-CARD_W / 2, -(CARD_H - CARD_IN), -CARD_T / 2 + 0.4, CARD_W / 2, CARD_IN, CARD_T / 2 + 0.4))   # von der Zunge an die Rückwand gedrückt
+    """gesteckte Karte (von der Zunge an die Rückwand gedrückt) in Einbaulage"""
+    return to_world(_karte_nach_kartenrahmen(karte_print()))
+
+
+def einleger_world(t=0.3):
+    """Papier-Cover in der Tasche (nur für Ansichten)"""
+    w, h = einleger_mass()
+    zf = CARD_T - INS_FRONT - INS_LIP - INS_GAP
+    e = box(CARD_W / 2 - w / 2, INS_Y0 + INS_CLR, zf, CARD_W / 2 + w / 2, INS_Y0 + INS_CLR + h, zf + t)
+    return to_world(_karte_nach_kartenrahmen(e))
+
+
+def einleger_mass():
+    """Einleger (Papier-Cover) Breite × Höhe in mm."""
+    w = CARD_W - 2 * INS_WALL - 2 * INS_CLR
+    h = CARD_H - INS_Y0 - 0.5            # 0,5 mm unter der Oberkante
+    return w, h
+
+
+def karte_fenster():
+    """sichtbares Fenster (x0, y0, x1, y1) in Kartenkoordinaten von vorne gesehen, y ab Kartenunterkante"""
+    x0 = INS_WALL + INS_LIP
+    return x0, INS_Y0 + INS_LIP, CARD_W - x0, CARD_H
 
 
 def karte_print():
-    """Karte flach, Rückseite oben (NFC-Tasche von oben druckbar). Unten = Kartenunterkante bei y=0."""
-    cs = rr(0, 0, CARD_W, CARD_H, 5.0)
-    ch = CrossSection([[(CARD_W - 9, CARD_H + 1), (CARD_W + 1, CARD_H + 1), (CARD_W + 1, CARD_H - 9)]])
-    cs = cs - ch                                          # Ecke schräg: oben rechts (von vorne gesehen)
-    c = slab(cs, 0, CARD_T)
-    c = c - cyl_z(CARD_W / 2, 1.0 + NFC_D / 2, CARD_T - NFC_T - 0.4, 2, NFC_D / 2 + 0.3)
-    return c.mirror([1, 0, 0]).translate([CARD_W, 0, 0])
+    """Karte flach, Rückseite unten (NFC-Tasche an der Platte, Decke Ø 25 mm als Brücke), Vorderseite mit Einschubtasche oben.
+    Koordinaten wie von vorne gesehen: x nach rechts, y = 0 Kartenunterkante (steckt im Fach), z = 0 Rückseite.
+    Tasche: Boden auf zf, Spalt INS_GAP an der Außenwand, darüber Lippen mit 45°-Unterseite, oben offen."""
+    T = CARD_T
+    R0 = 5.0
+    out = rr(0, 0, CARD_W, CARD_H, R0) ^ CrossSection.square([CARD_W, CARD_H - 10]) 
+    out = out + rr(0, CARD_H - 20, CARD_W, CARD_H, CARD_TOP_R)
+    c = slab(out, 0, T)
+    zf = T - INS_FRONT - INS_LIP - INS_GAP
+    a, l = INS_WALL, INS_LIP
+    top = CARD_H + 1
+    gap = box(a, INS_Y0, zf, CARD_W - a, top, zf + INS_GAP)
+    wedge = Manifold.batch_hull([box(a, INS_Y0, zf + INS_GAP - 0.01, CARD_W - a, top, zf + INS_GAP),
+                                 box(a + l, INS_Y0 + l, zf + INS_GAP + l - 0.01, CARD_W - a - l, top, zf + INS_GAP + l)])
+    window = box(a + l, INS_Y0 + l, zf + INS_GAP + l - 0.01, CARD_W - a - l, top, T + 1)
+    c = c - U([gap, wedge, window])
+    c = c - cyl_z(CARD_W / 2, CARD_H, -1, zf + 1.01, GRIP_R)                         # Griffmulde hinten oben
+    c = c - cyl_z(CARD_W / 2, 1.0 + NFC_D / 2, -1, 1 + NFC_T + 0.4, NFC_D / 2 + 0.3)   # NFC-Tasche hinten unten
+    return c
 
 
 # =====================================================================================

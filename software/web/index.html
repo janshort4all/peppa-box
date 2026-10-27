@@ -256,8 +256,11 @@ async function karte() {
   } catch (e) { zeige($('banner'), true); }
 }
 
+let zuletztBedient = 0;                        // Zeitpunkt der letzten Bedienung (Millisekunden)
+['input', 'change', 'click'].forEach(ev => document.addEventListener(ev, () => { zuletztBedient = Date.now(); }, true));
 async function zustand() {
   let z;
+  const t0 = Date.now();
   try { z = await holen('/api/zustand'); } catch (e) { zeige($('banner'), true); return; }
   zeige($('banner'), false);
   $('rechner').textContent = z.rechner;
@@ -301,6 +304,7 @@ async function zustand() {
   if (v.fehler) { $('vtext').textContent = 'Version unbekannt'; $('vdatum').textContent = v.fehler; }
   else { $('vtext').textContent = v.text; $('vdatum').textContent = `Stand ${datum(v.datum)} · ${v.kurz}`; }
   zeige($('bzurueck'), !!v.vorherige);
+  if (zuletztBedient >= t0) return;            // inzwischen bedient: veraltete Werte nicht anzeigen, nächste Runde stimmt
   lautstaerkeAnzeigen(z.lautstaerke);
   zeitenAnzeigen(z.zeiten, z.player);
 }
@@ -405,7 +409,7 @@ $('lregler').addEventListener('change', async e => {
 function grenzenBauen() {
   $('lgrenzen').innerHTML = AUSGAENGE.map(([a, name]) => `
     <div class="trenner"><b>${name}</b>
-      ${ausgaenge[a] ? '' : '<div class="leise">Noch nicht angeschlossen. Die Werte gelten, sobald er läuft.</div>'}
+      <div class="leise versteckt" id="g-${a}-hinweis">Noch nicht angeschlossen. Die Werte gelten, sobald er läuft.</div>
       <div class="grenze"><div class="kopf"><span>Höchstlautstärke</span><b id="g-${a}-maxw"></b></div>
         <input type="range" id="g-${a}-max" min="5" max="100" step="5" oninput="grenzeAnzeigen('${a}')"></div>
       <div class="grenze"><div class="kopf"><span>Beim Einschalten</span><b id="g-${a}-startw"></b></div>
@@ -420,32 +424,44 @@ function grenzeAnzeigen(a) {
 async function grenzenSpeichern() {
   const l = {};
   AUSGAENGE.forEach(([a]) => { l[a] = {max: +$(`g-${a}-max`).value, start: +$(`g-${a}-start`).value}; });
+  stand++;
   const erg = await sicher('/api/einstellungen', {lautstaerke: l});
-  if (erg.ok) einst = erg.einstellungen;
+  stand++;
+  if (erg.ok) { einst = erg.einstellungen; geaendert.grenzen = false; formFuellen(); }
   hinweis('gergebnis', erg, true);
   if (erg.ok) zustand();
 }
 
 // ------------------------------------------------------------ Zeiten
 
+// geaendert: der Benutzer hat im Formular etwas verstellt, aber noch nicht gespeichert. Solche Eingaben
+// dürfen von nachladenden Werten nie überschrieben werden (die Box antwortet unter Last langsam).
+const geaendert = {grenzen: false, ruhe: false};
+let stand = 0;                                 // zählt Speichervorgänge: ältere Antworten sind veraltet
 function formFuellen() {
   if (!einst) return;
-  grenzenBauen();
   AUSGAENGE.forEach(([a]) => {
+    zeige($(`g-${a}-hinweis`), !ausgaenge[a]);
+    if (geaendert.grenzen) return;
     $(`g-${a}-max`).value = einst.lautstaerke[a].max; $(`g-${a}-start`).value = einst.lautstaerke[a].start;
     grenzeAnzeigen(a);
   });
+  if (geaendert.ruhe) return;
   const r = einst.ruhezeit;
   $('rvon').value = r.von; $('rbis').value = r.bis; $('rmodus').value = r.modus;
   $('rleise').value = r.leise_max; $('rleisew').textContent = r.leise_max + '\u00a0%';
   zeige($('rleisewahl'), r.modus === 'leiser');
 }
 async function einstellungenLaden() {
+  const st = stand;
   try {
     const e = await holen('/api/einstellungen');
+    if (st !== stand) return;                  // inzwischen gespeichert: diese Antwort ist veraltet
     einst = e.einstellungen; ausgaenge = e.ausgaben; formFuellen();
   } catch (x) { /* beim nächsten Öffnen erneut */ }
 }
+$('lgrenzen').addEventListener('input', () => { geaendert.grenzen = true; }, true);   // true: auch ohne Aufsteigen des Ereignisses
+$('rdetails').addEventListener('input', () => { geaendert.ruhe = true; }, true);
 ['gdetails', 'rdetails'].forEach(id => $(id).addEventListener('toggle', () => { if ($(id).open) einstellungenLaden(); }));
 
 function zeitenAnzeigen(t, p) {
@@ -487,18 +503,23 @@ async function ruheUmschalten() {
   hinweis('zergebnis', erg, true); zustand();
 }
 async function ruheSpeichern() {
+  stand++;
   const erg = await sicher('/api/einstellungen', {ruhezeit: {von: $('rvon').value, bis: $('rbis').value,
     modus: $('rmodus').value, leise_max: +$('rleise').value}});
-  if (erg.ok) einst = erg.einstellungen; else formFuellen();
+  stand++;
+  if (erg.ok) { einst = erg.einstellungen; geaendert.ruhe = false; formFuellen(); }   // bei Fehler: Eingaben stehen lassen
   hinweis('zergebnis', erg, true); zustand();
 }
 async function schalter(bereich, name, wert) {
+  stand++;
   const erg = await sicher('/api/einstellungen', {[bereich]: {[name]: wert}});
-  if (erg.ok) einst = erg.einstellungen;
+  stand++;
+  if (erg.ok) { einst = erg.einstellungen; formFuellen(); }
   if (!erg.ok) hinweis('zergebnis', erg);
   zustand();
 }
 
+grenzenBauen();
 karte(); zustand(); einstellungenLaden();
 setInterval(() => { if (document.visibilityState === 'visible') karte(); }, 1000);
 setInterval(() => { if (document.visibilityState === 'visible') zustand(); }, 5000);

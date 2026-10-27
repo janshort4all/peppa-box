@@ -186,3 +186,4 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 ## Nachtrag 27.10.2026 – Reichelt-Ersatz
 - Reichelt liefert nicht. Touch-Modul jetzt **Adafruit 1982 (MPR121) bei Conrad, Bestell-Nr. 1516630**, 11,99 €. Produktbild zeigt die ältere Ausführung ohne STEMMA QT; welche geliefert wird, ist offen. Nach Lieferung Maße messen (Adafruit nennt 30 × 22 × 3 mm für die STEMMA-Ausführung) und Verteiler-Brücke (24 mm breit) anpassen.
 - Klinke: Ersatz für Lumberg 1503-09 noch offen (Conrad: Einbaubuchse 3,5 mm stereo, Tafelmontage, mit Schaltkontakt). SpeaKa SP-1300376 (2 m, gerader Stecker) passt nicht: nur 20 mm hinter der Pi-Klinke. Kabel bleibt Goobay 67782 (90°) oder gleichwertig.
+- Elko-Ersatz: Yageo SE016M1000B5S-1015, 1000 µF / 16 V, Ø 10 × 15 mm, RM 5 mm, Conrad 445386 (16 V statt 10 V gleichwertig). Beinlänge auf der Produktseite nicht eindeutig; für die Hebelklemmen werden ca. 11 mm gebraucht.

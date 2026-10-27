@@ -3,7 +3,7 @@
 #   peppa-player  Karten lesen, Spotify steuern
 #   peppa-web     Eltern-Seite (Zustand, Neustart, Ausschalten, Update), Port 80 und 8080
 # Dazu: sudo-Freigabe nur fuer die Befehle, die die Eltern-Seite braucht (/etc/sudoers.d/peppa-box),
-# und die Gruppen fuer Akku (i2c), Protokoll (adm) und Stromversorgung (video).
+# und die Gruppen fuer Akku (i2c), Protokoll (adm), Stromversorgung (video) und Lautstaerke (audio).
 # Aufruf (als normaler Benutzer, nicht als root):  sh ~/peppa-box/software/dienst_einrichten.sh
 # Kann beliebig oft wiederholt werden.
 set -e
@@ -68,7 +68,7 @@ fi
 rm -f "$TMP"
 
 # --- Gruppen (nur die, die es auf dem System gibt)
-for G in i2c adm video; do
+for G in i2c adm video audio; do
     if getent group "$G" > /dev/null; then sudo usermod -aG "$G" "$BENUTZER"; fi
 done
 

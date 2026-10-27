@@ -54,6 +54,22 @@ dialog h3 { margin:0 0 8px; font-size:19px; }
 #voll { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center;
         justify-content:center; text-align:center; padding:24px; z-index:10; }
 #voll .gross { font-size:22px; font-weight:700; margin-bottom:8px; }
+input[type=range] { width:100%; accent-color:var(--orange); height:32px; margin:0; }
+input[type=time], select { font:inherit; padding:8px 10px; border-radius:10px; border:1px solid var(--rand);
+                           background:var(--bg); color:var(--text); min-height:44px; }
+input.schalter { appearance:none; -webkit-appearance:none; width:50px; height:30px; border-radius:15px; background:var(--rand);
+                 position:relative; flex:none; cursor:pointer; transition:background .2s; margin:0; }
+input.schalter::after { content:''; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%;
+                        background:#fff; transition:transform .2s; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+input.schalter:checked { background:var(--orange); }
+input.schalter:checked::after { transform:translateX(20px); }
+.zeile { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:6px 0; }
+.trenner { border-top:1px solid var(--rand); margin-top:14px; padding-top:12px; }
+.laut { display:flex; align-items:center; gap:14px; }
+.laut .zahl { font-size:34px; font-weight:700; line-height:1; min-width:3.6ch; }
+.grenze { margin-top:12px; } .grenze .kopf { display:flex; justify-content:space-between; }
+.klein { font-size:14px; margin:0 0 2px; }
+#tknoepfe button { padding-left:4px; padding-right:4px; white-space:nowrap; }
 </style></head>
 <body><main>
 <div id="banner" class="versteckt">Keine Verbindung zur Box</div>
@@ -71,6 +87,69 @@ dialog h3 { margin:0 0 8px; font-size:19px; }
       <li>Schreiben tippen, Karte hinten ans Handy halten</li>
     </ol>
   </details>
+</section>
+
+<section class="box">
+  <h2>Lautstärke</h2>
+  <div class="laut">
+    <div class="zahl" id="lzahl">–</div>
+    <div style="flex:1"><input type="range" id="lregler" min="0" max="100" step="1" disabled aria-label="Lautstärke">
+      <div class="leise" id="ltext"></div></div>
+  </div>
+  <div id="lergebnis"></div>
+  <details id="gdetails" style="margin-top:8px"><summary>Grenzen und Startlautstärke</summary>
+    <div id="lgrenzen"></div>
+    <button class="haupt" onclick="grenzenSpeichern()">Speichern</button>
+    <div id="gergebnis"></div>
+  </details>
+</section>
+
+<section class="box">
+  <h2>Zeiten</h2>
+  <div class="leise klein">Schlummer-Timer</div>
+  <div id="tknoepfe" class="reihe">
+    <button onclick="timerStart(15)">15 Min</button><button onclick="timerStart(30)">30 Min</button>
+    <button onclick="timerStart(45)">45 Min</button><button onclick="timerStart(60)">60 Min</button>
+  </div>
+  <div id="taktiv" class="versteckt">
+    <div class="wert" id="trest"></div>
+    <button onclick="timerAbbrechen()">Timer abbrechen</button>
+  </div>
+  <div class="leise" style="margin-top:6px">Die letzten 20 Sekunden wird die Musik leiser, dann ist Pause.</div>
+  <div id="tergebnis"></div>
+
+  <div class="trenner">
+    <label class="zeile"><span><span class="wert">Ruhezeit</span><br><span class="leise" id="rtext">–</span></span>
+      <input type="checkbox" class="schalter" id="ran" onchange="schalter('ruhezeit', 'an', this.checked)"></label>
+    <div id="raktiv" class="versteckt">
+      <div class="hinweis" id="rhinweis"></div>
+      <button id="rknopf" onclick="ruheUmschalten()"></button>
+    </div>
+    <details id="rdetails" style="margin-top:6px"><summary>Ruhezeit einstellen</summary>
+      <label class="zeile"><span>Von</span><input type="time" id="rvon"></label>
+      <label class="zeile"><span>Bis</span><input type="time" id="rbis"></label>
+      <label class="zeile"><span>Dann</span>
+        <select id="rmodus" onchange="zeige($('rleisewahl'), this.value === 'leiser')">
+          <option value="leiser">leiser spielen</option><option value="aus">keine Musik</option></select></label>
+      <div id="rleisewahl">
+        <div class="grenze"><div class="kopf"><span>Höchstens</span><b id="rleisew"></b></div>
+          <input type="range" id="rleise" min="5" max="100" step="5" oninput="$('rleisew').textContent = this.value + '\u00a0%'"></div>
+      </div>
+      <div class="leise" id="ruhr" style="margin-top:8px"></div>
+      <button class="haupt" onclick="ruheSpeichern()">Speichern</button>
+    </details>
+  </div>
+
+  <div class="trenner">
+    <label class="zeile"><span><span class="wert">Automatisch ausschalten</span><br><span class="leise" id="atext2">–</span></span>
+      <input type="checkbox" class="schalter" id="aan" onchange="schalter('auto_aus', 'an', this.checked)"></label>
+    <label class="zeile"><span>Ausschalten nach</span>
+      <select id="amin" onchange="schalter('auto_aus', 'minuten', +this.value)">
+        <option value="10">10 Min</option><option value="20">20 Min</option><option value="30">30 Min</option>
+        <option value="60">60 Min</option><option value="120">2 Std</option></select></label>
+    <div class="leise">Solange diese Seite offen ist, bleibt die Box an.</div>
+  </div>
+  <div id="zergebnis"></div>
 </section>
 
 <section class="box">
@@ -133,16 +212,25 @@ async function holen(pfad) {
   const r = await fetch(pfad, {cache: 'no-store'});
   return r.json();
 }
-async function senden(pfad) {
-  const r = await fetch(pfad, {method: 'POST', headers: {'X-Peppa-Box': '1'}});
+async function senden(pfad, daten) {
+  const kopf = {'X-Peppa-Box': '1'};
+  if (daten !== undefined) kopf['Content-Type'] = 'application/json';
+  const r = await fetch(pfad, {method: 'POST', headers: kopf, body: daten !== undefined ? JSON.stringify(daten) : undefined});
   return r.json();
 }
-function hinweis(ziel, erg) {
+const KEINE_VERBINDUNG = {ok: false, meldung: 'Keine Verbindung zur Box.'};
+async function sicher(pfad, daten) {           // wie senden, aber ohne Ausnahme bei Verbindungsfehlern
+  try { return await senden(pfad, daten); } catch (x) { return KEINE_VERBINDUNG; }
+}
+const hinweisZeit = {};
+function hinweis(ziel, erg, kurz) {
+  clearTimeout(hinweisZeit[ziel]);
   $(ziel).innerHTML = '';
   const d = document.createElement('div');
   d.className = 'hinweis' + (erg.ok ? '' : ' fehler');
   d.textContent = erg.meldung || (erg.ok ? 'Erledigt.' : 'Fehlgeschlagen.');
   $(ziel).appendChild(d);
+  if (kurz && erg.ok) hinweisZeit[ziel] = setTimeout(() => { $(ziel).innerHTML = ''; }, 3000);
 }
 function datum(iso) {
   const d = new Date(iso);
@@ -213,6 +301,8 @@ async function zustand() {
   if (v.fehler) { $('vtext').textContent = 'Version unbekannt'; $('vdatum').textContent = v.fehler; }
   else { $('vtext').textContent = v.text; $('vdatum').textContent = `Stand ${datum(v.datum)} · ${v.kurz}`; }
   zeige($('bzurueck'), !!v.vorherige);
+  lautstaerkeAnzeigen(z.lautstaerke);
+  zeitenAnzeigen(z.zeiten, z.player);
 }
 
 async function pruefen() {
@@ -286,7 +376,130 @@ $('mdetails').addEventListener('toggle', async () => {
   catch (e) { $('mtext').textContent = 'Keine Verbindung zur Box.'; }
 });
 
-karte(); zustand();
+// ------------------------------------------------------------ Lautstärke
+
+let reglerBenutzt = 0;                         // Zeitpunkt der letzten Bedienung (Millisekunden)
+const AUSGAENGE = [['kopfhoerer', 'Kopfhörer (Klinke)'], ['lautsprecher', 'Lautsprecher']];
+let einst = null, ausgaenge = {};              // Einstellungen von der Box, welche Ausgänge eingerichtet sind
+
+function lautstaerkeAnzeigen(l) {
+  const r = $('lregler');
+  if (l.prozent == null) {
+    r.disabled = true; $('lzahl').textContent = '–';
+    $('ltext').textContent = l.ausgaben[l.aktiv].eingerichtet ? 'Regler der Box nicht lesbar' : 'Ausgang nicht eingerichtet';
+    return;
+  }
+  r.disabled = false; r.max = Math.max(l.max, 5);
+  if (Date.now() - reglerBenutzt > 2500) { r.value = l.prozent; $('lzahl').textContent = l.prozent + '\u00a0%'; }
+  $('ltext').textContent = `${l.name} · höchstens ${l.max}\u00a0%` + (l.max < l.max_ausgang ? ' (Ruhezeit)' : '');
+}
+$('lregler').addEventListener('input', e => { reglerBenutzt = Date.now(); $('lzahl').textContent = e.target.value + '\u00a0%'; });
+$('lregler').addEventListener('change', async e => {
+  reglerBenutzt = Date.now();
+  const erg = await sicher('/api/lautstaerke', {prozent: +e.target.value});
+  if (!erg.ok) { hinweis('lergebnis', erg); return; }
+  $('lergebnis').innerHTML = '';
+  e.target.value = erg.prozent; $('lzahl').textContent = erg.prozent + '\u00a0%';
+});
+
+function grenzenBauen() {
+  $('lgrenzen').innerHTML = AUSGAENGE.map(([a, name]) => `
+    <div class="trenner"><b>${name}</b>
+      ${ausgaenge[a] ? '' : '<div class="leise">Noch nicht angeschlossen. Die Werte gelten, sobald er läuft.</div>'}
+      <div class="grenze"><div class="kopf"><span>Höchstlautstärke</span><b id="g-${a}-maxw"></b></div>
+        <input type="range" id="g-${a}-max" min="5" max="100" step="5" oninput="grenzeAnzeigen('${a}')"></div>
+      <div class="grenze"><div class="kopf"><span>Beim Einschalten</span><b id="g-${a}-startw"></b></div>
+        <input type="range" id="g-${a}-start" min="5" max="100" step="5" oninput="grenzeAnzeigen('${a}')"></div>
+    </div>`).join('');
+}
+function grenzeAnzeigen(a) {
+  const max = $(`g-${a}-max`), start = $(`g-${a}-start`);
+  if (+start.value > +max.value) start.value = max.value;      // Start nie über dem Maximum
+  $(`g-${a}-maxw`).textContent = max.value + '\u00a0%'; $(`g-${a}-startw`).textContent = start.value + '\u00a0%';
+}
+async function grenzenSpeichern() {
+  const l = {};
+  AUSGAENGE.forEach(([a]) => { l[a] = {max: +$(`g-${a}-max`).value, start: +$(`g-${a}-start`).value}; });
+  const erg = await sicher('/api/einstellungen', {lautstaerke: l});
+  if (erg.ok) einst = erg.einstellungen;
+  hinweis('gergebnis', erg, true);
+  if (erg.ok) zustand();
+}
+
+// ------------------------------------------------------------ Zeiten
+
+function formFuellen() {
+  if (!einst) return;
+  grenzenBauen();
+  AUSGAENGE.forEach(([a]) => {
+    $(`g-${a}-max`).value = einst.lautstaerke[a].max; $(`g-${a}-start`).value = einst.lautstaerke[a].start;
+    grenzeAnzeigen(a);
+  });
+  const r = einst.ruhezeit;
+  $('rvon').value = r.von; $('rbis').value = r.bis; $('rmodus').value = r.modus;
+  $('rleise').value = r.leise_max; $('rleisew').textContent = r.leise_max + '\u00a0%';
+  zeige($('rleisewahl'), r.modus === 'leiser');
+}
+async function einstellungenLaden() {
+  try {
+    const e = await holen('/api/einstellungen');
+    einst = e.einstellungen; ausgaenge = e.ausgaben; formFuellen();
+  } catch (x) { /* beim nächsten Öffnen erneut */ }
+}
+['gdetails', 'rdetails'].forEach(id => $(id).addEventListener('toggle', () => { if ($(id).open) einstellungenLaden(); }));
+
+function zeitenAnzeigen(t, p) {
+  zeige($('tknoepfe'), !t.timer); zeige($('taktiv'), !!t.timer);
+  if (t.timer) $('trest').textContent = t.timer.rest_s > 60 ? `Musik endet in ${Math.ceil(t.timer.rest_s / 60)} Min` : 'Musik endet gleich';
+
+  const r = t.ruhezeit;
+  if (document.activeElement !== $('ran')) $('ran').checked = r.an;
+  $('rtext').textContent = !r.an ? 'aus' :
+    `${r.von} bis ${r.bis} · ` + (r.modus === 'leiser' ? `leiser, höchstens ${r.leise_max}\u00a0%` : 'keine Musik');
+  zeige($('raktiv'), r.aktiv || r.ausgesetzt);
+  if (r.aktiv) { $('rhinweis').textContent = 'Jetzt ist Ruhezeit (bis ' + r.bis + ' Uhr).'; $('rknopf').textContent = 'Für heute aussetzen'; }
+  else if (r.ausgesetzt) { $('rhinweis').textContent = 'Ruhezeit ist bis ' + r.bis + ' Uhr ausgesetzt.'; $('rknopf').textContent = 'Wieder einschalten'; }
+  $('rknopf').dataset.aktion = r.aktiv ? 'aussetzen' : 'wieder';
+  $('ruhr').textContent = `Uhrzeit der Box: ${t.box.uhrzeit} (${t.box.zone})`;
+
+  const a = t.auto_aus;
+  if (document.activeElement !== $('aan')) $('aan').checked = a.an;
+  if (document.activeElement !== $('amin')) {
+    if (![...$('amin').options].some(o => +o.value === a.minuten)) {
+      const o = new Option(a.minuten + ' Min', a.minuten); $('amin').add(o);
+    }
+    $('amin').value = a.minuten;
+  }
+  $('atext2').textContent = a.an ? `nach ${a.minuten} Min ohne Musik` : 'aus';
+}
+
+async function timerStart(min) {
+  const erg = await sicher('/api/timer/starten', {minuten: min});
+  hinweis('tergebnis', erg, true); zustand();
+}
+async function timerAbbrechen() {
+  const erg = await sicher('/api/timer/abbrechen', {});
+  hinweis('tergebnis', erg, true); zustand();
+}
+async function ruheUmschalten() {
+  const wie = $('rknopf').dataset.aktion === 'aussetzen' ? 'aussetzen' : 'wieder';
+  const erg = await sicher('/api/ruhezeit/' + wie, {});
+  hinweis('zergebnis', erg, true); zustand();
+}
+async function ruheSpeichern() {
+  const erg = await sicher('/api/einstellungen', {ruhezeit: {von: $('rvon').value, bis: $('rbis').value,
+    modus: $('rmodus').value, leise_max: +$('rleise').value}});
+  if (erg.ok) einst = erg.einstellungen; else formFuellen();
+  hinweis('zergebnis', erg, true); zustand();
+}
+async function schalter(bereich, name, wert) {
+  const erg = await sicher('/api/einstellungen', {[bereich]: {[name]: wert}});
+  if (erg.ok) einst = erg.einstellungen;
+  if (!erg.ok) hinweis('zergebnis', erg);
+  zustand();
+}
+
+karte(); zustand(); einstellungenLaden();
 setInterval(() => { if (document.visibilityState === 'visible') karte(); }, 1000);
 setInterval(() => { if (document.visibilityState === 'visible') zustand(); }, 5000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { karte(); zustand(); } });

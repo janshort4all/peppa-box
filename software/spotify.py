@@ -155,6 +155,17 @@ def abspielen(device_id, uri):
     return status, data
 
 
+def spielt(device_id):
+    """Spielt gerade Musik auf diesem Gerät? True/False, None wenn Spotify nicht antwortet."""
+    status, data = api("GET", "/me/player")
+    if status == 204:                       # kein aktives Gerät, nichts spielt
+        return False
+    if status != 200 or not isinstance(data, dict):
+        return None
+    geraet = data.get("device") or {}
+    return bool(data.get("is_playing")) and geraet.get("id") == device_id
+
+
 def fortsetzen(device_id):
     return api("PUT", "/me/player/play", None, {"device_id": device_id})
 

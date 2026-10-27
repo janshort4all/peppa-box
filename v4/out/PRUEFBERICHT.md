@@ -1,4 +1,4 @@
-# Prüfbericht Musikbox v4 (Stand 24.10.2026)
+# Prüfbericht Musikbox v4 (Stand 27.10.2026)
 
 Automatisch gerechnet mit den Werten aus `model.py`. Bauteile, deren Maße noch fehlen, stecken als Platzhalter (Hüllquader) im Modell.
 
@@ -17,10 +17,10 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | Prüfung | Wert (mm) |
 | --- | --- |
 | Oberkante Klemmen (z) | 77,5 |
-| Unterkante Kartenfach (z) | 86,8 |
+| Unterkante Kartenfach (z) | 81,8 |
 | Unterkante Klemmen im Deckel (z) | 117,4 |
-| Abstand Pi + Klemmen-Aufsatz ↔ Kartenfach | 9,8 |
-| Abstand Pi + Klemmen-Aufsatz ↔ RC522 | 12,8 |
+| Abstand Pi + Klemmen-Aufsatz ↔ Kartenfach | 4,8 |
+| Abstand Pi + Klemmen-Aufsatz ↔ RC522 | 7,8 |
 | Abstand Klinkenstecker am Pi (Zone) ↔ Korpus | 5,5 |
 | Abstand Pi + Klemmen-Aufsatz ↔ WAGO GND B | 39,9 |
 | Abstand Pi + Klemmen-Aufsatz ↔ Touch-Modul MPR121 | 40,0 |
@@ -39,6 +39,7 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | Abstand RC522-Stecker (Zone) ↔ Deckelrahmen | 0,8 |
 | Abstand RC522-Stecker (Zone) ↔ Kartenfach | 1,7 |
 | Abstand Touch-Modul MPR121 ↔ Kartenfach | 13,6 |
+| Abstand RC522-Stecker (Zone) ↔ Schraubblock Deckelrahmen hinten | 3,7 |
 
 0,0 heißt: Teile liegen bewusst aneinander an (Lautsprecher auf der Mulde, Korpus auf dem Boden).
 „Zone“ = Freiraum, den Kabel oder Stecker brauchen, kein Bauteil.
@@ -51,7 +52,7 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | 02a_deckel_kern_orange.stl | 133 × 133 × 5 | Taschen unter den Touch-Feldern (Ø 20–28 mm, verdeckt) |
 | 02b_deckel_haut_beige.stl | 133 × 133 × 1 | – |
 | 03_deckelrahmen.stl | 127 × 128 × 17 | Boden Tasterhalter 12 mm |
-| 04_kartenfach.stl | 14 × 47 × 88 | Seitenwand über dem Kartenschlitz 5 mm |
+| 04_kartenfach.stl | 14 × 52 × 88 | Seitenwand über dem Kartenschlitz 5 mm |
 | 05_boden_traeger.stl | 140 × 140 × 8 | Decke der Senkbohrungen M2,5 (Ring 1,8 mm) |
 | 06_stoffrahmen.stl | 114 × 114 × 5 | – |
 | 07_drehknopf_orange.stl | 34 × 34 × 16 | – |

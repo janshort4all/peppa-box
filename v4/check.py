@@ -45,7 +45,22 @@ def gaps(ph, parts):
                  ("Kurzhubtaster", "kartenfach"), ("RC522", "deckelrahmen"), ("RC522-Stecker (Zone)", "korpus"), ("RC522-Stecker (Zone)", "deckelrahmen"), ("RC522-Stecker (Zone)", "kartenfach"), ("Touch-Modul MPR121", "kartenfach")):
         A = ph.get(a, parts.get(a)); B = ph.get(b, parts.get(b))
         g[f"Abstand {a} ↔ {b}"] = A.min_gap(B, 40.0)
+    # Schraubblock hinten rechts am Deckelrahmen (x = LS_X[1]) getrennt, sonst verdeckt der Tasterhalter den Wert
+    x = M.LS_X[1]
+    blk = parts["deckelrahmen"] ^ M.box(x - 8, M.W - M.WALL - 2.4 - 0.4 - 10.5, M.LS_BLOCK_Z0 - 1, x + 8, M.W, M.LID_BOT)
+    g["Abstand RC522-Stecker (Zone) ↔ Schraubblock Deckelrahmen hinten"] = ph["RC522-Stecker (Zone)"].min_gap(blk, 40.0)
     return g
+
+
+def symbol_gaps():
+    """Abstand jedes Symbols zur Innenkante seiner Ringnut (Probedruck 27.10.: Dreiecke lagen auf der Nut)."""
+    from manifold3d import CrossSection
+    sym = M.pad_symbols(rings=False)
+    out = {}
+    for name, (x, y, d) in M.PADS.items():
+        part = sym ^ CrossSection.circle(d / 2, M.SEG).translate([x, y])
+        out[name] = d / 2 - M.PAD_RING - M._cs_radius(part, x, y)
+    return out
 
 
 # --- Druckausrichtung ---
@@ -154,6 +169,9 @@ if __name__ == "__main__":
     print("== Abstände ==")
     for k, v in gaps(ph, parts).items():
         print(f"  {k}: {v:.1f}")
+    print("== Symbole auf den Touchfeldern (Abstand zur Ringnut, soll ≥ SYM_GAP) ==")
+    for k, v in symbol_gaps().items():
+        print(f"  {k}: {v:.2f} mm" + ("" if v >= M.SYM_GAP - 0.01 else "  ZU KNAPP"))
     print("== Druckausrichtung ohne Spiegelung (soll überall +1) ==")
     bad = [k for k in parts if handedness(k) < 0]
     print("  ok" if not bad else "  GESPIEGELT: " + ", ".join(bad))

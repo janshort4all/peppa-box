@@ -41,7 +41,7 @@ LID_T = par("LID_T", 6.0, "festgelegt", "Deckelstärke (Schrauben von unten brau
 LID_SINK = par("LID_SINK", 1.2, "festgelegt", "Deckel liegt so tief unter der Kante")
 LEDGE = par("LEDGE", 2.5, "festgelegt", "Auflage-Schräge 45° innen")
 GAP_LID = par("GAP_LID", 0.4, "Probedruck", "Spalt Deckel–Wand je Seite")
-SKIN = par("SKIN", 0.7, "festgelegt", "beige Deckschicht über orangem Kern (D1)")
+SKIN = par("SKIN", 0.8, "festgelegt", "beige Deckschicht über orangem Kern (D1); 0,8 = 4 Schichten à 0,2 bzw. 5 à 0,16 (vorher 0,7, lag zwischen zwei Schichten)")
 CLR = par("CLR", 0.3, "Probedruck", "Spiel für Passungen")
 PILOT = par("PILOT", 2.5, "Probedruck", "Kernloch für 3-mm-Kunststoffschraube in PETG")
 HOLE3 = par("HOLE3", 3.4, "festgelegt", "Durchgangsloch 3-mm-Schraube")
@@ -81,7 +81,10 @@ CH_Z = par("CH_Z", 122.0, "festgelegt", "Unterkante Kammerdecke")
 # Deckel-Bedienung (aus v3)
 PADS = par("PADS", {"zurück": (30, 30, 22), "play": (70, 30, 30), "vor": (110, 30, 22), "schlaf": (70, 64, 18)},
            "festgelegt", "Touch-Felder x, y, Ø")
-PAD_POCKET = par("PAD_POCKET", 2.0, "Probedruck", "Tasche unter dem Feld → 3,3 mm Kunststoff über dem Kupfer")
+PAD_POCKET = par("PAD_POCKET", 2.0, "Probedruck", "Tasche unter dem Feld → 4 mm Kunststoff über dem Kupfer, unter den Symbolen 3,2 mm")
+PAD_RING = par("PAD_RING", 1.1, "festgelegt", "Breite der Ringnut um jedes Touchfeld")
+SYM_GAP = par("SYM_GAP", 1.8, "festgelegt", "Mindestabstand Symbol ↔ Ringnut (Probedruck 27.10.: Dreiecke lagen auf der Nut)")
+SYM_MIN = par("SYM_MIN", 0.9, "festgelegt", "kleinste Breite in Symbolen (2 Linien bei Düse 0,4); dünnere Spitzen werden abgerundet")
 
 # Karte und Kartenfach
 CARD_W = par("CARD_W", 70.0, "festgelegt", "Karte Breite")
@@ -100,6 +103,9 @@ RC_COMP = par("RC_COMP", 5.0, "gemessen", "Bauteilhöhe auf der Rückseite (Quar
 RC_PIN_OUT = par("RC_PIN_OUT", 6.0, "gemessen", "Überstand der 90°-Stifte über die Platinenkante")
 RC_PLUG_OUT = par("RC_PLUG_OUT", 14.0, "gemessen", "Platinenkante bis Ende Steckkabel-Hülse (gesteckt, Buchse sitzt bis an die Leiste)")
 RC_BEND = par("RC_BEND", 8.0, "vorläufig", "Platz für den Kabelbogen hinter den Buchsen")
+RC_DROP = par("RC_DROP", 5.0, "festgelegt", "RC522 so viel tiefer (weg vom Deckel) als mittig hinter dem NFC-Aufkleber; Probedruck 27.10.: Steckkabel stießen an den Schraubblock des Deckelrahmens")
+RC_HDR_OFF = par("RC_HDR_OFF", 0.0, "vorläufig", "Mitte der Stiftleiste gegenüber Platinenmitte, + = vom Deckel weg (nicht gemessen, mittig angenommen)")
+RC_XTAL_FREE = par("RC_XTAL_FREE", 18.0, "festgelegt", "deckelseitige Schiene: Lippe auf so viel Länge vor dem Stiftleisten-Ende entfernt (Quarz; laut Foto ca. 12 mm lang)")
 
 # Ein-Taste
 BTN_X = par("BTN_X", 124.5, "festgelegt", "Ein-Taste x (hinten rechts)")
@@ -168,6 +174,7 @@ BRIDGE_Y = par("BRIDGE_Y", (74.0, 98.0), "festgelegt", "Verteiler-Brücke am Dec
 
 LS_X = par("LS_X", (24.0, 116.0), "festgelegt", "Deckelschrauben hinten x")
 LS_Z = par("LS_Z", 124.0, "festgelegt", "Deckelschrauben hinten z")
+LS_BLOCK_Z0 = par("LS_BLOCK_Z0", 119.0, "festgelegt", "Unterkante der Schraubblöcke hinten am Deckelrahmen (vorher 117; 2 mm mehr Platz für die RC522-Stecker, 3,2 mm Wand unter dem Kernloch)")
 
 # =====================================================================================
 # Helfer
@@ -357,23 +364,66 @@ def tri(x0, y0, s, left):
     return [(x0, y0 + s * 0.62), (x0, y0 - s * 0.62), (x0 + s, y0)]
 
 
-def pad_symbols():
-    def poly(p):
-        a = sum(p[i][0] * p[(i + 1) % len(p)][1] - p[(i + 1) % len(p)][0] * p[i][1] for i in range(len(p)))
-        return CrossSection([p if a > 0 else p[::-1]])
+def _poly(p):
+    a = sum(p[i][0] * p[(i + 1) % len(p)][1] - p[(i + 1) % len(p)][0] * p[i][1] for i in range(len(p)))
+    return CrossSection([p if a > 0 else p[::-1]])
+
+
+def _cs_radius(cs, cx, cy):
+    """größter Abstand eines Symbolpunkts von der Feldmitte"""
+    r = 0.0
+    for poly in cs.to_polygons():
+        p = np.asarray(poly)
+        if len(p):
+            r = max(r, float(np.max(np.hypot(p[:, 0] - cx, p[:, 1] - cy))))
+    return r
+
+
+def _fit(cs, cx, cy, d):
+    """Symbol um die Feldmitte so skalieren, dass SYM_GAP zur Ringnut bleibt (nur verkleinern)."""
+    r_max = d / 2 - PAD_RING - SYM_GAP
+    r = _cs_radius(cs, cx, cy)
+    if r <= r_max:
+        return cs
+    k = r_max / r
+    return cs.translate([-cx, -cy]).scale([k, k]).translate([cx, cy])
+
+
+def _skip(cx, cy, d, right):
+    """Doppeldreieck (vor/zurück), Dreiecke überlappen um 30 %: eine Fläche ohne dünne Stege."""
+    a, h, ov = 1.0, 0.62, 0.3
+    tot = 2 * a - ov * a
+    x0 = -tot / 2
+    t1 = [(x0, h), (x0, -h), (x0 + a, 0)]
+    t2 = [(x0 + a - ov * a, h), (x0 + a - ov * a, -h), (x0 + tot, 0)]
+    cs = _poly(t1) + _poly(t2)
+    if not right:
+        cs = cs.mirror([1, 0])
+    cs = cs.scale([20, 20]).translate([cx, cy])       # erst groß, _fit verkleinert auf den erlaubten Radius
+    return _fit(cs, cx, cy, d)
+
+
+def _opening(cs, r):
+    """entfernt alles, was schmaler als 2r ist (Spitzen werden mit Radius r abgerundet)"""
+    return cs.offset(-r, JoinType.Round, circular_segments=SEG).offset(r, JoinType.Round, circular_segments=SEG).simplify(0.01)   # simplify: doppelte Punkte aus offset entfernen
+
+
+def pad_symbols(rings=True):
     s = []
-    px, py, _ = PADS["zurück"]; s += [poly(tri(px - 9, py, 8, True)), poly(tri(px + 0.5, py, 8, True))]
-    px, py, _ = PADS["vor"]; s += [poly(tri(px - 8.5, py, 8, False)), poly(tri(px + 0.5, py, 8, False))]
-    px, py, _ = PADS["play"]
-    s += [poly(tri(px - 9, py, 9.5, False)), CrossSection.square([2.6, 11.5]).translate([px + 2.5, py - 5.75]),
-          CrossSection.square([2.6, 11.5]).translate([px + 6.6, py - 5.75])]
-    px, py, _ = PADS["schlaf"]
-    s += [CrossSection.circle(5.2, SEG).translate([px - 0.6, py]) - CrossSection.circle(4.5, SEG).translate([px + 2.0, py + 1.8])]
-    for (x, y, d) in PADS.values():
-        s.append(CrossSection.circle(d / 2, SEG).translate([x, y]) - CrossSection.circle(d / 2 - 1.1, SEG).translate([x, y]))
+    px, py, d = PADS["zurück"]; s.append(_skip(px, py, d, right=False))
+    px, py, d = PADS["vor"]; s.append(_skip(px, py, d, right=True))
+    px, py, d = PADS["play"]
+    s.append(_fit(_poly(tri(px - 9, py, 9.5, False)) + CrossSection.square([2.6, 11.5]).translate([px + 2.5, py - 5.75])
+                  + CrossSection.square([2.6, 11.5]).translate([px + 6.6, py - 5.75]), px, py, d))
+    px, py, d = PADS["schlaf"]
+    s.append(_fit(CrossSection.circle(5.2, SEG).translate([px - 0.6, py]) - CrossSection.circle(4.5, SEG).translate([px + 2.0, py + 1.8]), px, py, d))
     out = s[0]
     for t in s[1:]:
         out = out + t
+    out = _opening(out, SYM_MIN / 2)
+    if rings:
+        for (x, y, d) in PADS.values():
+            out = out + (CrossSection.circle(d / 2, SEG).translate([x, y]) - CrossSection.circle(d / 2 - PAD_RING, SEG).translate([x, y]))
     return out
 
 
@@ -396,11 +446,15 @@ def slot_cut():
     return to_world(box(-CARD_W / 2 - 0.75, -15, -CARD_T / 2 - 0.4, CARD_W / 2 + 0.75, 12, CARD_T / 2 + 0.4))
 
 
-def deckel():
-    core = slab(LID_CS, LID_BOT, LID_TOP - SKIN)
-    skin = slab(LID_CS, LID_TOP - SKIN, LID_TOP)
+def deckel(einfarbig=False):
     sym = pad_symbols()
-    skin = skin - slab(sym, LID_TOP - SKIN - 0.05, LID_TOP + 1)
+    if einfarbig:      # Prototyp: ein Körper, Symbole SKIN tief vertieft (ohne Vereinigung zweier Körper an einer gemeinsamen Fläche)
+        core = slab(LID_CS, LID_BOT, LID_TOP) - slab(sym, LID_TOP - SKIN, LID_TOP + 1)
+        skin = None
+    else:
+        core = slab(LID_CS, LID_BOT, LID_TOP - SKIN)
+        skin = slab(LID_CS, LID_TOP - SKIN, LID_TOP)
+        skin = skin - slab(sym, LID_TOP - SKIN - 0.05, LID_TOP + 1)
     cut = [slot_cut()]
     # Taste: Mulde und Bohrung
     cut.append(cyl_z(BTN_X, BTN_Y, LID_TOP - DISH_DEPTH, 5, DISH_D / 2))
@@ -412,6 +466,8 @@ def deckel():
     for (x, y) in RING_SCREWS + POCKET_SCREWS:
         cut.append(cyl_z(x, y, LID_BOT - 1, 1 + 4.5, PILOT / 2))
     cu = U(cut)
+    if einfarbig:
+        return core - cu
     return core - cu, skin - cu
 
 
@@ -423,7 +479,7 @@ def deckelrahmen():
         parts.append(box(x - 6, 9.4, CH_Z + 3.8, x + 6, 11.4, RING_Z0 + 0.1))
     # Blöcke hinten mit waagerechtem Kernloch
     for x in LS_X:
-        parts.append(box(x - 7, W - WALL - 2.4 - 0.4 - 10, LS_Z - 7, x + 7, W - WALL - 2.4 - 0.4, LID_BOT))
+        parts.append(box(x - 7, W - WALL - 2.4 - 0.4 - 10, LS_BLOCK_Z0, x + 7, W - WALL - 2.4 - 0.4, LID_BOT))
     # Steg zum Tasterhalter + Halter
     sw_bot = act_top() - SW_H
     hw = SW / 2 + 0.2 + 3.1
@@ -491,7 +547,7 @@ V_TAG = CARD_IN - 1.0 - NFC_D / 2
 def rc_local():
     """RC522-Lage im Kartenrahmen: u0,u1,v0,v1,w0,w1 der Platine."""
     u0 = -RC_ANT
-    v0 = V_TAG - RC_B / 2
+    v0 = V_TAG - RC_B / 2 + RC_DROP
     w0 = CARD_T / 2 + 0.4 + 1.2 + 0.6
     return (u0, u0 + RC_L, v0, v0 + RC_B, w0, w0 + RC_T)
 
@@ -505,9 +561,11 @@ def kartentasche():
     # Rückplatte bis unter die RC522-Platine, mit zwei Schienen (Platine wird seitlich eingeschoben)
     back = box(u0 - 3, V_LID, ti, u1 + 2, v1 + 3, ti + 1.2)
     rails = []
-    for (va, vb, gv0, gv1) in ((v0 - 3, v0 + 1.5, v0 - 0.3, v0 + 1.5), (v1 - 1.5, v1 + 3, v1 - 1.5, v1 + 0.3)):
+    for i, (va, vb, gv0, gv1) in enumerate(((v0 - 3, v0 + 1.5, v0 - 0.3, v0 + 1.5), (v1 - 1.5, v1 + 3, v1 - 1.5, v1 + 0.3))):
         rail = box(u0 - 3, va, ti + 1.2, u1 + 2, vb, w1 + 1.6)
         rail = rail - box(u0 - 1, gv0, w0 - 0.2, u1 + 3, gv1, w1 + 0.3)
+        if i == 0:      # deckelseitige Schiene: Lippe über dem Quarz weg (Platine liegt dort nur noch auf)
+            rail = rail - box(u1 - RC_XTAL_FREE, va - 1, w1 + 0.3 - 0.01, u1 + 3, vb + 1, w1 + 2.0)
         rails.append(rail)
     stop = box(-wi - 8.5, v0 - 3, ti + 1.2, u0 - 0.5, v1 + 3, w1 + 1.6)      # Anschlag an der Antennenseite, reicht bis zur Druckplatte
     # seitliche Wangen über die ganze Höhe: tragen die Schraublöcher und liegen beim Druck auf der Platte
@@ -541,7 +599,7 @@ def rc522_placeholder():
 def rc522_stecker_zone():
     """90°-Stiftleiste mit 8 Steckkabeln am Lötlochende, flach in der Platinenebene, plus Kabelbogen."""
     u0, u1, v0, v1, w0, w1 = rc_local()
-    vm = (v0 + v1) / 2
+    vm = (v0 + v1) / 2 + RC_HDR_OFF
     return to_world(box(u1 - 2.5, vm - 11.5, w1 - 0.5, u1 + RC_PLUG_OUT + RC_BEND, vm + 11.5, w1 + 4.0))   # Buchse 2,54 mm um den Stift, Stiftmitte ca. 1,3 mm über der Platine
 
 

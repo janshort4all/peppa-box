@@ -57,7 +57,7 @@ def c4_rahmenstifte():
 
 
 def c5_touch():
-    """Deckelstück: links mit Tasche (3,3 mm über dem Kupfer), rechts ohne (5,3 mm)."""
+    """Deckelstück: links mit Tasche (4 mm über dem Kupfer, unter der Ringnut 3,2 mm), rechts ohne."""
     p = slab(rr(0, 0, 70, 36, 3), 0, M.LID_T)
     p = p - cyl_z(18, 18, -1, 1 + M.PAD_POCKET, 10)
     p = p - (cyl_z(18, 18, M.LID_T - M.SKIN, 2, 11) - cyl_z(18, 18, -1, 9, 9.9))

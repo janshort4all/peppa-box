@@ -1,8 +1,8 @@
-# Parameter Musikbox v4 (Stand 24.10.2026)
+# Parameter Musikbox v4 (Stand 27.10.2026)
 
 Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Modell alles neu: Löcher, Halter, Kollisionsprüfung.
 
-## Vorläufig – am echten Teil messen (21)
+## Vorläufig – am echten Teil messen (22)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -12,6 +12,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `NFC_T` | 0,4 | NFC-Aufkleber Dicke |
 | `RC_T` | 1,6 | RC522 Platinendicke |
 | `RC_BEND` | 8 | Platz für den Kabelbogen hinter den Buchsen |
+| `RC_HDR_OFF` | 0 | Mitte der Stiftleiste gegenüber Platinenmitte, + = vom Deckel weg (nicht gemessen, mittig angenommen) |
 | `SW_H` | 7,3 | Tasterhöhe gesamt (Quellen: 7,3 bzw. 6,5) |
 | `ENC_WALL` | 2 | Wand am Drehgeber (Gewindelänge unbekannt) |
 | `ENC_OUT` | 14 | Achse ragt so weit aus der Wand |
@@ -38,7 +39,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `PILOT` | 2,5 | Kernloch für 3-mm-Kunststoffschraube in PETG |
 | `PILOT25` | 2,1 | Kernloch M2,5 (Akku-Board) |
 | `PIN_HOLE` | 4,1 | Loch für Rahmenstift (Coupon C4: 4,0 / 4,1 / 4,2) |
-| `PAD_POCKET` | 2 | Tasche unter dem Feld → 3,3 mm Kunststoff über dem Kupfer |
+| `PAD_POCKET` | 2 | Tasche unter dem Feld → 4 mm Kunststoff über dem Kupfer, unter den Symbolen 3,2 mm |
 | `ENC_HOLE` | 7,4 | Loch für M7-Gewinde |
 
 ## Von dir gemessen (10)
@@ -72,7 +73,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (62)
+## Gestaltung festgelegt (68)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -89,7 +90,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `LID_T` | 6 | Deckelstärke (Schrauben von unten brauchen Fleisch) |
 | `LID_SINK` | 1,2 | Deckel liegt so tief unter der Kante |
 | `LEDGE` | 2,5 | Auflage-Schräge 45° innen |
-| `SKIN` | 0,7 | beige Deckschicht über orangem Kern (D1) |
+| `SKIN` | 0,8 | beige Deckschicht über orangem Kern (D1); 0,8 = 4 Schichten à 0,2 bzw. 5 à 0,16 (vorher 0,7, lag zwischen zwei Schichten) |
 | `HOLE3` | 3,4 | Durchgangsloch 3-mm-Schraube |
 | `BOSS_D` | 9 | Dom-Ø, groß genug für spätere M3-Einsätze |
 | `SEAT` | 12 / 128 / 12 / 128 | Stoffrahmen-Vertiefung x0,x1,z0,z1 |
@@ -103,12 +104,17 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `DIV_Y` | 48 | Vorderkante Trennwand Lautsprecherkammer |
 | `CH_Z` | 122 | Unterkante Kammerdecke |
 | `PADS` | zurück 30 / 30 / 22; play 70 / 30 / 30; vor 110 / 30 / 22; schlaf 70 / 64 / 18 | Touch-Felder x, y, Ø |
+| `PAD_RING` | 1,1 | Breite der Ringnut um jedes Touchfeld |
+| `SYM_GAP` | 1,8 | Mindestabstand Symbol ↔ Ringnut (Probedruck 27.10.: Dreiecke lagen auf der Nut) |
+| `SYM_MIN` | 0,9 | kleinste Breite in Symbolen (2 Linien bei Düse 0,4); dünnere Spitzen werden abgerundet |
 | `CARD_W` | 70 | Karte Breite |
 | `CARD_H` | 112 | Karte Höhe (70 sichtbar + 42 im Fach) |
 | `CARD_T` | 4 | Karte Dicke |
 | `CARD_IN` | 42 | Einstecktiefe |
 | `SLOT_Y` | 116 | Schlitzmitte auf dem Deckel |
 | `TILT` | 8 | Neigung der Karte nach hinten |
+| `RC_DROP` | 5 | RC522 so viel tiefer (weg vom Deckel) als mittig hinter dem NFC-Aufkleber; Probedruck 27.10.: Steckkabel stießen an den Schraubblock des Deckelrahmens |
+| `RC_XTAL_FREE` | 18 | deckelseitige Schiene: Lippe auf so viel Länge vor dem Stiftleisten-Ende entfernt (Quarz; laut Foto ca. 12 mm lang) |
 | `BTN_X` | 124,5 | Ein-Taste x (hinten rechts) |
 | `BTN_Y` | 108 | Ein-Taste y |
 | `BTN_D` | 12 | Tastenkopf-Ø |
@@ -138,3 +144,4 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `BRIDGE_Y` | 74 / 98 | Verteiler-Brücke am Deckelrahmen: MPR121 + Klemmen für 3,3 V, SCL, GND B |
 | `LS_X` | 24 / 116 | Deckelschrauben hinten x |
 | `LS_Z` | 124 | Deckelschrauben hinten z |
+| `LS_BLOCK_Z0` | 119 | Unterkante der Schraubblöcke hinten am Deckelrahmen (vorher 117; 2 mm mehr Platz für die RC522-Stecker, 3,2 mm Wand unter dem Kernloch) |

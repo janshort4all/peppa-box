@@ -8,7 +8,7 @@ import check as K
 import coupons as C
 from build_all import DRUCK, OUT
 
-STAND = "24.10.2026"
+STAND = "27.10.2026"
 
 
 def fmt(v):

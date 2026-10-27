@@ -1,4 +1,4 @@
-# Musikbox v4 – Druckpaket (Stand 24.10.2026)
+# Musikbox v4 – Druckpaket (Stand 27.10.2026)
 
 **Noch nicht das Gehäuse drucken.** Einige Maße sind Platzhalter, bis deine Teile gemessen sind
 (Liste in `PARAMETER.md`, Abschnitt „Vorläufig“). Jetzt sinnvoll: C7 (Lochbild) und die Probedruck-Coupons.

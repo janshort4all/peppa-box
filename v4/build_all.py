@@ -47,6 +47,10 @@ def export_parts(parts):
         p = os.path.join(OUT, fn)
         tm(o).export(p)
         files[fn] = (k, col, note, o.bounding_box())
+    # einfarbiger Deckel für Prototypen: gleiche Form wie 02a + 02b, als ein Körper (Symbole SKIN tief vertieft)
+    one = M.deckel(einfarbig=True).translate([0, 0, -M.LID_BOT])
+    tm(one).export(os.path.join(OUT, "02_deckel_einfarbig.stl"))
+    files["02_deckel_einfarbig.stl"] = ("deckel", "eine Farbe", "Prototyp: Oberseite nach oben", one.bounding_box())
     # Karte
     card = M.karte_print()
     tm(card).export(os.path.join(OUT, "10_karte_orange.stl"))

@@ -182,3 +182,7 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Nachgestellt und geprüft** mit künstlich verzögerter Antwort (0,1 / 0,6 / 2 s): Ziehen während des Nachladens, anderes Formular öffnen bei ungespeicherten Änderungen, verspätete Antwort nach dem Speichern, echtes Ziehen mit der Maus bis 100 % mit Neuladen. Gesamte Bedienung (Regler, Timer, Schalter, Ruhezeit, Fehlermeldungen) ohne Konsolenfehler.
 - **Regel für die Seite:** Werte, die der Benutzer gerade bearbeitet, nie durch nachladende Daten ersetzen; langsame Antworten sind am Pi der Normalfall.
 - Hinweis zur Anzeige: Ist die Ruhezeit mit „leiser“ gerade aktiv, begrenzt sie den Regler unabhängig von der Höchstlautstärke; die Seite zeigt dann „höchstens X % (Ruhezeit)“.
+
+## Nachtrag 27.10.2026 – Reichelt-Ersatz
+- Reichelt liefert nicht. Touch-Modul jetzt **Adafruit 1982 (MPR121) bei Conrad, Bestell-Nr. 1516630**, 11,99 €. Produktbild zeigt die ältere Ausführung ohne STEMMA QT; welche geliefert wird, ist offen. Nach Lieferung Maße messen (Adafruit nennt 30 × 22 × 3 mm für die STEMMA-Ausführung) und Verteiler-Brücke (24 mm breit) anpassen.
+- Klinke: Ersatz für Lumberg 1503-09 noch offen (Conrad: Einbaubuchse 3,5 mm stereo, Tafelmontage, mit Schaltkontakt). SpeaKa SP-1300376 (2 m, gerader Stecker) passt nicht: nur 20 mm hinter der Pi-Klinke. Kabel bleibt Goobay 67782 (90°) oder gleichwertig.

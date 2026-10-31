@@ -71,7 +71,7 @@ else
 fi
 
 # --- 3. Raspotify auf den Lautsprecher
-if [ -f "$RASPOTIFY" ]; then
+if sudo test -f "$RASPOTIFY"; then   # Datei/Ordner nur mit sudo lesbar
     if sudo grep -q '^LIBRESPOT_DEVICE="lautsprecher"$' "$RASPOTIFY"; then
         :
     elif sudo grep -q '^LIBRESPOT_DEVICE=' "$RASPOTIFY"; then

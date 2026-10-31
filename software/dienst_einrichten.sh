@@ -4,6 +4,7 @@
 #   peppa-web     Eltern-Seite (Zustand, Neustart, Ausschalten, Update), Port 80 und 8080
 # Dazu: sudo-Freigabe nur fuer die Befehle, die die Eltern-Seite braucht (/etc/sudoers.d/peppa-box),
 # und die Gruppen fuer Akku (i2c), Protokoll (adm), Stromversorgung (video) und Lautstaerke (audio).
+# Ausserdem den Lautsprecher (lautsprecher_einrichten.sh).
 # Aufruf (als normaler Benutzer, nicht als root):  sh ~/peppa-box/software/dienst_einrichten.sh
 # Kann beliebig oft wiederholt werden.
 set -e
@@ -71,6 +72,9 @@ rm -f "$TMP"
 for G in i2c adm video audio; do
     if getent group "$G" > /dev/null; then sudo usermod -aG "$G" "$BENUTZER"; fi
 done
+
+# --- Lautsprecher (I2S, Software-Lautstaerke, Raspotify-Ausgabe)
+sh "$ORDNER/lautsprecher_einrichten.sh" || echo "Lautsprecher-Einrichtung mit Fehler beendet (siehe oben)."
 
 sudo systemctl daemon-reload
 sudo systemctl enable peppa-player peppa-web

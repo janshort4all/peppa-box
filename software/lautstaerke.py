@@ -6,24 +6,63 @@ Lautstärke wird nur hier geregelt.
 
 Ausgänge:
   kopfhoerer    Klinke des Pi (Karte "Headphones", Regler "PCM"), läuft schon
-  lautsprecher  MAX98357A: der Verstärker hat keinen eigenen Regler. Erst wenn der Lautsprecher
-                eingebaut ist und eine Software-Lautstärke (ALSA softvol) eingerichtet wurde, hier
-                Karte und Reglername eintragen. Bis dahin gilt er als "nicht eingerichtet".
+  lautsprecher  MAX98357A: der Verstärker hat keinen eigenen Regler. Software-Lautstärke (ALSA
+                softvol "lautsprecher", Regler "Lautsprecher") richtet lautsprecher_einrichten.sh ein.
+                Die Karte wird in /proc/asound/cards gesucht (Name enthält "hifiberry"). Gilt als
+                eingerichtet, sobald Karte und Regler da sind; sonst "nicht eingerichtet".
 """
 import re
 import shutil
 import subprocess
+import time
 
 AUSGABEN = {
     "kopfhoerer": {"karte": "Headphones", "regler": "PCM"},
-    "lautsprecher": None,
+    "lautsprecher": {"suche": "hifiberry", "regler": "Lautsprecher"},
 }
+KARTEN_DATEI = "/proc/asound/cards"
+KARTE_ZEILE = re.compile(r"^\s*\d+\s+\[([^\]\s]+)\s*\]:(.*)$")
+NEU_SUCHEN_S = 30            # nicht gefunden: frühestens nach so vielen Sekunden neu suchen
+_gefunden = {}               # ausgang -> Kartenname (bleibt, einmal gefunden)
+_zuletzt_gesucht = {}        # ausgang -> Zeitpunkt der letzten erfolglosen Suche
 NAMEN = {"kopfhoerer": "Kopfhörer", "lautsprecher": "Lautsprecher"}
 PROZENT = re.compile(r"\[(\d{1,3})%\]")
 
 
+def _karte_suchen(muster):
+    try:
+        with open(KARTEN_DATEI, encoding="utf-8", errors="replace") as f:
+            for zeile in f:
+                m = KARTE_ZEILE.match(zeile)
+                if m and muster in zeile.lower():
+                    return m.group(1)
+    except OSError:
+        pass
+    return None
+
+
+def _ausgang(ausgang):
+    """Karte und Regler eines Ausgangs, None wenn nicht (oder noch nicht) eingerichtet."""
+    a = AUSGABEN.get(ausgang)
+    if not a:
+        return None
+    if "karte" in a:
+        return a
+    if ausgang in _gefunden:
+        return {"karte": _gefunden[ausgang], "regler": a["regler"]}
+    jetzt = time.monotonic()
+    if ausgang in _zuletzt_gesucht and jetzt - _zuletzt_gesucht[ausgang] < NEU_SUCHEN_S:
+        return None
+    _zuletzt_gesucht[ausgang] = jetzt
+    karte = _karte_suchen(a["suche"])
+    if karte and _amixer("-c", karte, "sget", a["regler"]) is not None:   # Regler muss es geben
+        _gefunden[ausgang] = karte
+        return {"karte": karte, "regler": a["regler"]}
+    return None
+
+
 def eingerichtet(ausgang):
-    return AUSGABEN.get(ausgang) is not None
+    return _ausgang(ausgang) is not None
 
 
 def aktive_ausgabe():
@@ -45,7 +84,7 @@ def _amixer(*args):
 
 def lesen(ausgang):
     """Aktuelle Lautstärke in Prozent, None wenn nicht lesbar oder Ausgang nicht eingerichtet."""
-    a = AUSGABEN.get(ausgang)
+    a = _ausgang(ausgang)
     if not a:
         return None
     aus = _amixer("-M", "-c", a["karte"], "sget", a["regler"])
@@ -55,7 +94,7 @@ def lesen(ausgang):
 
 def setzen(ausgang, prozent):
     """Stellt die Lautstärke ein (0 bis 100). Gibt True zurück, wenn amixer es angenommen hat."""
-    a = AUSGABEN.get(ausgang)
+    a = _ausgang(ausgang)
     if not a:
         return False
     prozent = max(0, min(100, int(round(prozent))))

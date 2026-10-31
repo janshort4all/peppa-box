@@ -215,3 +215,14 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - Empfehlung Cover: Farbdruck auf normalem Papier, laminieren (stabiler, abwischbar, ca. 0,25–0,35 mm), danach auf 67 × 68 mm schneiden.
 - **Am Probedruck prüfen:** Spiel des Covers (fällt es heraus, wenn die Karte kopfüber gehalten wird?), Steifigkeit der Karte oben (1,3 mm hinter dem Cover), Lesen durch die neue Kartenrückseite.
 - **Idee für später:** Druckvorlage für Cover auf der Eltern-Seite (Cover-Bild per Spotify Web API zur Karte holen, A4 mit Schnittmarken in Einlegergröße).
+
+## Nachtrag 31.10.2026 – Lautsprecher (MAX98357A) eingerichtet
+
+- Verstärker angeschlossen, `dtoverlay=hifiberry-dac` von Jan in `config.txt` ergänzt, `speaker-test` über die hifiberry-Karte erfolgreich.
+- **Neu `software/lautsprecher_einrichten.sh`** (wird von `dienst_einrichten.sh` aufgerufen, wiederholbar): ergänzt in `config.txt` `dtoverlay=hifiberry-dac` und `gpio=16=ip,pn` (SD/stumm als Eingang ohne Pull, sonst zieht der Pi den Pin nach unten), nur wenn `config.txt` mit `[all]` endet; sucht die Karte in `/proc/asound/cards` (Name mit „hifiberry“, nicht angenommen); legt in `/etc/asound.conf` einen eigenen Block (Markierungen `# >>> / <<< peppa-box lautsprecher`) mit softvol `lautsprecher`, Regler `Lautsprecher` an; stellt Raspotify auf `LIBRESPOT_DEVICE="lautsprecher"` um; legt den Regler beim ersten Mal an (1 s Stille) und stellt ihn auf 30 %, `alsactl store`.
+- **`lautstaerke.py`:** Ausgang `lautsprecher` = gesuchte hifiberry-Karte + Regler `Lautsprecher`. Gilt als eingerichtet, sobald Karte und Regler da sind (sonst alle 30 s neu geprüft). Damit gelten Eltern-Seite, Höchst-/Startlautstärke (Standard 70/40 %), Timer und Ruhezeit für den Lautsprecher.
+- **Folge bis zur Kopfhörer-Erkennung (Pin 37):** Die Pi-Klinke ist stumm, alles läuft über den Lautsprecher. Zurück auf die Klinke: in `/etc/raspotify/conf` `LIBRESPOT_DEVICE="plughw:CARD=Headphones,DEV=0"`.
+- Update-Hinweis der Eltern-Seite erscheint jetzt auch bei Änderungen an `lautsprecher_einrichten.sh`.
+- Geprüft ohne Hardware: `software/test_lautsprecher.py` (11 Tests: Kartensuche, Regler fehlt, spätere Einrichtung, Skript mit nachgebauten Systemdateien, zweiter Lauf ändert nichts, Abbruch ohne `[all]`, Raspotify ohne Device-Zeile); `test_automatik` weiter grün.
+- **Am Pi einmal ausführen:** Update über die Eltern-Seite, dann per SSH `sh ~/peppa-box/software/dienst_einrichten.sh`. Root-Änderungen (config.txt, asound.conf, Raspotify) gehen bewusst nicht über die Seite, weil sie ohne Passwort erreichbar ist.
+- **Am Pi noch zu prüfen:** Karte auflegen → Ton aus dem Lautsprecher; Regler der Eltern-Seite wirkt; nach Neustart nicht stumm (GPIO 16); Prozentwerte klingen sinnvoll.

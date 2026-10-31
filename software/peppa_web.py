@@ -282,7 +282,8 @@ def nach_versionswechsel(geaendert, text):
     meldung = text + " Musik startet neu."
     if code != 0:
         meldung += " Neustart des Players fehlgeschlagen: " + aus
-    if "software/dienst_einrichten.sh" in geaendert.split():
+    einrichtung = {"software/dienst_einrichten.sh", "software/lautsprecher_einrichten.sh"}
+    if einrichtung & set(geaendert.split()):
         meldung += (" Hinweis: Die Einrichtung hat sich geändert. Einmal am Pi "
                     "'sh ~/peppa-box/software/dienst_einrichten.sh' ausführen.")
     selbst_neu_starten()

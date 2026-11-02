@@ -469,11 +469,29 @@ class Handler(BaseHTTPRequestHandler):
         self._antwort(200, erg)
 
 
+class DoppelServer(ThreadingHTTPServer):
+    """Lauscht auf IPv6 und IPv4 zugleich (Windows spricht peppabox.local oft per IPv6 an).
+    Nur-IPv4 hatte am 02.11.2026 zur Folge: SSH ging, die Eltern-Seite nicht."""
+    address_family = socket.AF_INET6
+
+    def server_bind(self):
+        self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+        super().server_bind()
+
+
+def server_starten(port):
+    """Erst IPv6+IPv4, falls IPv6 auf dem Geraet fehlt nur IPv4."""
+    try:
+        return DoppelServer(("::", port), Handler)
+    except OSError:
+        return ThreadingHTTPServer(("0.0.0.0", port), Handler)
+
+
 def main():
     server = []
     for port in PORTS:
         try:
-            s = ThreadingHTTPServer(("0.0.0.0", port), Handler)
+            s = server_starten(port)
         except OSError as e:
             log(f"Port {port} nicht moeglich ({e.strerror}), ueberspringe.")
             continue

@@ -50,8 +50,27 @@ if command -v iw > /dev/null && [ -d /sys/class/net/wlan0 ]; then
     sudo iw dev wlan0 set power_save off 2> /dev/null || true
 fi
 
-# --- cloud-init abschalten: braucht nur der allererste Start (Raspberry Pi Imager: WLAN, Benutzer),
-#     kostet danach bei jedem Start ca. 4-5 s. Rueckgaengig: sudo rm /etc/cloud/cloud-init.disabled
+# --- Rechnername festschreiben, dann cloud-init abschalten.
+#     cloud-init braucht nur der allererste Start (Raspberry Pi Imager: WLAN, Benutzer, Name) und kostet
+#     danach bei jedem Start ca. 4-5 s. Es hat aber den Namen bei jedem Start gesetzt: ohne Festschreiben
+#     ist die Box danach nicht mehr als peppabox.local erreichbar (passiert am 02.11.2026).
+#     Rueckgaengig: sudo rm /etc/cloud/cloud-init.disabled
+NAME="$(hostname)"
+case "$NAME" in
+    ""|localhost|localhost.*|raspberrypi) NAME="peppabox" ;;
+esac
+if [ "$(cat /etc/hostname 2> /dev/null)" != "$NAME" ] || [ "$(hostname)" != "$NAME" ]; then
+    sudo hostnamectl set-hostname "$NAME"
+    echo "Rechnername festgeschrieben: $NAME"
+fi
+if grep -q '^127\.0\.1\.1' /etc/hosts; then
+    if ! grep -q "^127\.0\.1\.1[[:space:]]\+$NAME\$" /etc/hosts; then
+        sudo sed -i "s/^127\.0\.1\.1.*/127.0.1.1\t$NAME/" /etc/hosts
+    fi
+else
+    printf '127.0.1.1\t%s\n' "$NAME" | sudo tee -a /etc/hosts > /dev/null
+fi
+sudo systemctl restart avahi-daemon 2> /dev/null || true
 if [ -d /etc/cloud ] && [ ! -f /etc/cloud/cloud-init.disabled ]; then
     sudo touch /etc/cloud/cloud-init.disabled
     echo "cloud-init abgeschaltet (schnellerer Start ab dem naechsten Einschalten)."

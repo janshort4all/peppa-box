@@ -5,6 +5,7 @@
 # Dazu: sudo-Freigabe nur fuer die Befehle, die die Eltern-Seite braucht (/etc/sudoers.d/peppa-box),
 # und die Gruppen fuer Akku (i2c), Protokoll (adm), Stromversorgung (video) und Lautstaerke (audio).
 # Ausserdem den Lautsprecher (lautsprecher_einrichten.sh) und: Raspotify startet erst mit Netz.
+# Und: WLAN-Stromsparen aus (sonst nach einer Weile nicht mehr erreichbar).
 # Aufruf (als normaler Benutzer, nicht als root):  sh ~/peppa-box/software/dienst_einrichten.sh
 # Kann beliebig oft wiederholt werden.
 set -e
@@ -33,6 +34,21 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 EOF
+
+# --- WLAN-Stromsparen aus: sonst ist die Box nach einiger Zeit ohne Verkehr ueber WLAN nicht mehr
+#     erreichbar (Eltern-Seite, SSH, peppabox.local), waehrend Spotify weiterlaeuft.
+if [ -d /etc/NetworkManager/conf.d ]; then
+    sudo tee /etc/NetworkManager/conf.d/peppa-wlan-stromsparen-aus.conf > /dev/null <<EOF
+# Peppa Box (erzeugt von dienst_einrichten.sh): WLAN-Stromsparen aus (2 = aus)
+[connection]
+wifi.powersave = 2
+EOF
+    echo "WLAN-Stromsparen aus (dauerhaft ab dem naechsten Einschalten)."
+fi
+# Sofort wirksam, ohne die WLAN-Verbindung neu aufzubauen (eine SSH-Sitzung bleibt bestehen)
+if command -v iw > /dev/null && [ -d /sys/class/net/wlan0 ]; then
+    sudo iw dev wlan0 set power_save off 2> /dev/null || true
+fi
 
 # --- Alter Startton-Dienst (02.11.2026 kurz eingebaut, ersetzt durch die Ansage im Player): entfernen
 if [ -f /etc/systemd/system/peppa-startton.service ]; then

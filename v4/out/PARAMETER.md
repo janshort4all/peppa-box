@@ -2,7 +2,7 @@
 
 Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Modell alles neu: Löcher, Halter, Kollisionsprüfung.
 
-## Vorläufig – am echten Teil messen (22)
+## Vorläufig – am echten Teil messen (21)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -13,7 +13,6 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `RC_T` | 1,6 | RC522 Platinendicke |
 | `RC_BEND` | 8 | Platz für den Kabelbogen hinter den Buchsen |
 | `RC_HDR_OFF` | 0 | Mitte der Stiftleiste gegenüber Platinenmitte, + = vom Deckel weg (nicht gemessen, mittig angenommen) |
-| `SW_H` | 7,3 | Tasterhöhe gesamt (Quellen: 7,3 bzw. 6,5) |
 | `ENC_WALL` | 2 | Wand am Drehgeber (Gewindelänge unbekannt) |
 | `ENC_OUT` | 14 | Achse ragt so weit aus der Wand |
 | `ENC_SLOT` | 1 | Schlitzbreite Achse |
@@ -43,7 +42,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `INS_GAP` | 0,6 | Tasche: Spalt an der Außenwand (Einleger laminiert ca. 0,25–0,35 mm) |
 | `ENC_HOLE` | 7,4 | Loch für M7-Gewinde |
 
-## Von dir gemessen (10)
+## Von dir gemessen (11)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -53,12 +52,13 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `RC_COMP` | 5 | Bauteilhöhe auf der Rückseite (Quarz, höchstes Bauteil) |
 | `RC_PIN_OUT` | 6 | Überstand der 90°-Stifte über die Platinenkante |
 | `RC_PLUG_OUT` | 14 | Platinenkante bis Ende Steckkabel-Hülse (gesteckt, Buchse sitzt bis an die Leiste) |
+| `SW_LEGS` | 13 | Breite über die Beinchen (Außenkante zu Außenkante), Jan ca. 13 mm; Taster 12 mm, Beinchen stehen seitlich über |
 | `ACRYL` | 85 / 55 | Acrylplatte unter dem Stapel (von dir gemessen) |
 | `STACK_H` | 70 | Acrylplatte bis Oberkante graue Klemmen, ohne Kabel |
 | `PINS_H` | 60 | Acrylplatte bis Spitzen der gelben Stifte |
 | `STACK_PAT` | 58 / 49 | Lochbild der Bolzen unter der Acrylplatte |
 
-## Aus Datenblatt belegt (11)
+## Aus Datenblatt belegt (12)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -69,12 +69,13 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `SPK_MAG` | 60 | Magnet-Ø |
 | `NFC_D` | 25 | NFC-Aufkleber Ø |
 | `SW` | 12 | Kurzhubtaster 12 × 12 |
+| `SW_H` | 7,3 | Tasterhöhe gesamt, Gehäuseunterseite bis Stößeloberkante (Etikett BerryBase KHT1212PV73: H 7,30; nachmessen) |
 | `UPS` | 85 / 56 | Akku-Board Grundriss |
 | `OVERHANG` | 20 | Akku-Board steht so weit über den Pi hinaus (85 − 65), BOOT-Taste dort |
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (79)
+## Gestaltung festgelegt (80)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -132,6 +133,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `BTN_MEMBRANE` | 0,2 | Opferschicht über dem Tastenloch am Muldenboden (kopfüber wird der Muldenboden als Brücke gedruckt); nach dem Druck mit Cutter ausschneiden |
 | `LID_EDGE_CH` | 0,5 | Fase 45° an der Deckel-Oberkante (kopfüber: verdeckt den Elefantenfuß) |
 | `SLOT_CH` | 0,6 | Einführfase am Kartenschlitz oben |
+| `SW_LEG_CLR` | 0,5 | Luft je Seite im Beinchen-Kanal des Tasterhalters |
 | `ENC_Y` | 84 | Drehgeber y |
 | `ENC_Z` | 60 | Drehgeber z |
 | `KNOB_D` | 34 | Knopf-Ø |

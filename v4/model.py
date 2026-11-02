@@ -128,6 +128,8 @@ LID_EDGE_CH = par("LID_EDGE_CH", 0.5, "festgelegt", "Fase 45° an der Deckel-Obe
 SLOT_CH = par("SLOT_CH", 0.6, "festgelegt", "Einführfase am Kartenschlitz oben")
 SW = par("SW", 12.0, "belegt", "Kurzhubtaster 12 × 12")
 SW_H = par("SW_H", 7.3, "belegt", "Tasterhöhe gesamt, Gehäuseunterseite bis Stößeloberkante (Etikett BerryBase KHT1212PV73: H 7,30; nachmessen)")
+SW_LEGS = par("SW_LEGS", 13.0, "gemessen", "Breite über die Beinchen (Außenkante zu Außenkante), Jan ca. 13 mm; Taster 12 mm, Beinchen stehen seitlich über")
+SW_LEG_CLR = par("SW_LEG_CLR", 0.5, "festgelegt", "Luft je Seite im Beinchen-Kanal des Tasterhalters")
 
 # Rechts: Drehgeber, Klinke
 ENC_Y = par("ENC_Y", 84.0, "festgelegt", "Drehgeber y")
@@ -538,7 +540,8 @@ def deckelrahmen():
     cut.append(box(BTN_X - s, BTN_Y - s, sw_bot, BTN_X + s, BTN_Y + s, RING_Z0 + 0.01))
     cut.append(cyl_z(BTN_X, BTN_Y, RING_Z0 - 0.01, RING_T + 1, COLLAR[2] + 0.5))
     cut.append(cyl_z(BTN_X, BTN_Y, RING_Z0 - 2.9, 2.9, SW / 2 + 0.2, COLLAR[2] + 0.5))     # 45°-Trichter, druckbar kopfüber
-    cut.append(box(BTN_X - 7, BTN_Y - 3.5, sw_bot - 4, BTN_X + 7, BTN_Y + 3.5, sw_bot + 0.01))   # Beinchen/Kabel
+    lx = SW_LEGS / 2 + SW_LEG_CLR
+    cut.append(box(BTN_X - lx, BTN_Y - 3.5, sw_bot - 4, BTN_X + lx, BTN_Y + 3.5, RING_Z0 + 0.01))   # Beinchen-Kanal: Taster mit Beinchen von oben einsetzen, Beinchen/Kabel unten raus
     cut.append(box(BTN_X - 3, BTN_Y - hw - 1, sw_bot, BTN_X + 3, BTN_Y - 5, sw_bot + 4))         # Kabelausgang
     return r - U(cut)
 

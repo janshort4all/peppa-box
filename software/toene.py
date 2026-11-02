@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Ansagen der Peppa Box. Nur Standardbibliothek.
 
-  bereit  „Peppa Box bereit“: Spotify kennt die Box, eine Karte startet jetzt Musik.
+  bereit  „Peppa Box bereit – viel Spaß“: Spotify kennt die Box, eine Karte startet jetzt Musik.
           Spielt der Player einmal je Einschalten (nicht nach Updates oder „Musik neu starten“).
 
 Die Ansagen liegen als WAV in software/ansagen/. Ausgabe über den gerade aktiven Ausgang

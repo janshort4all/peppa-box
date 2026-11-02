@@ -42,8 +42,10 @@ def status_schreiben():
 
 
 def warte_auf_geraet():
-    """Wartet, bis Raspotify bei Spotify angemeldet ist (nach dem Einschalten dauert das etwas)."""
+    """Wartet, bis Raspotify bei Spotify angemeldet ist (nach dem Einschalten dauert das etwas).
+    Die erste Minute wird jede Sekunde gefragt (Ansage kommt sofort), danach alle 5 s."""
     gemeldet = False
+    beginn = time.time()
     while True:
         status_schreiben()
         try:
@@ -58,7 +60,7 @@ def warte_auf_geraet():
             if not gemeldet:
                 log(f"Warte auf Spotify ({e!r}) ...")
                 gemeldet = True
-        time.sleep(5)
+        time.sleep(1 if time.time() - beginn < 60 else 5)
 
 
 def main():

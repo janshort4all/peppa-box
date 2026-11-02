@@ -50,6 +50,13 @@ if command -v iw > /dev/null && [ -d /sys/class/net/wlan0 ]; then
     sudo iw dev wlan0 set power_save off 2> /dev/null || true
 fi
 
+# --- cloud-init abschalten: braucht nur der allererste Start (Raspberry Pi Imager: WLAN, Benutzer),
+#     kostet danach bei jedem Start ca. 4-5 s. Rueckgaengig: sudo rm /etc/cloud/cloud-init.disabled
+if [ -d /etc/cloud ] && [ ! -f /etc/cloud/cloud-init.disabled ]; then
+    sudo touch /etc/cloud/cloud-init.disabled
+    echo "cloud-init abgeschaltet (schnellerer Start ab dem naechsten Einschalten)."
+fi
+
 # --- Alter Startton-Dienst (02.11.2026 kurz eingebaut, ersetzt durch die Ansage im Player): entfernen
 if [ -f /etc/systemd/system/peppa-startton.service ]; then
     sudo systemctl disable peppa-startton > /dev/null 2>&1 || true

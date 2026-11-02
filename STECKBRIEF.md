@@ -266,3 +266,8 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Gegen das Knacken beim Ein-/Ausschalten:** `config.txt` jetzt `gpio=16=op,dl` (SD beim Start low = stumm; ersetzt `ip,pn`). `peppa-stille`: vor dem Start SD low, Stille starten, 0,5 s später SD frei (Eingang ohne Pull); beim Stoppen erst SD low, dann Stille aus. Raspotify bekommt `PrivateIPC=no` (Zusatzdatei `peppa-ipc.conf`), damit es den Mischer mitbenutzen kann. Skript macht am Ende eine Probe (zweites Programm spielt neben der Stille).
 - Nebenwirkung: Verstärker dauerhaft an (laut Hersteller wenige mA Ruhestrom), etwas CPU für die Stille. Akkulaufzeit beobachten.
 - Geprüft ohne Hardware: ALSA liest die Konfiguration fehlerfrei (`aplay -L`), `test_lautsprecher.py` angepasst (12 Tests). **Am Pi prüfen:** kein Knacken bei Karte/Ansage, beim Einschalten, beim Ausschalten; `systemctl status peppa-stille`.
+
+## Nachtrag 02.11.2026 – Startzeit
+- Messung (`systemd-analyze`, Neustart 21:50): Kernel 4,2 s + Userspace 47,0 s; Ansage „bereit“ bei ca. 57 s. Kritischer Pfad: cloud-init (main 3,55 s + local 0,76 s + network 0,27 s) → NetworkManager 14,8 s → NetworkManager-wait-online 19,1 s → network-online bei ca. 50 s → Raspotify → Player (fragte nur alle 5 s).
+- Umgesetzt: `dienst_einrichten.sh` schaltet **cloud-init** ab (`/etc/cloud/cloud-init.disabled`, nur für den ersten Start mit dem Imager nötig; rückgängig durch Löschen der Datei). Player fragt Spotify in der ersten Minute **jede Sekunde** statt alle 5 s.
+- **Offen, größter Posten:** WLAN-Aufbau (NetworkManager + wait-online ≈ 34 s). Nächster Schritt: `journalctl -b -u NetworkManager -o short-monotonic` ansehen (Suche, Anmeldung, DHCP, IPv6?).

@@ -36,7 +36,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 - MAX98357A-Klon (Lautsprecher, I2S an Pin 12, 35, 40; SD/stumm an Pin 36)
 - Visaton FRS 8, 4 Ω, in eigener geschlossener Kammer vorne
 - Kopfhörer: **direkt aus der Klinke des Pi** (DAC entfällt, 25.10.). Kabel Goobay 67782 (ein Stecker 90°) halbiert zur Lumberg 1503-09 in der rechten Wand. Steckererkennung: Öffner L an Pin 37. Beim Ein-/Ausstecken stellt das Programm den Spotify-Ausgang um (3–5 s Pause), Lautsprecher stumm, Lautstärke begrenzt
-- RC522 (SPI), MPR121 (I2C 0x5A, 4 Kupfer-Touchfelder im Deckel), STEC11B03 Drehgeber, DTS-24R hinter gedruckter Ein-Taste (an SCL zum Wecken)
+- RC522 (SPI), MPR121 (I2C 0x5A, 4 Kupfer-Touchfelder im Deckel), STEC11B03 Drehgeber, Kurzhubtaster 12 × 12 × 7,3 (BerryBase KHT1212PV73) hinter gedruckter Ein-Taste (an SCL zum Wecken)
 - WAGO: auf dem Boden 5 V (3-fach) und GND A (5-fach); unter dem Deckel 3,3 V, SCL (je 3-fach) und GND B (5-fach)
 - Elko 1000 µF / 10 V an 5 V / GND A
 
@@ -245,3 +245,12 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - Geprüft ohne Hardware: `test_toene.py` (8 Tests). **Am Pi prüfen:** beide Töne nach dem Einschalten hörbar; Zeitpunkte mit `journalctl -b -u peppa-startton -u peppa-player --no-pager -o short-monotonic | head -30`.
 - Offen/Idee: Fehlerton, wenn nach ca. 60 s kein WLAN/Spotify.
 - **Änderung (02.11., ersetzt die Signaltöne oben):** Keine Pieptöne mehr. Stattdessen die Ansage **„Peppa Box bereit“** (Stimme „Helmut“, von Jan mit ElevenLabs erzeugt), sobald eine Karte Musik starten kann – also wenn Spotify die Box kennt, einmal je Einschalten, über den aktiven Ausgang in der Startlautstärke. Datei `software/ansagen/peppa_box_bereit.wav` (aus Jans MP3: Ende ab 2,62 s abgeschnitten, 80 ms ausgeblendet, Spitze −3 dBFS, 150 ms Stille vorne gegen Verschlucken beim Aufwachen des Verstärkers, 44,1 kHz mono). Startton-Dienst entfernt; `dienst_einrichten.sh` räumt einen schon eingerichteten `peppa-startton` wieder ab. Test von Hand: `python3 ~/peppa-box/software/toene.py bereit`. Tests: `test_toene.py` (6).
+
+## Nachtrag 02.11.2026 – Kurzhubtaster KHT1212PV73 geprüft
+
+- Geliefert: BerryBase KHT1212PV73, 12 × 12 mm, H 7,30 mm (Etikett), Stößel 3,8 × 3,8 mm (Shopangabe). Hub steht nirgends, bei 12 × 12 üblich 0,25–0,3 mm (nicht belegt).
+- Modell v4 ist schon seit 25.10. auf genau diesen Taster ausgelegt (`SW` 12, `SW_H` 7,3; jetzt Status „belegt“ statt „vorläufig“). Die alte Angabe „DTS-24R“ in der Hardwareliste ist ersetzt.
+- Kette in Ruhe: Kragen der Kappe liegt unter dem Deckel an, Stößel Ø 5 endet 0,05 mm über dem Taster. Beim Drücken bleiben bis zum Anschlag am Trichter 0,52 mm, also ca. 0,2 mm Reserve über dem Schaltweg. Die Taschenwand fängt kräftiges Drücken nicht ab, der 3-mm-Halterboden trägt.
+- Einbau: Beinchen nach links/rechts (Schlitz 14 × 7 mm läuft in x). Um 90° gedreht passen die Beinchen nicht durch. Anschluss diagonal (zwei gegenüberliegende Ecken), dann ist die Belegung egal.
+- Toleranz: Ist der Taster 0,2 mm niedriger als 7,3, schaltet er knapp oder gar nicht. Ausgleich nur über die Kappe (`PLUNGER_L`), Rahmen bleibt. Höhe mit dem Messschieber nachmessen; Coupon C3 (Halter, Kappe, Deckelstück) zeigt es am Druck.
+

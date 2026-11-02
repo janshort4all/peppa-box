@@ -127,7 +127,7 @@ BTN_MEMBRANE = par("BTN_MEMBRANE", 0.2, "festgelegt", "Opferschicht über dem Ta
 LID_EDGE_CH = par("LID_EDGE_CH", 0.5, "festgelegt", "Fase 45° an der Deckel-Oberkante (kopfüber: verdeckt den Elefantenfuß)")
 SLOT_CH = par("SLOT_CH", 0.6, "festgelegt", "Einführfase am Kartenschlitz oben")
 SW = par("SW", 12.0, "belegt", "Kurzhubtaster 12 × 12")
-SW_H = par("SW_H", 7.3, "vorläufig", "Tasterhöhe gesamt (Quellen: 7,3 bzw. 6,5)")
+SW_H = par("SW_H", 7.3, "belegt", "Tasterhöhe gesamt, Gehäuseunterseite bis Stößeloberkante (Etikett BerryBase KHT1212PV73: H 7,30; nachmessen)")
 
 # Rechts: Drehgeber, Klinke
 ENC_Y = par("ENC_Y", 84.0, "festgelegt", "Drehgeber y")

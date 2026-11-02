@@ -2,7 +2,6 @@
 # Richtet die Dienste der Peppa Box ein. Beide starten beim Einschalten und nach Fehlern neu.
 #   peppa-player  Karten lesen, Spotify steuern
 #   peppa-web     Eltern-Seite (Zustand, Neustart, Ausschalten, Update), Port 80 und 8080
-#   peppa-startton  Startton beim Einschalten (einmalig, vor dem WLAN); Bereit-Ton spielt der Player
 # Dazu: sudo-Freigabe nur fuer die Befehle, die die Eltern-Seite braucht (/etc/sudoers.d/peppa-box),
 # und die Gruppen fuer Akku (i2c), Protokoll (adm), Stromversorgung (video) und Lautstaerke (audio).
 # Ausserdem den Lautsprecher (lautsprecher_einrichten.sh) und: Raspotify startet erst mit Netz.
@@ -35,23 +34,12 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
-# --- Startton: sobald der Ton bereit ist, noch vor dem WLAN (einmal je Einschalten)
-sudo tee /etc/systemd/system/peppa-startton.service > /dev/null <<EOF
-[Unit]
-Description=Peppa Box Startton
-After=sound.target alsa-restore.service
-Wants=sound.target
-
-[Service]
-Type=oneshot
-User=$BENUTZER
-WorkingDirectory=$ORDNER
-ExecStart=/usr/bin/python3 $ORDNER/toene.py start
-TimeoutStartSec=20
-
-[Install]
-WantedBy=multi-user.target
-EOF
+# --- Alter Startton-Dienst (02.11.2026 kurz eingebaut, ersetzt durch die Ansage im Player): entfernen
+if [ -f /etc/systemd/system/peppa-startton.service ]; then
+    sudo systemctl disable peppa-startton > /dev/null 2>&1 || true
+    sudo rm -f /etc/systemd/system/peppa-startton.service
+    echo "Alter Startton-Dienst entfernt."
+fi
 
 # --- Eltern-Seite
 sudo tee /etc/systemd/system/peppa-web.service > /dev/null <<EOF
@@ -116,7 +104,7 @@ fi
 sh "$ORDNER/lautsprecher_einrichten.sh" || echo "Lautsprecher-Einrichtung mit Fehler beendet (siehe oben)."
 
 sudo systemctl daemon-reload
-sudo systemctl enable peppa-player peppa-web peppa-startton
+sudo systemctl enable peppa-player peppa-web
 sudo systemctl restart peppa-player peppa-web
 sleep 3
 systemctl status peppa-player --no-pager | head -n 5

@@ -5,7 +5,7 @@ Den Link schreibt man mit einer Handy-App (z. B. NFC Tools: Schreiben -> URL) au
 Zustand (Karte, Link, Spotify bereit, Ausgang, Ruhezeit, Auto-Aus) schreibt der Player nach
 /dev/shm/peppa-box-status.json; die Eltern-Seite (Dienst peppa-web, peppa_web.py) zeigt ihn an.
 Die Automatik (Schlummer-Timer, Ruhezeit, Auto-Aus, Lautstärke-Grenzen) steht in automatik.py.
-Töne: Bereit-Ton, sobald Spotify die Box kennt (toene.py); Startton kommt vom Dienst peppa-startton.
+Ansage „Peppa Box bereit“, sobald Spotify die Box kennt und eine Karte Musik starten kann (toene.py).
 Start von Hand: python3 ~/peppa-box/software/peppa_player.py   (laeuft sonst als Dienst peppa-player)
 """
 import json
@@ -70,7 +70,7 @@ def main():
     dev = warte_auf_geraet()
     ZUSTAND["spotify_bereit"] = True
     log("Bereit. Karte auflegen.")
-    if not auto.sperrt():                       # Bereit-Ton, einmal je Einschalten (nicht in der Ruhezeit "keine Musik")
+    if not auto.sperrt():                       # Ansage, einmal je Einschalten (nicht in der Ruhezeit "keine Musik")
         toene.einmal_je_einschalten("bereit", log=log)
     aktuell, zuletzt, letzte_sicht = None, None, 0.0
     while True:

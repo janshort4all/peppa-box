@@ -259,3 +259,10 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 ## Nachtrag 02.11.2026 – Box nach einer Weile nicht mehr erreichbar
 - Befund Jan: Musik läuft, aber `peppabox.local` (Eltern-Seite, SSH) nach einiger Zeit nicht mehr erreichbar. Vermutete Ursache: Stromsparmodus des WLAN-Chips (brcmfmac) – eingehende Anfragen bleiben liegen, ausgehende Verbindungen (Spotify) laufen weiter. Noch am Pi bestätigen: `iw dev wlan0 get power_save` (vorher „on“).
 - `dienst_einrichten.sh` legt `/etc/NetworkManager/conf.d/peppa-wlan-stromsparen-aus.conf` an (`wifi.powersave = 2`, dauerhaft ab dem nächsten Einschalten) und schaltet es sofort mit `iw dev wlan0 set power_save off` ab (ohne die Verbindung neu aufzubauen). Etwas mehr Stromverbrauch im Leerlauf; Akkulaufzeit beobachten.
+
+## Nachtrag 02.11.2026 – Knacken beim Abspielbeginn
+- Befund: Lautes Knacken bei jedem Abspielbeginn (Karte, Ansage). Ursache: In Pausen stoppt der Pi den I2S-Takt, der MAX98357A schaltet ab und springt beim nächsten Ton hart wieder an.
+- **Lösung (in `lautsprecher_einrichten.sh`):** Mischer `peppa_dmix` (44,1 kHz, S16_LE, `ipc_perm 0666`) → `peppa_plug` → softvol `lautsprecher` (Regler wie bisher). Neuer Dienst **`peppa-stille`** spielt dauerhaft Stille in den Mischer; Spotify und Ansage werden dazugemischt, der Takt reißt nie ab.
+- **Gegen das Knacken beim Ein-/Ausschalten:** `config.txt` jetzt `gpio=16=op,dl` (SD beim Start low = stumm; ersetzt `ip,pn`). `peppa-stille`: vor dem Start SD low, Stille starten, 0,5 s später SD frei (Eingang ohne Pull); beim Stoppen erst SD low, dann Stille aus. Raspotify bekommt `PrivateIPC=no` (Zusatzdatei `peppa-ipc.conf`), damit es den Mischer mitbenutzen kann. Skript macht am Ende eine Probe (zweites Programm spielt neben der Stille).
+- Nebenwirkung: Verstärker dauerhaft an (laut Hersteller wenige mA Ruhestrom), etwas CPU für die Stille. Akkulaufzeit beobachten.
+- Geprüft ohne Hardware: ALSA liest die Konfiguration fehlerfrei (`aplay -L`), `test_lautsprecher.py` angepasst (12 Tests). **Am Pi prüfen:** kein Knacken bei Karte/Ansage, beim Einschalten, beim Ausschalten; `systemctl status peppa-stille`.

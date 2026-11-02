@@ -111,6 +111,7 @@ class Einrichtungsskript(unittest.TestCase):
         self.asound = os.path.join(d, "asound.conf")
         self.rasp = os.path.join(d, "raspotify.conf")
         self.cards = os.path.join(d, "cards")
+        self.systemd = os.path.join(d, "systemd")
         bin_ = os.path.join(d, "bin")
         os.mkdir(bin_)
         # sudo: Befehl ohne Rechte ausführen; install ohne -o/-g
@@ -118,7 +119,7 @@ class Einrichtungsskript(unittest.TestCase):
         self.skript(bin_, "pinctrl", "exit 0")
         self.env = dict(os.environ, PATH=bin_ + ":" + os.environ["PATH"], PEPPA_CONFIG_TXT=self.cfg,
                         PEPPA_ASOUND=self.asound, PEPPA_RASPOTIFY=self.rasp, PEPPA_KARTEN=self.cards,
-                        PEPPA_TROCKEN="1")
+                        PEPPA_SYSTEMD=self.systemd, PEPPA_TROCKEN="1")
 
     @staticmethod
     def skript(ordner, name, inhalt):
@@ -147,22 +148,46 @@ class Einrichtungsskript(unittest.TestCase):
         r = self.lauf()
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         cfg = self.lesen(self.cfg)
-        self.assertTrue(cfg.endswith("dtparam=spi=on\ndtoverlay=hifiberry-dac\ngpio=16=ip,pn\n"))
+        self.assertTrue(cfg.endswith("dtparam=spi=on\ndtoverlay=hifiberry-dac\ngpio=16=op,dl\n"))
         a = self.lesen(self.asound)
         self.assertTrue(a.startswith("# vorhandener Inhalt\n"))
-        self.assertIn('slave.pcm "plughw:CARD=sndrpihifiberry,DEV=0"', a)
+        self.assertIn('pcm "hw:CARD=sndrpihifiberry,DEV=0"', a)
+        self.assertIn("type dmix", a)
+        self.assertIn("ipc_perm 0666", a)
+        self.assertIn('slave.pcm "peppa_plug"', a)
         self.assertIn("card sndrpihifiberry", a)
+        dienst = self.lesen(os.path.join(self.systemd, "peppa-stille.service"))
+        self.assertIn("-D peppa_dmix", dienst)
+        self.assertLess(dienst.index("ExecStartPre=") , dienst.index("ExecStart="))
+        self.assertRegex(dienst, r"ExecStartPre=\S*pinctrl set 16 op dl")
+        self.assertRegex(dienst, r"ExecStartPost=.*sleep 0\.5; \S*pinctrl set 16 ip pn")
+        self.assertRegex(dienst, r"ExecStop=\S*pinctrl set 16 op dl")
+        self.assertIn("PrivateIPC=no", self.lesen(os.path.join(self.systemd, "raspotify.service.d", "peppa-ipc.conf")))
         rasp = self.lesen(self.rasp)
         self.assertIn('\nLIBRESPOT_DEVICE="lautsprecher"\n', rasp)
         self.assertIn('#LIBRESPOT_DEVICE="default"', rasp)            # Kommentar bleibt
         self.assertNotIn("Headphones", rasp)
         self.assertIn("neu starten", r.stdout)
-        vorher = (cfg, a, rasp)
+        vorher = (cfg, a, rasp, dienst)
         r = self.lauf()                                                # zweiter Lauf ändert nichts
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        self.assertEqual(vorher, (self.lesen(self.cfg), self.lesen(self.asound), self.lesen(self.rasp)))
+        self.assertEqual(vorher, (self.lesen(self.cfg), self.lesen(self.asound), self.lesen(self.rasp),
+                                  self.lesen(os.path.join(self.systemd, "peppa-stille.service"))))
+        self.assertNotIn("eingerichtet", r.stdout)
         self.assertNotIn("neu starten", r.stdout)
         self.assertEqual(self.lesen(self.asound).count("pcm.lautsprecher"), 1)
+
+    def test_alte_sd_zeile_wird_ersetzt(self):
+        self.schreiben(self.cfg, CONFIG_TXT + "dtoverlay=hifiberry-dac\ngpio=16=ip,pn\n")
+        self.schreiben(self.rasp, RASPOTIFY)
+        self.schreiben(self.cards, KARTEN_MIT)
+        r = self.lauf()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        cfg = self.lesen(self.cfg)
+        self.assertIn("gpio=16=op,dl\n", cfg)
+        self.assertNotIn("ip,pn", cfg)
+        self.assertEqual(cfg.count("gpio=16="), 1)
+        self.assertIn("neu starten", r.stdout)
 
     def test_hifiberry_schon_da_kein_doppel(self):
         self.schreiben(self.cfg, CONFIG_TXT + "dtoverlay=hifiberry-dac\n")

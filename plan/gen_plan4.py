@@ -87,7 +87,7 @@ for i, (mp, tgt, kind, fn) in enumerate(MAXP):
         wire([(RX0 - 26, yy), (RX0, yy)], kind); dot(RX0, yy, kind); tag(RX0 - 30, yy, tgt, "end")
 mb = py + 5 * DY + 20
 box(RX0, top, RX1, mb)
-text(RX0 + 14, top + 24, "MAX98357A Verstärker", "mtitle"); text(RX0 + 14, top + 42, "GAIN frei lassen (9 dB)", "msub")
+text(RX0 + 14, top + 24, "MAX98357A Verstärker", "mtitle"); text(RX0 + 14, top + 42, "GAIN an GND A (12 dB)", "msub")
 # Lautsprecher
 spy = (top + mb) / 2
 wire([(RX1, spy - 10), (1100, spy - 10)], "aud"); wire([(RX1, spy + 10), (1100, spy + 10)], "aud")
@@ -163,7 +163,7 @@ text((SX0 + SX1) / 2, PI_Y0 + 90, "2 × 21700 · USB-C zum Laden", "msub", "midd
 # ---------- Hebelklemmen unten ----------
 WAGOS = [
     ("5V", "3-fach · Boden", ["Aufsatz Pin 2 (5 V)", "MAX VIN", "Elko +"]),
-    ("GNDA", "5-fach · Boden", ["Aufsatz Pin 6 (GND)", "MAX GND", "Elko −", "Drehgeber C", "frei"]),
+    ("GNDA", "5-fach · Boden", ["Aufsatz Pin 6 (GND)", "MAX GND", "Elko −", "Drehgeber C", "MAX GAIN"]),
     ("3V3", "3-fach · Deckel", ["Aufsatz Pin 1 (3,3 V)", "RC522 3.3V", "MPR121 VIN"]),
     ("SCL", "3-fach · Deckel", ["Aufsatz Pin 5 (SCL)", "MPR121 SCL", "Ein-Taste Bein 1"]),
     ("GNDB", "5-fach · Deckel", ["Aufsatz Pin 9 (GND)", "RC522 GND", "MPR121 GND", "Ein-Taste Bein 2", "frei"]),
@@ -208,7 +208,7 @@ CABLES = [
     ("Verstärker und Lautsprecher", "Steckkabel-Hälften; Lautsprecher mit zwei Adern", [
         ("mx1", "MAX BCLK", "Aufsatz Pin 12 (GPIO 18)"), ("mx2", "MAX LRC", "Aufsatz Pin 35 (GPIO 19)"),
         ("mx3", "MAX DIN", "Aufsatz Pin 40 (GPIO 21)"), ("mx4", "MAX SD", "Aufsatz Pin 36 (GPIO 16)"),
-        ("mx5", "MAX VIN", "Hebelklemme 5 V"), ("mx6", "MAX GND", "Hebelklemme GND A"),
+        ("mx5", "MAX VIN", "Hebelklemme 5 V"), ("mx6", "MAX GND", "Hebelklemme GND A"), ("mx8", "MAX GAIN (lauter: 12 statt 9 dB)", "Hebelklemme GND A"),
         ("mx7", "MAX Klemme + und −", "Lautsprecher + und − (Lötfahnen)"),
     ]),
     ("Bedienteile", "Ader an das Bauteil gelötet, anderes Ende abisoliert", [

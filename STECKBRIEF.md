@@ -298,3 +298,11 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - USB-C-Breakout (Soldered) eingebaut: an der Platine 4,95 V, GND-Durchgang zum Stecker ok, **blaue LED am Akku-Board leuchtet** (laut Waveshare-Wiki UPS HAT (D): blau an = lädt, aus = voll, blinkt = Fehler). Buchse damit sehr wahrscheinlich in Ordnung. Netzteil: Notebook-USB-C-Netzteil (5-V-Angabe noch ablesen).
 - `akku.py` zeigt mit Netzteil trotzdem „akku“ (shunt −6,48 mV über die Buchse, −4,47 mV direkt; Akku 4,14–4,15 V ≈ 95 %). Waveshare: negativ = Akku gibt Strom ab (Laststrom), positiv = Ladestrom. Vermutung (nicht belegt): Bei fast vollem Akku lädt das Board nur noch wenig nach, Pi + Verstärker ziehen mehr → unterm Strich negativ. **Die Ladeanzeige der Eltern-Seite ist also bei fast vollem Akku irreführend.**
 - **Offen:** Test bei ca. 60 % Akku mit Netzteil in der Buchse (`shunt_mv` positiv erwartet). Danach Anzeige überarbeiten; möglich: prüfen, ob das zweite I2C-Gerät des Boards (0x2D) einen Ladezustand liefert (nicht belegt, erst nachsehen).
+
+## Nachtrag 02.11.2026 (3) – Ein-Taste bündig, Mulde entfällt
+
+- Befund am Druck: Kappe und Taster passen genau, Ringspalt gut. Die Mulde um die Taste wirkt billig.
+- Neu: **keine Mulde mehr**. Die Kappe endet **bündig** mit der Deckeloberfläche (`BTN_FLUSH` 0), sichtbar bleibt nur der Ringspalt 0,25 mm je Seite (`BTN_GAP`, wie gedruckt). Oberkante der Kappe mit Fase 0,3 mm (`BTN_TOP_CH`).
+- Bohrung geht glatt bis zur Oberfläche. Beim Druck kopfüber liegt die Öffnung auf der Platte → keine Brücke, **Opferschicht entfällt** (`DISH_D`, `DISH_DEPTH`, `DISH_WALL`, `BTN_MEMBRANE` gelöscht). Elefantenfuß-Kompensation (ca. 0,15 mm) bleibt wichtig, sonst wird das Loch an der Oberfläche enger.
+- Unter dem Deckel unverändert: Kragen, Stößel, Tasterhalter, Schaltweg. Die Kappe ist oben 1,5 mm länger. Neu gebaut: `02_deckel_einfarbig`, `02a`, `02b`, `08_ein_taste_orange`, Coupons C2 (Deckel), C3 (Deckelstück, Kappe), C9; Schnitt `ein_taste_schnitt.png`. Prüfungen ohne Kollision.
+- Folge: Die Mulde schützte gegen versehentliches Drücken. Ausgleich in der Software: Ausschalten erst nach ca. 2 s Halten, kurzes Drücken nur Wecken/Anzeige.

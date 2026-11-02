@@ -120,10 +120,9 @@ RC_XTAL_FREE = par("RC_XTAL_FREE", 18.0, "festgelegt", "deckelseitige Schiene: L
 BTN_X = par("BTN_X", 124.5, "festgelegt", "Ein-Taste x (hinten rechts)")
 BTN_Y = par("BTN_Y", 108.0, "festgelegt", "Ein-Taste y")
 BTN_D = par("BTN_D", 12.0, "festgelegt", "Tastenkopf-Ø")
-DISH_D = par("DISH_D", 20.0, "festgelegt", "Mulde um die Taste")
-DISH_DEPTH = par("DISH_DEPTH", 1.5, "festgelegt", "Taste liegt so tief (gegen versehentliches Drücken)")
-DISH_WALL = par("DISH_WALL", 45.0, "festgelegt", "Mulde um die Taste mit 45°-Wand (kopfüber druckbar, Boden Ø = DISH_D − 2 × DISH_DEPTH)")
-BTN_MEMBRANE = par("BTN_MEMBRANE", 0.2, "festgelegt", "Opferschicht über dem Tastenloch am Muldenboden (kopfüber wird der Muldenboden als Brücke gedruckt); nach dem Druck mit Cutter ausschneiden")
+BTN_GAP = par("BTN_GAP", 0.25, "Probedruck", "Luft je Seite zwischen Kappe und Deckelbohrung (Druck 02.11.: passt)")
+BTN_FLUSH = par("BTN_FLUSH", 0.0, "festgelegt", "Kappe endet bündig mit der Deckeloberfläche, keine Mulde (Jan 02.11.: Mulde wirkt billig)")
+BTN_TOP_CH = par("BTN_TOP_CH", 0.3, "festgelegt", "Fase an der Oberkante der Kappe (nimmt die Kante, kaum sichtbar)")
 LID_EDGE_CH = par("LID_EDGE_CH", 0.5, "festgelegt", "Fase 45° an der Deckel-Oberkante (kopfüber: verdeckt den Elefantenfuß)")
 SLOT_CH = par("SLOT_CH", 0.6, "festgelegt", "Einführfase am Kartenschlitz oben")
 SW = par("SW", 12.0, "belegt", "Kurzhubtaster 12 × 12")
@@ -476,7 +475,7 @@ def slot_chamfer():
 
 
 def deckel(einfarbig=False):
-    """Deckel. Gedacht für den Druck kopfüber (Oberseite auf der Platte): Symbole, Ringnuten, Fasen, Muldenwand druckbar ohne Stützen."""
+    """Deckel. Gedacht für den Druck kopfüber (Oberseite auf der Platte): Symbole, Ringnuten, Fasen druckbar ohne Stützen."""
     sym = pad_symbols()
     plate = lid_plate()
     if einfarbig:      # Prototyp: ein Körper, Symbole SKIN tief vertieft (ohne Vereinigung zweier Körper an einer gemeinsamen Fläche)
@@ -487,11 +486,8 @@ def deckel(einfarbig=False):
         skin = plate ^ box(-1, -1, LID_TOP - SKIN, W + 1, W + 1, LID_TOP + 1)
         skin = skin - slab(sym, LID_TOP - SKIN - 0.05, LID_TOP + 1)
     cut = [slot_cut(), slot_chamfer()]
-    # Taste: Mulde mit 45°-Wand, Bohrung endet unter einer Opferschicht am Muldenboden
-    rf = DISH_D / 2 - DISH_DEPTH / math.tan(math.radians(DISH_WALL))
-    cut.append(cyl_z(BTN_X, BTN_Y, LID_TOP - DISH_DEPTH, DISH_DEPTH + 1, rf, DISH_D / 2 + 1 / math.tan(math.radians(DISH_WALL))))
-    z_mem = LID_TOP - DISH_DEPTH - BTN_MEMBRANE
-    cut.append(cyl_z(BTN_X, BTN_Y, LID_BOT - 1, z_mem - (LID_BOT - 1), BTN_D / 2 + 0.25))
+    # Taste: glatte Bohrung bis zur Oberfläche, keine Mulde. Kopfüber liegt die Öffnung auf der Platte → keine Brücke, keine Opferschicht
+    cut.append(cyl_z(BTN_X, BTN_Y, LID_BOT - 1, LID_T + 2, BTN_D / 2 + BTN_GAP))
     # Taschen für Kupferband unter den Feldern (von unten)
     for (x, y, d) in PADS.values():
         cut.append(cyl_z(x, y, LID_BOT - 1, 1 + PAD_POCKET, d / 2 - 1.0))
@@ -570,8 +566,9 @@ def taste():
     """Kappe: Kopf in der Deckelbohrung, Kegelkragen als Anschlag unter dem Deckel, Stößel auf den Taster.
     Druck kopfüber: Kegel wächst unter 45° – keine Stütze."""
     ch, cy, cr = COLLAR
-    head = Manifold.batch_hull([cyl_z(BTN_X, BTN_Y, LID_BOT, LID_T - DISH_DEPTH - 0.5, BTN_D / 2),
-                                cyl_z(BTN_X, BTN_Y, LID_TOP - DISH_DEPTH - 0.01, 0.01, BTN_D / 2 - 0.5)])
+    top = LID_TOP - BTN_FLUSH
+    head = Manifold.batch_hull([cyl_z(BTN_X, BTN_Y, LID_BOT, top - BTN_TOP_CH - LID_BOT, BTN_D / 2),
+                                cyl_z(BTN_X, BTN_Y, top - 0.01, 0.01, BTN_D / 2 - BTN_TOP_CH)])
     cone = cyl_z(BTN_X, BTN_Y, LID_BOT - ch, ch + 0.01, cr, BTN_D / 2)
     cylr = cyl_z(BTN_X, BTN_Y, LID_BOT - ch - cy, cy + 0.01, cr)
     plunger = cyl_z(BTN_X, BTN_Y, LID_BOT - ch - cy - PLUNGER_L, PLUNGER_L + 0.01, 2.5)

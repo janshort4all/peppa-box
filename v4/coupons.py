@@ -112,7 +112,7 @@ def c8_bodenecke():
 
 def c9_kopfueber():
     """Deckel kopfüber (Oberseite auf der Platte), einfarbig: (a) Ecke vorne rechts mit Play, Vor, Kante und Kupfertaschen,
-    (b) Stück hinten rechts mit Ein-Taste-Mulde (Opferschicht), Ende des Kartenschlitzes mit Einführfase und Kante."""
+    (b) Stück hinten rechts mit bündiger Ein-Taste (Bohrung ohne Mulde), Ende des Kartenschlitzes mit Einführfase und Kante."""
     lid = M.deckel(einfarbig=True)
     a = lid ^ box(52, -1, 0, M.W + 1, 50, M.HB)
     b = lid ^ box(95, 92, 0, M.W + 1, 124, M.HB)

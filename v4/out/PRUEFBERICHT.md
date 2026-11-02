@@ -56,7 +56,7 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | 05_boden_traeger.stl | 140 × 140 × 8 | Decke der Senkbohrungen M2,5 (Ring 1,8 mm) |
 | 06_stoffrahmen.stl | 114 × 114 × 5 | – |
 | 07_drehknopf_orange.stl | 34 × 34 × 16 | – |
-| 08_ein_taste_orange.stl | 17 × 17 × 12 | – |
+| 08_ein_taste_orange.stl | 17 × 17 × 13 | – |
 | 09_riemen_gegenplatte.stl | 18 × 24 × 4 | – |
 
 Alle anderen Flächen sind steiler als 45° oder liegen auf der Platte. Kein Teil braucht Stützmaterial.

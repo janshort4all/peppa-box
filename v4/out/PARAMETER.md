@@ -28,7 +28,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `MAXB` | 19 / 18 / 8 | Verstärker-Klon L, B, Höhe mit Klemme |
 | `MPRB` | 25 / 20 / 4 | MPR121-Modul L, B, Höhe |
 
-## Mit Probedruck einstellen (9)
+## Mit Probedruck einstellen (10)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -40,6 +40,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `PIN_HOLE` | 4,1 | Loch für Rahmenstift (Coupon C4: 4,0 / 4,1 / 4,2) |
 | `PAD_POCKET` | 2 | Tasche unter dem Feld → 4 mm Kunststoff über dem Kupfer, unter den Symbolen 3,2 mm |
 | `INS_GAP` | 0,6 | Tasche: Spalt an der Außenwand (Einleger laminiert ca. 0,25–0,35 mm) |
+| `BTN_GAP` | 0,25 | Luft je Seite zwischen Kappe und Deckelbohrung (Druck 02.11.: passt) |
 | `ENC_HOLE` | 7,4 | Loch für M7-Gewinde |
 
 ## Von dir gemessen (11)
@@ -75,7 +76,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (80)
+## Gestaltung festgelegt (78)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -127,10 +128,8 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `BTN_X` | 124,5 | Ein-Taste x (hinten rechts) |
 | `BTN_Y` | 108 | Ein-Taste y |
 | `BTN_D` | 12 | Tastenkopf-Ø |
-| `DISH_D` | 20 | Mulde um die Taste |
-| `DISH_DEPTH` | 1,5 | Taste liegt so tief (gegen versehentliches Drücken) |
-| `DISH_WALL` | 45 | Mulde um die Taste mit 45°-Wand (kopfüber druckbar, Boden Ø = DISH_D − 2 × DISH_DEPTH) |
-| `BTN_MEMBRANE` | 0,2 | Opferschicht über dem Tastenloch am Muldenboden (kopfüber wird der Muldenboden als Brücke gedruckt); nach dem Druck mit Cutter ausschneiden |
+| `BTN_FLUSH` | 0 | Kappe endet bündig mit der Deckeloberfläche, keine Mulde (Jan 02.11.: Mulde wirkt billig) |
+| `BTN_TOP_CH` | 0,3 | Fase an der Oberkante der Kappe (nimmt die Kante, kaum sichtbar) |
 | `LID_EDGE_CH` | 0,5 | Fase 45° an der Deckel-Oberkante (kopfüber: verdeckt den Elefantenfuß) |
 | `SLOT_CH` | 0,6 | Einführfase am Kartenschlitz oben |
 | `SW_LEG_CLR` | 0,5 | Luft je Seite im Beinchen-Kanal des Tasterhalters |

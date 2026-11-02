@@ -293,3 +293,8 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - Grenzen: WLANs mit Anmeldeseite (Hotels) gehen nur über den Handy-Hotspot.
 - **Vorher reparieren:** `peppa-wlan-rueckfall` würde ohne bekanntes WLAN (Urlaub) nach 120 s die Netplan-Sicherung zurückholen und `peppa-wlan` löschen (nicht gefährlich, Heim-WLAN bleibt, aber Start wieder langsam). Soll sich nach dem ersten erfolgreichen Start abschalten.
 - Empfehlung: erst Baustein 1+2, danach 3.
+
+## Nachtrag 02.11.2026 – USB-C-Buchse und Ladeanzeige
+- USB-C-Breakout (Soldered) eingebaut: an der Platine 4,95 V, GND-Durchgang zum Stecker ok, **blaue LED am Akku-Board leuchtet** (laut Waveshare-Wiki UPS HAT (D): blau an = lädt, aus = voll, blinkt = Fehler). Buchse damit sehr wahrscheinlich in Ordnung. Netzteil: Notebook-USB-C-Netzteil (5-V-Angabe noch ablesen).
+- `akku.py` zeigt mit Netzteil trotzdem „akku“ (shunt −6,48 mV über die Buchse, −4,47 mV direkt; Akku 4,14–4,15 V ≈ 95 %). Waveshare: negativ = Akku gibt Strom ab (Laststrom), positiv = Ladestrom. Vermutung (nicht belegt): Bei fast vollem Akku lädt das Board nur noch wenig nach, Pi + Verstärker ziehen mehr → unterm Strich negativ. **Die Ladeanzeige der Eltern-Seite ist also bei fast vollem Akku irreführend.**
+- **Offen:** Test bei ca. 60 % Akku mit Netzteil in der Buchse (`shunt_mv` positiv erwartet). Danach Anzeige überarbeiten; möglich: prüfen, ob das zweite I2C-Gerät des Boards (0x2D) einen Ladezustand liefert (nicht belegt, erst nachsehen).

@@ -4,7 +4,7 @@
 #   peppa-web     Eltern-Seite (Zustand, Neustart, Ausschalten, Update), Port 80 und 8080
 # Dazu: sudo-Freigabe nur fuer die Befehle, die die Eltern-Seite braucht (/etc/sudoers.d/peppa-box),
 # und die Gruppen fuer Akku (i2c), Protokoll (adm), Stromversorgung (video) und Lautstaerke (audio).
-# Ausserdem den Lautsprecher (lautsprecher_einrichten.sh).
+# Ausserdem den Lautsprecher (lautsprecher_einrichten.sh) und: Raspotify startet erst mit Netz.
 # Aufruf (als normaler Benutzer, nicht als root):  sh ~/peppa-box/software/dienst_einrichten.sh
 # Kann beliebig oft wiederholt werden.
 set -e
@@ -72,6 +72,26 @@ rm -f "$TMP"
 for G in i2c adm video audio; do
     if getent group "$G" > /dev/null; then sudo usermod -aG "$G" "$BENUTZER"; fi
 done
+
+# --- Raspotify erst starten, wenn das Netz steht (sonst Fehlstart "Service unavailable" und
+#     ca. 20 s bis zum automatischen Neustart). Zusatzdatei, die Raspotify-Unit selbst bleibt unveraendert.
+if systemctl cat raspotify.service > /dev/null 2>&1; then
+    sudo mkdir -p /etc/systemd/system/raspotify.service.d
+    sudo tee /etc/systemd/system/raspotify.service.d/peppa-netz.conf > /dev/null <<EOF
+# Peppa Box (erzeugt von dienst_einrichten.sh): auf das Netz warten, bei Fehlern schnell neu starten
+[Unit]
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+RestartSec=3
+EOF
+    # network-online.target wartet nur, wenn der Warte-Dienst des Netzwerkmanagers aktiv ist
+    if systemctl cat NetworkManager-wait-online.service > /dev/null 2>&1; then
+        sudo systemctl enable NetworkManager-wait-online.service > /dev/null 2>&1 || true
+    fi
+    echo "Raspotify wartet beim Start auf das Netz (wirkt ab dem naechsten Einschalten)."
+fi
 
 # --- Lautsprecher (I2S, Software-Lautstaerke, Raspotify-Ausgabe)
 sh "$ORDNER/lautsprecher_einrichten.sh" || echo "Lautsprecher-Einrichtung mit Fehler beendet (siehe oben)."

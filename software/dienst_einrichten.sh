@@ -53,7 +53,8 @@ fi
 # --- Rechnername festschreiben, dann cloud-init abschalten.
 #     cloud-init braucht nur der allererste Start (Raspberry Pi Imager: WLAN, Benutzer, Name) und kostet
 #     danach bei jedem Start ca. 4-5 s. Es hat aber den Namen bei jedem Start gesetzt: ohne Festschreiben
-#     ist die Box danach nicht mehr als peppabox.local erreichbar (passiert am 02.11.2026).
+#     koennte die Box danach anders heissen (Vorsichtsmassnahme; die Nichterreichbarkeit am
+#     02.11.2026 kam von Avahi, siehe unten).
 #     Rueckgaengig: sudo rm /etc/cloud/cloud-init.disabled
 NAME="$(hostname)"
 case "$NAME" in
@@ -69,6 +70,20 @@ if grep -q '^127\.0\.1\.1' /etc/hosts; then
     fi
 else
     printf '127.0.1.1\t%s\n' "$NAME" | sudo tee -a /etc/hosts > /dev/null
+fi
+# Avahi (Name peppabox.local): nur IPv4 und nur WLAN. Sonst haelt Avahi nach einem Neuaufbau der
+# WLAN-Adresse (v. a. IPv6) seine eigene alte Meldung fuer ein fremdes Geraet und nennt sich
+# "peppabox-2.local" -> Box unter peppabox.local nicht mehr erreichbar (02.11.2026).
+AVAHI_CONF="${PEPPA_AVAHI_CONF:-/etc/avahi/avahi-daemon.conf}"
+if [ -f "$AVAHI_CONF" ]; then
+    VORHER="$(cat "$AVAHI_CONF")"
+    sudo sed -i -e 's/^#\?use-ipv6=.*/use-ipv6=no/' \
+                -e 's/^#\?allow-interfaces=.*/allow-interfaces=wlan0/' "$AVAHI_CONF"
+    grep -q '^use-ipv6=' "$AVAHI_CONF" || sudo sed -i 's/^\[server\]$/[server]\nuse-ipv6=no/' "$AVAHI_CONF"
+    grep -q '^allow-interfaces=' "$AVAHI_CONF" || sudo sed -i 's/^\[server\]$/[server]\nallow-interfaces=wlan0/' "$AVAHI_CONF"
+    if [ "$VORHER" != "$(cat "$AVAHI_CONF")" ]; then
+        echo "Avahi: nur IPv4 und WLAN (gegen Umbenennung in peppabox-2.local)."
+    fi
 fi
 sudo systemctl restart avahi-daemon 2> /dev/null || true
 if [ -d /etc/cloud ] && [ ! -f /etc/cloud/cloud-init.disabled ]; then

@@ -121,6 +121,19 @@ def c9_kopfueber():
     return M.deckel_kopfueber(a), M.deckel_kopfueber(b)
 
 
+def c10_fuzzy():
+    """Fuzzy-Skin-Probe: Ecke hinten rechts (Anschlussfeld-Ende, USB-C-Öffnung, Eckradius, rechte Wand), aufrecht wie im Korpus.
+    Dazu das passende Stück des Modifiers „ohne Fuzzy“ – beide gleich verschoben, im Slicer zusammen laden.
+    Mehrfach drucken, je Kopie andere Fuzzy-Werte (Einstellungen pro Objekt)."""
+    import modifier as MD
+    cut = box(98, 110, 44, M.W, M.W, 76)
+    k = M.korpus() ^ cut
+    mod = MD.ohne_fuzzy() ^ box(96, 108, 44, M.W + 3, M.W + 3, 76)
+    bb = k.bounding_box()
+    t = [-bb[0], -bb[1], -bb[2]]
+    return k.translate(t), mod.translate(t)
+
+
 def all_coupons():
     out = {}
     out["C1_wand_rechts_drehgeber_klinke"] = c1_wand_rechts()
@@ -142,6 +155,9 @@ def all_coupons():
     a, b = c8_bodenecke()
     out["C8_bodenecke_korpus"] = a
     out["C8_bodenecke_boden"] = b
+    a, b = c10_fuzzy()
+    out["C10_fuzzy_ecke"] = a
+    out["C10_fuzzy_ecke_MODIFIER_ohne_fuzzy"] = b
     a, b = c9_kopfueber()
     out["C9_deckel_kopfueber_felder"] = a
     out["C9_deckel_kopfueber_taste_schlitz"] = b

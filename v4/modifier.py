@@ -10,7 +10,7 @@ from model import box, cyl_x, cyl_y, U
 def ohne_fuzzy():
     sx0, sx1, sz0, sz1 = M.SEAT
     ux, uz = M.usb_panel()
-    r = M.USB_PANEL["loch"] / 2 + 5
+    r = M.USBC_PLUG[0] / 2 + 4
     parts = {
         "front_stoffrahmen": box(sx0 + 0.2, -2, sz0 + 0.2, sx1 - 0.2, 10, sz1 - 0.2),
         "rechts_drehgeber": cyl_x(M.W - 6, M.W + 2, M.ENC_Y, M.ENC_Z, 12),

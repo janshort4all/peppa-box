@@ -90,7 +90,7 @@ def readme_md():
 - Ein Kragen auf der Platte zentriert sie in der Öffnung. Weil die Kammer vorne gerade ist und die Ecken hinten rund sind, passt sie nur richtig herum.
 - Unter dem Deckel sitzt jetzt eine Verteiler-Brücke mit Touch-Modul und den Klemmen für 3,3 V, SCL und GND B. Die Kabel zu Touchfeldern, NFC-Leser und Taste werden dadurch kurz.
 - Die Deckelauflage ist ringsum geschlossen, weil nichts mehr von oben eingesetzt werden muss.
-- Die USB-C-Einbaubuchse sitzt hinten rechts auf 60 mm Höhe. Die Position ist vorläufig, bis die Buchse feststeht.
+- Die USB-C-Buchse (Soldered-Platine 333011) sitzt hinten rechts auf 60 mm Höhe (Buchsenmitte x 112). Platine mit Bauteilseite oben auf zwei Domen an der Rückwand, 2 Schrauben 3,0 mm von oben; die Wand hat eine Öffnung 13 × 7 mm für den Steckerkörper.
 
 **Stapel einsetzen:** Überhang mit der BOOT-Taste nach links, Kante mit den gelben Stiften nach vorne (zum Lautsprecher),
 Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zeigt es von oben.
@@ -102,7 +102,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | coupon_C7_lochbild_stapel | **Lochbild 58 × 49 mm des Akku-Stapels**, ca. 20 min | Stapel mit den vorhandenen Schrauben daraufsetzen: Fallen alle 4 Köpfe in die Mulden? Liegt die Acrylplatte innerhalb der Ecken-Marken? |
 | coupon_C8_bodenecke_* (2 Teile) | Schattenfuge Boden/Korpus, Zentrierkragen, Senkschraube 3,0 × 14 in den Dom | Rutscht der Kragen leicht hinein, ohne zu wackeln? Sitzt die Schraube bündig? |
 | coupon_C1_wand_rechts_drehgeber_klinke | Loch und Wandstärke für Drehgeber (M7) und Klinke | Passt das Gewinde, greift die Mutter? |
-| coupon_C1_wand_hinten_usbc | Loch für die USB-C-Einbaubuchse | **Erst drucken, wenn die Buchse feststeht.** |
+| coupon_C1_wand_hinten_usbc | Öffnung für den USB-C-Stecker, 2 Dome für die Soldered-Platine | Platine anschrauben: Buchse mittig hinter der Öffnung? Stecker rastet voll ein? |
 | coupon_C2_deckelecke_* (3 Teile) | Deckelspalt 0,4 mm, Auflage, hintere Deckelschraube | Spalt gleichmäßig? Klappert es? |
 | coupon_C3_taste_* (3 Teile) | Ein-Taste: Kappe, Halter, Kurzhubtaster | Klickt sie sauber, klemmt nichts? |
 | coupon_C4_rahmenstifte_* | Stoffrahmen-Stift in Loch 4,0 / 4,1 / 4,2 (1–3 Kerben) | Welches Loch hält fest, lässt sich aber lösen? |

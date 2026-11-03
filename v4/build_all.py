@@ -109,7 +109,7 @@ def renders(parts):
             (M.karte_world() ^ cut, COL["orange"], None)]
     pc = {"Akku-Board mit Zellen": "ups", "Pi + Klemmen-Aufsatz": "pcb", "Lautsprecher": "spk",
           "RC522": "rc", "Verstärker": "rc", "Touch-Modul MPR121": "rc", "Drehgeber": "grey", "Klinkenbuchse": "grey", "Kurzhubtaster": "dark",
-          "USB-C-Einbaubuchse mit Kabel": "grey"}
+          "USB-C-Platine mit Buchse und Kabeln": "grey"}
     for k, c in pc.items():
         sect.append((ph[k] ^ cut, COL[c], None))
     for k in ph:

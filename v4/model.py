@@ -176,8 +176,18 @@ CB25 = par("CB25", (6.4, 2.2), "festgelegt", "Senkbohrung von unten für Kopf/Mu
 WIRE_CLR = par("WIRE_CLR", 15.0, "festgelegt", "Platz für die Kabel an jeder Klemmreihe")
 STACK_CLR = par("STACK_CLR", 3.0, "festgelegt", "Luft rings um den Stapel")
 USB_PLUG = par("USB_PLUG", 20.0, "festgelegt", "Platz hinter der Anschlusskante: Stecker am Akku-Board gewinkelt oder höchstens 20 mm lang")
-USB_PANEL = par("USB_PANEL", {"x": 114.0, "z": 60.0, "loch": 16.4, "mutter": 24.0, "tiefe": 20.0}, "vorläufig",
-                "USB-C-Einbaubuchse in der Rückwand (rund M16 angenommen, Produkt noch offen)")
+USBC = par("USBC", {"x": 112.0, "z": 60.0, "pcb": 22.0, "pcb_t": 1.6, "loch_abst": 16.0, "loch_rand": 3.0,
+                    "buchse_b": 9.2, "buchse_h": 3.3, "spalt": 0.3, "dom_l": 10.0},
+            "belegt / vorläufig",
+            "Soldered 333011 (V1.2.0) in der Rückwand, Bauteilseite oben, Buchsenmund bündig mit der Platinenkante. "
+            "Belegt (KiCad-Datei V1.2.0): Platine 22 × 22 × 1,6, Löcher Ø 3,2 mit 16,0 Abstand, 3,0 von der Buchsenkante, "
+            "Buchsenbreite ca. 9,2 (Bestückungsdruck). Vorläufig: Buchsenhöhe 3,3 (USB-C-üblich, nachmessen). "
+            "x 112 statt 114: 2 mm mehr Abstand zur Innenecke")
+USBC_LEGS = par("USBC_LEGS", (4.31, 2.5, 6.7, 1.5), "belegt",
+                "Lötfahnen der Buchse unter der Platine (KiCad): seitlich ±4,31, 2,5 und 6,7 von der Platinenkante; Aussparung 1,5 tief im Dom")
+USBC_PLUG = par("USBC_PLUG", (13.0, 7.0, 3.0), "vorläufig",
+                "Öffnung in der Rückwand für den Steckerkörper (B, H, Eckradius). USB-C-Spezifikation: Steckerkörper höchstens 12,35 × 6,5; Netzteilstecker nachmessen")
+USBC_CH = par("USBC_CH", 0.6, "festgelegt", "Fase außen an der USB-C-Öffnung")
 AUDIO_PLUG = par("AUDIO_PLUG", 20.0, "vorläufig", "Platz hinter der Klinke des Pi: Klinkenstecker 90° gewinkelt (Goobay 67782)")
 MAXB = par("MAXB", (19.0, 18.0, 8.0), "vorläufig", "Verstärker-Klon L, B, Höhe mit Klemme")
 MPRB = par("MPRB", (34.0, 20.0, 5.0), "gemessen", "MPR121-Modul L, B, Höhe: Adafruit 1982 STEMMA-QT-Ausführung, L × B gemessen 03.11.; Höhe 5 mm festgelegt (inkl. Buchsen und Lötstellen)")
@@ -298,6 +308,7 @@ def korpus():
     z0 = LID_BOT - LEDGE
     ledge = slab(INN.offset(0.6, JoinType.Round), z0, LID_BOT) - Manifold.batch_hull([slab(INN.offset(0.03, JoinType.Round), z0 - 0.03, z0), slab(INN.offset(-LEDGE - 1.0, JoinType.Round), LID_BOT + 0.99, LID_BOT + 1.0)])
     add.append(ledge)                                                          # ringsum geschlossen: Elektronik kommt von unten
+    add.append(usbc_domes())                                                   # Halter USB-C-Platine
 
     # Dome hinten für die Deckelschrauben
     for x in LS_X:
@@ -332,15 +343,14 @@ def korpus():
         cut.append(ext_xz(tear(HOLE3 / 2, x, LS_Z), W - WALL - 3, W - 0.8))
         cut.append(Manifold.cylinder(2.9, 1.5, 4.4, 61).rotate([-90, 0, 0]).translate([x, W - 1.9, LS_Z]))
     # Rechts: Drehgeber und Klinke
-    cut.append(ext_yz(tear(ENC_HOLE / 2, ENC_Y, ENC_Z), W - WALL - 1, W + 1))
+    cut.append(ext_yz(tear(ENC_HOLE / 2, ENC_Y, ENC_Z, cap=ENC_HOLE / 2), W - WALL - 1, W + 1))
     cut.append(cyl_x(W - WALL - 1, W - ENC_WALL, ENC_Y, ENC_Z, 11))
-    cut.append(ext_yz(tear(JK_HOLE / 2, JK_Y, JK_Z), W - WALL - 1, W + 1))
+    cut.append(ext_yz(tear(JK_HOLE / 2, JK_Y, JK_Z, cap=JK_HOLE / 2), W - WALL - 1, W + 1))
     cut.append(cyl_x(W - WALL - 1, W - JK_WALL, JK_Y, JK_Z, 9))
     # Links: Riemen
-    cut.append(ext_yz(tear(STRAP_HOLE / 2, STRAP_Y, STRAP_Z), -1, WALL + 1))
-    # Hinten: USB-C-Einbaubuchse (Tropfenform, druckbar) und Lüftungsschlitze (G11, max. 2 mm)
-    up = USB_PANEL
-    cut.append(ext_xz(tear(up["loch"] / 2, up["x"], up["z"]), W - WALL - 1, W + 1))
+    cut.append(ext_yz(tear(STRAP_HOLE / 2, STRAP_Y, STRAP_Z, cap=STRAP_HOLE / 2), -1, WALL + 1))
+    # Hinten: Öffnung für den USB-C-Steckerkörper (Buchse sitzt innen an der Wand) und Lüftungsschlitze (G11, max. 2 mm)
+    cut.append(usbc_cut())
     for i in range(6):
         cut.append(ext_xz(rr(30 + i * 6.4, 50, 32 + i * 6.4, 66, 1.0), W - WALL - 1, W + 1))
     # Kernlöcher der Bodendome (von unten, blind – Kammer bleibt dicht)
@@ -357,8 +367,50 @@ def frame_pins():
 
 
 def usb_panel():
-    up = USB_PANEL
-    return up["x"], up["z"]
+    return USBC["x"], USBC["z"]
+
+
+def usbc_geo():
+    """Lage der USB-C-Platine: Unterkante, Löcher (x, y)."""
+    u = USBC
+    pcb_top = u["z"] - u["buchse_h"] / 2
+    pcb_bot = pcb_top - u["pcb_t"]
+    y_edge = W - WALL - u["spalt"]                              # Platinenkante = Buchsenmund
+    holes = [(u["x"] + s * u["loch_abst"] / 2, y_edge - u["loch_rand"]) for s in (-1, 1)]
+    return pcb_bot, pcb_top, y_edge, holes
+
+
+def usbc_cut():
+    b, h, r = USBC_PLUG
+    x, z = usb_panel()
+    inner = ext_xz(rr(x - b / 2, z - h / 2, x + b / 2, z + h / 2, r), W - WALL - 1, W - USBC_CH + 0.01)
+    c = USBC_CH
+    fase = Manifold.batch_hull([ext_xz(rr(x - b / 2, z - h / 2, x + b / 2, z + h / 2, r), W - c, W - c + 0.01),
+                                ext_xz(rr(x - b / 2 - c, z - h / 2 - c, x + b / 2 + c, z + h / 2 + c, r + c), W - 0.01, W + 1)])
+    return inner + fase
+
+
+def usbc_domes():
+    """Zwei Dome unter der Platine, an die Rückwand angesetzt; unten 45°-Kegel in die Wand (ohne Stütze).
+    Aussparung oben für die Lötfahnen der Buchse."""
+    pcb_bot, _, y_edge, holes = usbc_geo()
+    dl = USBC["dom_l"]
+    r = BOSS_D / 2
+    yw = W - WALL + 0.5                                         # bis in die Wand
+    out = []
+    for (x, y) in holes:
+        col = cyl_z(x, y, pcb_bot - dl, dl, r) + box(x - r, y, pcb_bot - dl, x + r, yw, pcb_bot)
+        # 45°-Übergang unten: Kegel von der Wand aus
+        cone = Manifold.batch_hull([box(x - r, yw - 0.01, pcb_bot - dl - (yw - y + r), x + r, yw, pcb_bot - dl),
+                                    cyl_z(x, y, pcb_bot - dl, 0.01, r)])
+        out.append(col + cone)
+    d = U(out)
+    lat, a, b, depth = USBC_LEGS
+    x0 = USBC["x"]
+    d = d - box(x0 - lat - 0.9, y_edge - b - 1.0, pcb_bot - depth, x0 + lat + 0.9, W, pcb_bot + 1)   # Lötfahnen (a liegt näher an der Wand)
+    for (x, y) in holes:
+        d = d - cyl_z(x, y, pcb_bot - dl + 1.0, dl, PILOT / 2)
+    return d ^ INN_SLAB(0, HB)
 
 
 # =====================================================================================
@@ -840,9 +892,16 @@ def placeholders():
         ph[name] = box(x0 + CLR, y0 + CLR, z, x0 + w - CLR, y0 + d - CLR, z + h + (4 if name.startswith("WAGO") else 0))
     for (name, x0, y0, w, d, h) in lid_layout():
         ph[name] = box(x0 + CLR, y0 + CLR, RING_Z0 - h - (4 if name.startswith("WAGO") else 0), x0 + w - CLR, y0 + d - CLR, RING_Z0)
-    up = USB_PANEL
-    r = up["mutter"] / 2
-    ph["USB-C-Einbaubuchse mit Kabel"] = cyl_y(W - WALL - up["tiefe"], W - WALL - 0.3, up["x"], up["z"], r)
+    pcb_bot, pcb_top, y_edge, holes = usbc_geo()
+    u = USBC
+    x = u["x"]
+    lat, a, b, _ = USBC_LEGS
+    ph["USB-C-Platine mit Buchse und Kabeln"] = U([
+        box(x - u["pcb"] / 2, y_edge - u["pcb"], pcb_bot, x + u["pcb"] / 2, y_edge, pcb_top),                       # Platine
+        box(x - u["buchse_b"] / 2, y_edge - 7.9, pcb_top, x + u["buchse_b"] / 2, y_edge, pcb_top + u["buchse_h"]),     # Buchse
+        box(x - u["pcb"] / 2, y_edge - u["pcb"], pcb_top, x + u["pcb"] / 2, y_edge - 15.0, pcb_top + 12.0),           # Lötreihe, Kabel, Widerstände
+        box(x - lat - 0.5, y_edge - b - 0.5, pcb_bot - 1.2, x + lat + 0.5, y_edge - a + 0.5, pcb_bot),                # Lötfahnen unten
+    ] + [cyl_z(hx, hy, pcb_top, 2.5, 2.9) for (hx, hy) in holes])                                                # Schraubenköpfe
     spk_front = BAY_D - SPK_FLANGE
     flange = ext_xz(rr(SPK_X - SPK_FRAME / 2, SPK_Z - SPK_FRAME / 2, SPK_X + SPK_FRAME / 2, SPK_Z + SPK_FRAME / 2, SPK_FRAME_R), spk_front, BAY_D)
     basket = cyl_y(BAY_D + 3, spk_front + SPK_DEPTH - 8, SPK_X, SPK_Z, 35.5)
@@ -863,7 +922,7 @@ BASE_PH = ["Akku-Board mit Zellen", "Pi + Klemmen-Aufsatz", "Kabel Klemmreihe li
            "Klinkenstecker am Pi (Zone)",
            "WAGO GND A", "WAGO 5 V", "Verstärker"]
 LID_PH = ["RC522", "Kurzhubtaster", "Karte (gesteckt)", "WAGO GND B", "WAGO 3,3 V", "WAGO SCL", "Touch-Modul MPR121"]
-WALL_PH = ["Lautsprecher", "Drehgeber", "Klinkenbuchse", "USB-C-Einbaubuchse mit Kabel"]
+WALL_PH = ["Lautsprecher", "Drehgeber", "Klinkenbuchse", "USB-C-Platine mit Buchse und Kabeln"]
 
 
 def build():

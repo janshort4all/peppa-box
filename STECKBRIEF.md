@@ -93,6 +93,7 @@ In einem neuen Chat die Zip anhängen und sagen: „Entpacke nach /home/claude/m
 | `v4/coupons.py` | Probedruck-Coupons C1–C8 |
 | `v4/docs.py` | README, PARAMETER, PRÜFBERICHT, Druckpaket-Zip |
 | `v4/boden_plan.py` | Draufsicht und Höhen des Bodens |
+| `v4/usbc_schnitt.py` | Schnitte durch den Halter der USB-C-Platine, Ansicht der Öffnung (`out/usbc_schnitt.png`) |
 | `v4/modifier.py` | Modifier-Körper „ohne Fuzzy Skin“ |
 | `v4/gitter/` | Logo-Vektorisierung und Gitter-Varianten |
 | `plan/gen_plan4.py` | erzeugt `verdrahtungsplan.html` |
@@ -336,3 +337,15 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - Die zwei weißen Buchsen sind STEMMA QT (JST SH, 4-polig, 1 mm Raster: GND, 3,3 V, SDA, SCL) zum lötfreien Anschluss von I2C. Werden nicht genutzt (Kabel gehen in die Lötaugen); Option: STEMMA-QT-Kabel statt 4 Lötstellen, dafür dünne Adern an den Klemmen.
 - Beiliegende Stiftleiste ist länger als die Lötreihe und wird nicht gebraucht (Kabel direkt in die Lötaugen). Belegung Vorschlag: E0 zurück, E1 Play, E2 vor, E3 Schlaf (in der Software änderbar).
 - Kupferfelder: Streifen nebeneinander in die Tasche, blanke Litze quer über alle Streifen, zweiter Streifen darüber (Kleber kann nichtleitend sein).
+
+## Nachtrag 03.11.2026 (3) – Korpus: Löcher rechts, USB-C-Halter hinten
+
+- **Befund Jan:** Loch für Drehgeber und Klinke sind tropfenförmig, im ausgebauten Zustand sichtbare Spitze oben. Ursache: **so im Modell** (`tear()`, Spitze nach oben, damit die Lochoberseite in der senkrechten Wand ohne Stütze druckt), kein Druckfehler.
+- **Neu:** Drehgeber-, Klinken- und Riemenloch als **Tropfen mit flacher Oberseite** (`cap` = Radius): Lochhöhe = Durchmesser, oben eine kurze Brücke (2,6–3 mm), nur zwei kleine Ecken stehen 0,25–0,3 mm über den Kreis hinaus und liegen unter Mutter/Scheibe. Druckt weiterhin ohne Stütze.
+- **USB-C hinten (ersetzt das runde 16,4-mm-Loch der früher geplanten Einbaubuchse):** Soldered 333011 liegt **mit der Bauteilseite oben waagerecht** an der Rückwand, Buchsenmund an der Wand (0,3 mm Spalt). In der Wand eine **Öffnung 13 × 7 mm** (Eckradius 3, Fase 0,6 außen) für den Steckerkörper; der Stecker taucht 3 mm in die Wand ein und rastet voll in der Buchse ein. Buchsenmitte x 112 (vorher 114, 2 mm mehr Abstand zur Innenecke), z 60.
+- **Halter:** 2 Dome Ø 9 an die Rückwand angesetzt, unten 45°-Kegel (ohne Stütze), Kernloch 2,5 für Kunststoffschrauben 3,0 von oben durch die Platine (Länge ca. 8–10 mm, Dome 10 mm hoch, Kernloch 9 tief). Aussparung 1,5 mm oben in den Domen für die Lötfahnen der Buchse. Montage bei leerem Korpus von oben (Deckel, Boden draußen), Schraubendreher leicht schräg an der Deckelauflage vorbei.
+- **Maße belegt** aus der KiCad-Datei V1.2.0 (github.com/SolderedElectronics/USB-C-female-connector-breakout-hardware-design): Platine 22 × 22 × 1,6, Löcher Ø 3,2 mit 16,0 Abstand, 3,0 von der Buchsenkante, Buchsenmund bündig mit der Platinenkante, Lötfahnen ±4,31 seitlich, 2,5 und 6,7 von der Kante. **Vorläufig:** Buchsenhöhe über der Platine 3,3 (nachmessen), Öffnung 13 × 7 (USB-C-Spezifikation: Steckerkörper höchstens 12,35 × 6,5; Stecker des Netzteilkabels nachmessen). Version der gelieferten Platine (V1.2.0?) auf der Rückseite ablesen.
+- Platzhalter „USB-C-Platine mit Buchse und Kabeln" (Platine, Buchse, 12 mm Zone über der Lötreihe, Lötfahnen, Schraubenköpfe): keine Kollision, Abstand zur Kabelzone hinten am Stapel 7,0 mm. Die CC-Widerstände flach umbiegen (Zone 12 mm hoch).
+- **Drehknopf noch nicht probiert.** Knopf erwartet: Achse 14 mm über der Wand-Außenseite (`ENC_OUT`, vorläufig), Schlitz 1,0 mm (`ENC_SLOT`, vorläufig; Steg im Knopf 0,8 mm), Mutter + Scheibe in einer Aussparung Ø 14 × 3 (`NUT_REC`, vorläufig). Messen: Achslänge ab Wand außen bei angezogener Mutter, Schlitzbreite und -tiefe, Mutter Schlüsselweite/Höhe.
+- Neu gebaut: `01_korpus_beige.stl`, Modifier, Coupons C1 (hinten jetzt mit Domen und Fuß unten), C2/C8 (Korpus-Ausschnitte), Ansichten, Bodenplan, `usbc_schnitt.png`. Prüfungen ohne Kollision.
+- **Zu tun:** Coupon `coupon_C1_wand_hinten_usbc` drucken, Platine anschrauben, Netzteilstecker einstecken (rastet voll ein? Spiel ringsum?). Danach Korpus neu drucken.

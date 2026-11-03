@@ -100,7 +100,7 @@ def top_view(ax, parts, ph):
         x0, y0, x1, y1 = bb(ph[k])
         rect(ax, x0, y0, min(x1, 140), y1, fc="#d9d9d9", ec=INK, lw=0.6, alpha=0.8)
     ax.text(141.5, 84, "Drehknopf (z 60)\nKlinke (z 24)", ha="left", va="center", fontsize=7.5, color=INK)
-    x0, y0, x1, y1 = bb(ph["USB-C-Einbaubuchse mit Kabel"])
+    x0, y0, x1, y1 = bb(ph["USB-C-Platine mit Buchse und Kabeln"])
     rect(ax, x0, y0, x1, y1, fc="#d9d9d9", ec=INK, lw=0.6, alpha=0.8)
     ax.text((x0 + x1) / 2, 141.5, "USB-C-Buchse (z 60)", ha="center", va="bottom", fontsize=7.5, color=INK)
     ax.text(-1.5, M.STRAP_Y, "Riemen\n(z 118)", ha="right", va="center", fontsize=7.5, color=INK)

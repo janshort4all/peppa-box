@@ -23,7 +23,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `PAT_END` | 3,5 | Lochmitte bis Pi-Ende des Stapels (Pi-Norm); ±3 mm deckt der Freiraum ab |
 | `UPS_LEVEL` | 35 | Acrylplatte bis Oberkante Akku-Board (Zellen + Board) |
 | `CLAMP_Z` | 52 | Unterkante der Klemmblöcke über der Acrylplatte |
-| `USB_PANEL` | x 114; z 60; loch 16,4; mutter 24; tiefe 20 | USB-C-Einbaubuchse in der Rückwand (rund M16 angenommen, Produkt noch offen) |
+| `USBC_PLUG` | 13 / 7 / 3 | Öffnung in der Rückwand für den Steckerkörper (B, H, Eckradius). USB-C-Spezifikation: Steckerkörper höchstens 12,35 × 6,5; Netzteilstecker nachmessen |
 | `AUDIO_PLUG` | 20 | Platz hinter der Klinke des Pi: Klinkenstecker 90° gewinkelt (Goobay 67782) |
 | `MAXB` | 19 / 18 / 8 | Verstärker-Klon L, B, Höhe mit Klemme |
 
@@ -59,7 +59,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `STACK_PAT` | 58 / 49 | Lochbild der Bolzen unter der Acrylplatte |
 | `MPRB` | 34 / 20 / 5 | MPR121-Modul L, B, Höhe: Adafruit 1982 STEMMA-QT-Ausführung, L × B gemessen 03.11.; Höhe 5 mm festgelegt (inkl. Buchsen und Lötstellen) |
 
-## Aus Datenblatt belegt (12)
+## Aus Datenblatt belegt (13)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -73,10 +73,11 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `SW_H` | 7,3 | Tasterhöhe gesamt, Gehäuseunterseite bis Stößeloberkante (Etikett BerryBase KHT1212PV73: H 7,30; nachmessen) |
 | `UPS` | 85 / 56 | Akku-Board Grundriss |
 | `OVERHANG` | 20 | Akku-Board steht so weit über den Pi hinaus (85 − 65), BOOT-Taste dort |
+| `USBC_LEGS` | 4,31 / 2,5 / 6,7 / 1,5 | Lötfahnen der Buchse unter der Platine (KiCad): seitlich ±4,31, 2,5 und 6,7 von der Platinenkante; Aussparung 1,5 tief im Dom |
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (78)
+## Gestaltung festgelegt (79)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -154,6 +155,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WIRE_CLR` | 15 | Platz für die Kabel an jeder Klemmreihe |
 | `STACK_CLR` | 3 | Luft rings um den Stapel |
 | `USB_PLUG` | 20 | Platz hinter der Anschlusskante: Stecker am Akku-Board gewinkelt oder höchstens 20 mm lang |
+| `USBC_CH` | 0,6 | Fase außen an der USB-C-Öffnung |
 | `BRIDGE_Y` | 74 / 98 | Verteiler-Brücke am Deckelrahmen: MPR121 + Klemmen für 3,3 V, SCL, GND B |
 | `LS_X` | 24 / 116 | Deckelschrauben hinten x |
 | `LS_Z` | 124 | Deckelschrauben hinten z |

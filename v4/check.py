@@ -40,7 +40,7 @@ def gaps(ph, parts):
     for a, b in (("Pi + Klemmen-Aufsatz", "kartenfach"), ("Pi + Klemmen-Aufsatz", "RC522"), ("Klinkenstecker am Pi (Zone)", "korpus"),
                  ("Pi + Klemmen-Aufsatz", "WAGO GND B"), ("Pi + Klemmen-Aufsatz", "Touch-Modul MPR121"),
                  ("Akku-Board mit Zellen", "korpus"), ("Kabel Klemmreihe links (Zone)", "korpus"), ("Kabel Klemmreihe rechts (Zone)", "Drehgeber"),
-                 ("Kabel Klemmreihe hinten (Zone)", "USB-C-Einbaubuchse mit Kabel"), ("USB-C-Stecker am Akku-Board (Zone)", "korpus"),
+                 ("Kabel Klemmreihe hinten (Zone)", "USB-C-Platine mit Buchse und Kabeln"), ("USB-C-Stecker am Akku-Board (Zone)", "korpus"),
                  ("WAGO GND A", "korpus"), ("Verstärker", "korpus"), ("boden", "korpus"), ("Lautsprecher", "korpus"),
                  ("Kurzhubtaster", "kartenfach"), ("RC522", "deckelrahmen"), ("RC522-Stecker (Zone)", "korpus"), ("RC522-Stecker (Zone)", "deckelrahmen"), ("RC522-Stecker (Zone)", "kartenfach"), ("Touch-Modul MPR121", "kartenfach")):
         A = ph.get(a, parts.get(a)); B = ph.get(b, parts.get(b))

@@ -16,10 +16,12 @@ def c1_wand_rechts():
 
 
 def c1_wand_hinten():
-    """Rückwand mit Loch für die USB-C-Einbaubuchse – erst drucken, wenn die Buchse feststeht."""
+    """Rückwand mit Öffnung für den USB-C-Stecker und den zwei Domen für die Soldered-Platine, aufrecht wie im Korpus."""
     ux, uz = M.usb_panel()
-    k = M.korpus() ^ box(ux - 16, M.W - 14, uz - 16, ux + 16, M.W, uz + 16)
-    foot = box(ux - 16, M.W - 14, uz - 16, ux + 16, M.W - 0.5, uz - 14)
+    pcb_bot, _, _, _ = M.usbc_geo()
+    z0 = pcb_bot - M.USBC["dom_l"] - M.BOSS_D - 3
+    k = M.korpus() ^ box(ux - 16, M.W - 14, z0, ux + 16, M.W, uz + 8)
+    foot = box(ux - 16, M.W - 3.5, z0, ux + 16, M.W - 0.5, z0 + 2)
     return base_at_zero(k + foot)
 
 

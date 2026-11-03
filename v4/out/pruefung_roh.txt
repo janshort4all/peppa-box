@@ -54,8 +54,8 @@
 == Druckausrichtung ohne Spiegelung (soll überall +1) ==
   ok
 == Druck ==
-  korpus: 140.0 × 140.0 × 136.0 mm, Überhang 5788 mm²
-      z= 118.0   5388.7 mm²  Bereich 134.0 × 44.1
+  korpus: 140.0 × 140.0 × 136.0 mm, Überhang 5795 mm²
+      z= 118.0   5398.5 mm²  Bereich 137.0 × 101.7
       z= 103.5     84.7 mm²  Bereich 28.2 × 3.0
       z=  38.0     40.9 mm²  Bereich 60.1 × 12.5
       z=  96.5     40.9 mm²  Bereich 60.1 × 12.5

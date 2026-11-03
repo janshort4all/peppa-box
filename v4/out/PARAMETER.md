@@ -2,7 +2,7 @@
 
 Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Modell alles neu: Löcher, Halter, Kollisionsprüfung.
 
-## Vorläufig – am echten Teil messen (14)
+## Vorläufig – am echten Teil messen (13)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -14,7 +14,6 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `RC_BEND` | 8 | Platz für den Kabelbogen hinter den Buchsen |
 | `RC_HDR_OFF` | 0 | Mitte der Stiftleiste gegenüber Platinenmitte, + = vom Deckel weg (nicht gemessen, mittig angenommen) |
 | `JK_HOLE` | 6,2 | Loch für Klinkengewinde (Gewinde unbekannt) |
-| `STRAP_HOLE` | 5,2 | Buchschraube noch nicht gekauft |
 | `PAT_END` | 3,5 | Lochmitte bis Pi-Ende des Stapels (Pi-Norm); ±3 mm deckt der Freiraum ab |
 | `UPS_LEVEL` | 35 | Acrylplatte bis Oberkante Akku-Board (Zellen + Board) |
 | `CLAMP_Z` | 52 | Unterkante der Klemmblöcke über der Acrylplatte |
@@ -37,7 +36,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `ENC_HOLE` | 7,4 | Loch für M7-Gewinde |
 | `KNOB_BORE` | 6,1 | Bohrung für die Schlitzachse Ø 6 (gedruckt meist 0,1–0,2 kleiner → Klemmsitz) |
 
-## Von dir gemessen (17)
+## Von dir gemessen (20)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -48,9 +47,12 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `RC_PIN_OUT` | 6 | Überstand der 90°-Stifte über die Platinenkante |
 | `RC_PLUG_OUT` | 14 | Platinenkante bis Ende Steckkabel-Hülse (gesteckt, Buchse sitzt bis an die Leiste) |
 | `SW_LEGS` | 13 | Breite über die Beinchen (Außenkante zu Außenkante), Jan ca. 13 mm; Taster 12 mm, Beinchen stehen seitlich über |
+| `ENC_LUG` | 2,5 / 2 / 1,5 | Nase am Drehgeber (Jan 03.11.): Gewinde-Außenkante bis Nase 2,5, Nase 2,0 breit, steht 1,5 vor. Einbau: Nase nach oben (zum Deckel) |
 | `ENC_SLOT_D` | 11 | Schlitztiefe ab ursprünglichem Achsende (nach dem Kürzen bleiben 5 mm) |
 | `ENC_SLOT` | 1,6 | Schlitzbreite Achse (Jan 03.11.: ca. 1,6, Schlitz 11 tief, Achse Ø 6) |
 | `JK_WALL` | 2 | Wand unter der Klinkenmutter (wie Prototyp, passt laut Jan; Gewinde ist knapp) |
+| `STRAP_HOLE` | 7,9 | Buchschraube: Schaft Ø 7,5 (Jan 03.11.) + 0,4 Spiel; Kopf liegt auf dem Riemen (Riemen ca. 3 mm dick) |
+| `CSK` | 6,2 / 3,4 | Senkung für Senkkopf 3,0 × 12 (Kopf Ø 6 gemessen + 0,2; Ø Loch) |
 | `ACRYL` | 85 / 55 | Acrylplatte unter dem Stapel (von dir gemessen) |
 | `STACK_H` | 70 | Acrylplatte bis Oberkante graue Klemmen, ohne Kabel |
 | `PINS_H` | 60 | Acrylplatte bis Spitzen der gelben Stifte |
@@ -79,7 +81,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (93)
+## Gestaltung festgelegt (92)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -150,7 +152,6 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `STRAP_Z` | 118 | Riemenpunkt z |
 | `BASE_BOSSES` | 8,6 / 8,6 / 131,4 / 8,6 / 7,7 / 47 / 132,3 / 47 / 8,6 / 131,4 / 131,4 / 131,4 | Bodenschrauben: 4 Ecken + 2 an der Kammerwand (vordere Dome stehen dicht in der Kammer) |
 | `BOSS_H` | 14 | Höhe der Bodendome im Korpus; Kernloch 12 tief |
-| `CSK` | 6,2 / 3,4 | Senkung für Kunststoffschraube 3,0 × 14 Senkkopf (Ø Kopf, Ø Loch) |
 | `LIP` | 1,6 / 3 | Zentrierkragen der Bodenplatte im hinteren Teil (Breite, Höhe) |
 | `STACK_X0` | 9 | Stapel links; Überhang mit BOOT-Taste zeigt nach links |
 | `STACK_Y0` | 55,5 | Stapel vorne = Kante mit den gelben Stiften; Anschlusskante (USB-C, Schalter) zeigt nach hinten |

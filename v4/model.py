@@ -138,6 +138,7 @@ ENC_WALL = par("ENC_WALL", 2.6, "festgelegt", "Wand unter der Drehgeber-Mutter =
 ENC_OUT = par("ENC_OUT", 16.0, "festgelegt", "Achse ragt so weit über die Wand-Außenfläche: Achse wird um 6 mm gekürzt (Jan 03.11.). Gemessen 23 bei 2 mm Wand = 22 bei 3 mm Wand; Achse 25 ab Gewindeanfang (Datenblatt)")
 ENC_THREAD = par("ENC_THREAD", 7.0, "belegt", "Gewindelänge ab Gehäusefläche (Datenblatt STEC11B, M7 × 0,75)")
 ENC_NUT = par("ENC_NUT", (2.5, 0.5, 12.0), "gemessen / vorläufig", "Mutter Höhe 2,5 und ca. 10 breit (Jan); Scheibe 0,5 dick und Ø 12 angenommen (liegen bei)")
+ENC_LUG = par("ENC_LUG", (2.5, 2.0, 1.5), "gemessen", "Nase am Drehgeber (Jan 03.11.): Gewinde-Außenkante bis Nase 2,5, Nase 2,0 breit, steht 1,5 vor. Einbau: Nase nach oben (zum Deckel)")
 ENC_SLOT_D = par("ENC_SLOT_D", 11.0, "gemessen", "Schlitztiefe ab ursprünglichem Achsende (nach dem Kürzen bleiben 5 mm)")
 ENC_PUSH = par("ENC_PUSH", 0.5, "belegt", "Hub des Drucktasters in der Achse (Datenblatt)")
 ENC_SLOT = par("ENC_SLOT", 1.6, "gemessen", "Schlitzbreite Achse (Jan 03.11.: ca. 1,6, Schlitz 11 tief, Achse Ø 6)")
@@ -154,13 +155,13 @@ JK_WALL = par("JK_WALL", 2.0, "gemessen", "Wand unter der Klinkenmutter (wie Pro
 # Links: Riemen, USB-C
 STRAP_Y = par("STRAP_Y", 104.0, "festgelegt", "Riemenpunkt y")
 STRAP_Z = par("STRAP_Z", 118.0, "festgelegt", "Riemenpunkt z")
-STRAP_HOLE = par("STRAP_HOLE", 5.2, "vorläufig", "Buchschraube noch nicht gekauft")
+STRAP_HOLE = par("STRAP_HOLE", 7.9, "gemessen", "Buchschraube: Schaft Ø 7,5 (Jan 03.11.) + 0,4 Spiel; Kopf liegt auf dem Riemen (Riemen ca. 3 mm dick)")
 
 # Boden (abnehmbar) – Schrauben von unten in Dome im Korpus
 BASE_BOSSES = par("BASE_BOSSES", [(8.6, 8.6), (131.4, 8.6), (7.7, 47.0), (132.3, 47.0), (8.6, 131.4), (131.4, 131.4)],
                   "festgelegt", "Bodenschrauben: 4 Ecken + 2 an der Kammerwand (vordere Dome stehen dicht in der Kammer)")
 BOSS_H = par("BOSS_H", 14.0, "festgelegt", "Höhe der Bodendome im Korpus; Kernloch 12 tief")
-CSK = par("CSK", (6.2, 3.4), "festgelegt", "Senkung für Kunststoffschraube 3,0 × 14 Senkkopf (Ø Kopf, Ø Loch)")
+CSK = par("CSK", (6.2, 3.4), "gemessen", "Senkung für Senkkopf 3,0 × 12 (Kopf Ø 6 gemessen + 0,2; Ø Loch)")
 LIP = par("LIP", (1.6, 3.0), "festgelegt", "Zentrierkragen der Bodenplatte im hinteren Teil (Breite, Höhe)")
 
 # Elektronik-Stapel: Acrylplatte → Zellen → Akku-Board → Pi → Klemmen-Aufsatz
@@ -205,6 +206,8 @@ VENTS = par("VENTS", (6, 2.0, 6.4, 50.0, 66.0), "festgelegt",
             "Lüftungsschlitze: Anzahl, Breite, Teilung, z unten, z oben; links im Anschlussfeld mit gleichem Rand wie USB-C rechts")
 LS_SPOT = par("LS_SPOT", 10.0, "festgelegt", "glatte Fläche um die Deckelschrauben hinten (Ø)")
 JK_NUT = par("JK_NUT", 8.0, "gemessen", "Mutter der Klinkenbuchse Ø (Jan 03.11.)")
+JK_BODY = par("JK_BODY", (12.2, 12.8, 0.6), "gemessen / festgelegt",
+              "Tasche innen gegen Mitdrehen der Klinkenbuchse (B × H × Tiefe): Körper 11,5 breit, 6,2 hoch, mit Lötfahne 9 (Jan 03.11.); Höhe symmetrisch, weil die Lage der Fahne zur Achse nicht gemessen ist. Wand unter der Mutter bleibt 2,0")
 JK_SPOT = par("JK_SPOT", 10.0, "festgelegt", "glatte Fläche um die Klinke (Ø) = Mutter + 1 mm Rand")
 ENC_SPOT = par("ENC_SPOT", 18.0, "festgelegt", "glatte Fläche um den Drehgeber (Ø), liegt unter dem Knopf (Ø 34)")
 SEAT_CH = par("SEAT_CH", 0.6, "festgelegt", "Fase 45° an der Kante des Gitter-Sitzes vorne (glatt, rahmt das Gitter)")
@@ -377,9 +380,13 @@ def korpus():
     if ENC_WALL < WALL - FUZZ_REC:                                              # Senkung innen nur bei dünnerer Wand
         cut.append(cyl_x(W - WALL - 1, W - FUZZ_REC - ENC_WALL, ENC_Y, ENC_Z, 11))
     cut.append(cyl_x(W - FUZZ_REC, W + 1, ENC_Y, ENC_Z, ENC_SPOT / 2))
+    g, lb, lh = ENC_LUG                                                         # Verdrehschutz: Tasche für die Nase (oben)
+    r0 = 3.5 + g                                                                # Gewinde M7 → Außenradius 3,5
+    cut.append(box(W - WALL - 1, ENC_Y - lb / 2 - 0.3, ENC_Z + r0 - 0.5, W - WALL + lh + 0.4, ENC_Y + lb / 2 + 0.3, ENC_Z + r0 + 1.4))
     cut.append(ext_yz(tear(JK_HOLE / 2, JK_Y, JK_Z, cap=JK_HOLE / 2), W - WALL - 1, W + 1))
     cut.append(cyl_x(W - FUZZ_REC, W + 1, JK_Y, JK_Z, JK_SPOT / 2))
-    cut.append(cyl_x(W - WALL - 1, W - FUZZ_REC - JK_WALL, JK_Y, JK_Z, 9))          # innen: Wand unter der Mutter bleibt 2,0
+    jb, jh, _ = JK_BODY                                                         # innen: Tasche gegen Mitdrehen, Wand unter der Mutter bleibt 2,0
+    cut.append(box(W - WALL - 1, JK_Y - jb / 2, JK_Z - jh / 2, W - FUZZ_REC - JK_WALL, JK_Y + jb / 2, JK_Z + jh / 2))
     # Links: Riemen
     cut.append(ext_yz(tear(STRAP_HOLE / 2, STRAP_Y, STRAP_Z, cap=STRAP_HOLE / 2), -1, WALL + 1))
     # Hinten: Öffnung für den USB-C-Steckerkörper (Buchse sitzt innen an der Wand) und Lüftungsschlitze (G11, max. 2 mm)
@@ -969,7 +976,7 @@ def placeholders():
         box(x - u["buchse_b"] / 2, y_edge - 7.9, pcb_top, x + u["buchse_b"] / 2, y_edge, pcb_top + u["buchse_h"]),     # Buchse
         box(x - u["pcb"] / 2, y_edge - u["pcb"], pcb_top, x + u["pcb"] / 2, y_edge - 15.0, pcb_top + 12.0),           # Lötreihe, Kabel, Widerstände
         box(x - lat - 0.5, y_edge - b - 0.5, pcb_bot - 1.2, x + lat + 0.5, y_edge - a + 0.5, pcb_bot),                # Lötfahnen unten
-    ] + [cyl_z(hx, hy, pcb_top, 2.5, 2.9) for (hx, hy) in holes])                                                # Schraubenköpfe
+    ] + [cyl_z(hx, hy, pcb_top, 3.0, 3.1) for (hx, hy) in holes])                                                # Schraubenköpfe
     spk_front = BAY_D - SPK_FLANGE
     flange = ext_xz(rr(SPK_X - SPK_FRAME / 2, SPK_Z - SPK_FRAME / 2, SPK_X + SPK_FRAME / 2, SPK_Z + SPK_FRAME / 2, SPK_FRAME_R), spk_front, BAY_D)
     basket = cyl_y(BAY_D + 3, spk_front + SPK_DEPTH - 8, SPK_X, SPK_Z, 35.5)

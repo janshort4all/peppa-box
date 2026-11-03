@@ -19,14 +19,18 @@ def ohne_fuzzy():
         "rechts_drehgeber": cyl_x(M.W - 6, M.W + 2, M.ENC_Y, M.ENC_Z, M.ENC_SPOT / 2 + e),
         "rechts_klinke": cyl_x(M.W - 6, M.W + 2, M.JK_Y, M.JK_Z, M.JK_SPOT / 2 + e),
         "hinten_anschlussfeld": M.ext_xz(M.rr(px0 - e, pz0 - e, px1 + e, pz1 + e, pr + e), M.W - 6, M.W + 2),
-        "links_riemen": cyl_x(-2, 6, M.STRAP_Y, M.STRAP_Z, 6),
+        "links_riemen": cyl_x(-2, 6, M.STRAP_Y, M.STRAP_Z, M.STRAP_HOLE / 2 + 0.6),   # nur die Bohrung, Rand liegt unter dem Riemen
         "hinten_deckelschrauben": U([cyl_y(M.W - 6, M.W + 2, x, M.LS_Z, M.LS_SPOT / 2 + e) for x in M.LS_X]),
     }
     return U(list(parts.values()))
 
 
 if __name__ == "__main__":
-    m = ohne_fuzzy().to_mesh()
+    # gleich verschieben wie 01_korpus_beige.stl (Druckausrichtung, Ecke auf 0) → im Slicer deckungsgleich
+    import check as K
+    bb = K.orient("korpus", M.korpus()).bounding_box()
+    kb = M.korpus().bounding_box()
+    m = ohne_fuzzy().translate([bb[0] - kb[0], bb[1] - kb[1], bb[2] - kb[2]]).to_mesh()
     t = trimesh.Trimesh(np.asarray(m.vert_properties)[:, :3], np.asarray(m.tri_verts))
     t.export(_os.path.join(ROOT, "v4/out/01m_modifier_korpus_OHNE_fuzzy.stl"))
     print(t.bounds)

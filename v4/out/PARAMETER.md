@@ -2,7 +2,7 @@
 
 Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Modell alles neu: Löcher, Halter, Kollisionsprüfung.
 
-## Vorläufig – am echten Teil messen (20)
+## Vorläufig – am echten Teil messen (17)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -13,9 +13,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `RC_T` | 1,6 | RC522 Platinendicke |
 | `RC_BEND` | 8 | Platz für den Kabelbogen hinter den Buchsen |
 | `RC_HDR_OFF` | 0 | Mitte der Stiftleiste gegenüber Platinenmitte, + = vom Deckel weg (nicht gemessen, mittig angenommen) |
-| `ENC_WALL` | 2 | Wand am Drehgeber (Gewindelänge unbekannt) |
-| `ENC_OUT` | 14 | Achse ragt so weit aus der Wand |
-| `ENC_SLOT` | 1 | Schlitzbreite Achse |
+| `ENC_OUT` | 14 | Achse ragt so weit aus der Wand. GEMESSEN 23 bei 2 mm Wand (= 22 bei 3 mm Wand, Achse 25 ab Gewindeanfang laut Datenblatt) → Knopf passt so nicht, Entscheidung offen (Knopf länger oder Achse kürzen) |
 | `NUT_REC` | 14 / 3 | Aussparung für Mutter+Scheibe im Knopf Ø, Tiefe |
 | `JK_HOLE` | 6,2 | Loch für Klinkengewinde (Gewinde unbekannt) |
 | `JK_WALL` | 2 | Wand an der Klinke |
@@ -23,7 +21,6 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `PAT_END` | 3,5 | Lochmitte bis Pi-Ende des Stapels (Pi-Norm); ±3 mm deckt der Freiraum ab |
 | `UPS_LEVEL` | 35 | Acrylplatte bis Oberkante Akku-Board (Zellen + Board) |
 | `CLAMP_Z` | 52 | Unterkante der Klemmblöcke über der Acrylplatte |
-| `USBC_PLUG` | 13 / 7 / 3 | Öffnung in der Rückwand für den Steckerkörper (B, H, Eckradius). USB-C-Spezifikation: Steckerkörper höchstens 12,35 × 6,5; Netzteilstecker nachmessen |
 | `AUDIO_PLUG` | 20 | Platz hinter der Klinke des Pi: Klinkenstecker 90° gewinkelt (Goobay 67782) |
 | `MAXB` | 19 / 18 / 8 | Verstärker-Klon L, B, Höhe mit Klemme |
 
@@ -42,7 +39,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `BTN_GAP` | 0,25 | Luft je Seite zwischen Kappe und Deckelbohrung (Druck 02.11.: passt) |
 | `ENC_HOLE` | 7,4 | Loch für M7-Gewinde |
 
-## Von dir gemessen (12)
+## Von dir gemessen (13)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -53,6 +50,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `RC_PIN_OUT` | 6 | Überstand der 90°-Stifte über die Platinenkante |
 | `RC_PLUG_OUT` | 14 | Platinenkante bis Ende Steckkabel-Hülse (gesteckt, Buchse sitzt bis an die Leiste) |
 | `SW_LEGS` | 13 | Breite über die Beinchen (Außenkante zu Außenkante), Jan ca. 13 mm; Taster 12 mm, Beinchen stehen seitlich über |
+| `ENC_SLOT` | 1,6 | Schlitzbreite Achse (Jan 03.11.: ca. 1,6, Schlitz 11 tief, Achse Ø 6) |
 | `ACRYL` | 85 / 55 | Acrylplatte unter dem Stapel (von dir gemessen) |
 | `STACK_H` | 70 | Acrylplatte bis Oberkante graue Klemmen, ohne Kabel |
 | `PINS_H` | 60 | Acrylplatte bis Spitzen der gelben Stifte |
@@ -77,7 +75,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (79)
+## Gestaltung festgelegt (81)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -136,6 +134,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `SW_LEG_CLR` | 0,5 | Luft je Seite im Beinchen-Kanal des Tasterhalters |
 | `ENC_Y` | 84 | Drehgeber y |
 | `ENC_Z` | 60 | Drehgeber z |
+| `ENC_WALL` | 3 | Wand am Drehgeber = volle Wand (vorher 2,0 mit Senkung innen). Gewinde 7 mm (Datenblatt STEC11B, M7×0,75); am Prototyp bei 2 mm Wand 2 mm Gewinde über der Mutter (Jan 03.11.) → bei 3 mm Wand noch ca. 1 mm, Mutter voll im Gewinde |
 | `KNOB_D` | 34 | Knopf-Ø |
 | `KNOB_L` | 16 | Knopflänge |
 | `JK_Y` | 84 | Klinke y |
@@ -155,6 +154,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WIRE_CLR` | 15 | Platz für die Kabel an jeder Klemmreihe |
 | `STACK_CLR` | 3 | Luft rings um den Stapel |
 | `USB_PLUG` | 20 | Platz hinter der Anschlusskante: Stecker am Akku-Board gewinkelt oder höchstens 20 mm lang |
+| `USBC_PLUG` | 13 / 7 / 3 | Öffnung in der Rückwand für den Steckerkörper (B, H, Eckradius). USB-C-Spezifikation: Steckerkörper höchstens 12,35 × 6,5; Netzteilstecker laut Jan normgerecht |
 | `USBC_CH` | 0,6 | Fase außen an der USB-C-Öffnung |
 | `BRIDGE_Y` | 74 / 98 | Verteiler-Brücke am Deckelrahmen: MPR121 + Klemmen für 3,3 V, SCL, GND B |
 | `LS_X` | 24 / 116 | Deckelschrauben hinten x |

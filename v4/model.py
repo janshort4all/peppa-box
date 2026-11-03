@@ -134,9 +134,9 @@ SW_LEG_CLR = par("SW_LEG_CLR", 0.5, "festgelegt", "Luft je Seite im Beinchen-Kan
 ENC_Y = par("ENC_Y", 84.0, "festgelegt", "Drehgeber y")
 ENC_Z = par("ENC_Z", 60.0, "festgelegt", "Drehgeber z")
 ENC_HOLE = par("ENC_HOLE", 7.4, "Probedruck", "Loch für M7-Gewinde")
-ENC_WALL = par("ENC_WALL", 2.0, "vorläufig", "Wand am Drehgeber (Gewindelänge unbekannt)")
-ENC_OUT = par("ENC_OUT", 14.0, "vorläufig", "Achse ragt so weit aus der Wand")
-ENC_SLOT = par("ENC_SLOT", 1.0, "vorläufig", "Schlitzbreite Achse")
+ENC_WALL = par("ENC_WALL", 3.0, "festgelegt", "Wand am Drehgeber = volle Wand (vorher 2,0 mit Senkung innen). Gewinde 7 mm (Datenblatt STEC11B, M7×0,75); am Prototyp bei 2 mm Wand 2 mm Gewinde über der Mutter (Jan 03.11.) → bei 3 mm Wand noch ca. 1 mm, Mutter voll im Gewinde")
+ENC_OUT = par("ENC_OUT", 14.0, "vorläufig", "Achse ragt so weit aus der Wand. GEMESSEN 23 bei 2 mm Wand (= 22 bei 3 mm Wand, Achse 25 ab Gewindeanfang laut Datenblatt) → Knopf passt so nicht, Entscheidung offen (Knopf länger oder Achse kürzen)")
+ENC_SLOT = par("ENC_SLOT", 1.6, "gemessen", "Schlitzbreite Achse (Jan 03.11.: ca. 1,6, Schlitz 11 tief, Achse Ø 6)")
 KNOB_D = par("KNOB_D", 34.0, "festgelegt", "Knopf-Ø")
 KNOB_L = par("KNOB_L", 16.0, "festgelegt", "Knopflänge")
 NUT_REC = par("NUT_REC", (14.0, 3.0), "vorläufig", "Aussparung für Mutter+Scheibe im Knopf Ø, Tiefe")
@@ -177,16 +177,16 @@ WIRE_CLR = par("WIRE_CLR", 15.0, "festgelegt", "Platz für die Kabel an jeder Kl
 STACK_CLR = par("STACK_CLR", 3.0, "festgelegt", "Luft rings um den Stapel")
 USB_PLUG = par("USB_PLUG", 20.0, "festgelegt", "Platz hinter der Anschlusskante: Stecker am Akku-Board gewinkelt oder höchstens 20 mm lang")
 USBC = par("USBC", {"x": 112.0, "z": 60.0, "pcb": 22.0, "pcb_t": 1.6, "loch_abst": 16.0, "loch_rand": 3.0,
-                    "buchse_b": 9.2, "buchse_h": 3.3, "spalt": 0.3, "dom_l": 10.0},
-            "belegt / vorläufig",
+                    "buchse_b": 9.2, "buchse_h": 3.4, "spalt": 0.3, "dom_l": 10.0},
+            "belegt / gemessen",
             "Soldered 333011 (V1.2.0) in der Rückwand, Bauteilseite oben, Buchsenmund bündig mit der Platinenkante. "
             "Belegt (KiCad-Datei V1.2.0): Platine 22 × 22 × 1,6, Löcher Ø 3,2 mit 16,0 Abstand, 3,0 von der Buchsenkante, "
-            "Buchsenbreite ca. 9,2 (Bestückungsdruck). Vorläufig: Buchsenhöhe 3,3 (USB-C-üblich, nachmessen). "
+            "Buchsenbreite ca. 9,2 (Bestückungsdruck). Gemessen (Jan 03.11.): Buchsenhöhe 3,4, Lochabstand 16. "
             "x 112 statt 114: 2 mm mehr Abstand zur Innenecke")
 USBC_LEGS = par("USBC_LEGS", (4.31, 2.5, 6.7, 1.5), "belegt",
                 "Lötfahnen der Buchse unter der Platine (KiCad): seitlich ±4,31, 2,5 und 6,7 von der Platinenkante; Aussparung 1,5 tief im Dom")
-USBC_PLUG = par("USBC_PLUG", (13.0, 7.0, 3.0), "vorläufig",
-                "Öffnung in der Rückwand für den Steckerkörper (B, H, Eckradius). USB-C-Spezifikation: Steckerkörper höchstens 12,35 × 6,5; Netzteilstecker nachmessen")
+USBC_PLUG = par("USBC_PLUG", (13.0, 7.0, 3.0), "festgelegt",
+                "Öffnung in der Rückwand für den Steckerkörper (B, H, Eckradius). USB-C-Spezifikation: Steckerkörper höchstens 12,35 × 6,5; Netzteilstecker laut Jan normgerecht")
 USBC_CH = par("USBC_CH", 0.6, "festgelegt", "Fase außen an der USB-C-Öffnung")
 AUDIO_PLUG = par("AUDIO_PLUG", 20.0, "vorläufig", "Platz hinter der Klinke des Pi: Klinkenstecker 90° gewinkelt (Goobay 67782)")
 MAXB = par("MAXB", (19.0, 18.0, 8.0), "vorläufig", "Verstärker-Klon L, B, Höhe mit Klemme")
@@ -344,7 +344,8 @@ def korpus():
         cut.append(Manifold.cylinder(2.9, 1.5, 4.4, 61).rotate([-90, 0, 0]).translate([x, W - 1.9, LS_Z]))
     # Rechts: Drehgeber und Klinke
     cut.append(ext_yz(tear(ENC_HOLE / 2, ENC_Y, ENC_Z, cap=ENC_HOLE / 2), W - WALL - 1, W + 1))
-    cut.append(cyl_x(W - WALL - 1, W - ENC_WALL, ENC_Y, ENC_Z, 11))
+    if ENC_WALL < WALL:                                                          # Senkung innen nur bei dünnerer Wand
+        cut.append(cyl_x(W - WALL - 1, W - ENC_WALL, ENC_Y, ENC_Z, 11))
     cut.append(ext_yz(tear(JK_HOLE / 2, JK_Y, JK_Z, cap=JK_HOLE / 2), W - WALL - 1, W + 1))
     cut.append(cyl_x(W - WALL - 1, W - JK_WALL, JK_Y, JK_Z, 9))
     # Links: Riemen

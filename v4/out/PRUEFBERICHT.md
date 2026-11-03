@@ -26,7 +26,7 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | Abstand Pi + Klemmen-Aufsatz ↔ Touch-Modul MPR121 | 40,0 |
 | Abstand Akku-Board mit Zellen ↔ Korpus | 4,1 |
 | Abstand Kabel Klemmreihe links (Zone) ↔ Korpus | 4,5 |
-| Abstand Kabel Klemmreihe rechts (Zone) ↔ Drehgeber | 13,0 |
+| Abstand Kabel Klemmreihe rechts (Zone) ↔ Drehgeber | 12,0 |
 | Abstand Kabel Klemmreihe hinten (Zone) ↔ USB-C-Platine mit Buchse und Kabeln | 7,0 |
 | Abstand USB-C-Stecker am Akku-Board (Zone) ↔ Korpus | 4,5 |
 | Abstand WAGO GND A ↔ Korpus | 2,4 |

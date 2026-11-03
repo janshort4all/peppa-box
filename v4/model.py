@@ -180,7 +180,7 @@ USB_PANEL = par("USB_PANEL", {"x": 114.0, "z": 60.0, "loch": 16.4, "mutter": 24.
                 "USB-C-Einbaubuchse in der Rückwand (rund M16 angenommen, Produkt noch offen)")
 AUDIO_PLUG = par("AUDIO_PLUG", 20.0, "vorläufig", "Platz hinter der Klinke des Pi: Klinkenstecker 90° gewinkelt (Goobay 67782)")
 MAXB = par("MAXB", (19.0, 18.0, 8.0), "vorläufig", "Verstärker-Klon L, B, Höhe mit Klemme")
-MPRB = par("MPRB", (25.0, 20.0, 4.0), "vorläufig", "MPR121-Modul L, B, Höhe")
+MPRB = par("MPRB", (34.0, 20.0, 4.0), "gemessen", "MPR121-Modul L, B, Höhe: Adafruit 1982 STEMMA-QT-Ausführung, L × B von Jan gemessen 03.11.; Höhe noch vorläufig")
 WAGO5 = par("WAGO5", (30.0, 18.6, 8.4), "belegt", "WAGO 221-425 B, T, H")
 WAGO3 = par("WAGO3", (18.6, 18.6, 8.4), "belegt", "WAGO 221-423 B, T, H")
 REAR_Y = STACK_Y0 + UPS[1] + 1.0          # hinterer Streifen hinter der Anschlusskante

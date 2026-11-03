@@ -2,7 +2,7 @@
 
 Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Modell alles neu: Löcher, Halter, Kollisionsprüfung.
 
-## Vorläufig – am echten Teil messen (21)
+## Vorläufig – am echten Teil messen (20)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -26,7 +26,6 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `USB_PANEL` | x 114; z 60; loch 16,4; mutter 24; tiefe 20 | USB-C-Einbaubuchse in der Rückwand (rund M16 angenommen, Produkt noch offen) |
 | `AUDIO_PLUG` | 20 | Platz hinter der Klinke des Pi: Klinkenstecker 90° gewinkelt (Goobay 67782) |
 | `MAXB` | 19 / 18 / 8 | Verstärker-Klon L, B, Höhe mit Klemme |
-| `MPRB` | 25 / 20 / 4 | MPR121-Modul L, B, Höhe |
 
 ## Mit Probedruck einstellen (10)
 
@@ -43,7 +42,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `BTN_GAP` | 0,25 | Luft je Seite zwischen Kappe und Deckelbohrung (Druck 02.11.: passt) |
 | `ENC_HOLE` | 7,4 | Loch für M7-Gewinde |
 
-## Von dir gemessen (11)
+## Von dir gemessen (12)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -58,6 +57,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `STACK_H` | 70 | Acrylplatte bis Oberkante graue Klemmen, ohne Kabel |
 | `PINS_H` | 60 | Acrylplatte bis Spitzen der gelben Stifte |
 | `STACK_PAT` | 58 / 49 | Lochbild der Bolzen unter der Acrylplatte |
+| `MPRB` | 34 / 20 / 4 | MPR121-Modul L, B, Höhe: Adafruit 1982 STEMMA-QT-Ausführung, L × B von Jan gemessen 03.11.; Höhe noch vorläufig |
 
 ## Aus Datenblatt belegt (12)
 

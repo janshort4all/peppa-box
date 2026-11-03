@@ -51,7 +51,7 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | 01_korpus_beige.stl | 140 × 140 × 136 | Kammerdecke ca. 40 mm, Lautsprecherausschnitt oben 28 mm, Kernlöcher der Dome, Schlitze 2 mm |
 | 02a_deckel_kern_orange.stl | 133 × 133 × 5 | Taschen unter den Touch-Feldern (Ø 20–28 mm, verdeckt) |
 | 02b_deckel_haut_beige.stl | 133 × 133 × 1 | – |
-| 03_deckelrahmen.stl | 127 × 128 × 17 | Boden Tasterhalter 12 mm |
+| 03_deckelrahmen.stl | 128 × 128 × 17 | Boden Tasterhalter 12 mm |
 | 04_kartenfach.stl | 14 × 52 × 88 | Seitenwand über dem Kartenschlitz 5 mm |
 | 05_boden_traeger.stl | 140 × 140 × 8 | Decke der Senkbohrungen M2,5 (Ring 1,8 mm) |
 | 06_stoffrahmen.stl | 114 × 114 × 5 | – |

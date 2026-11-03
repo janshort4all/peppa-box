@@ -327,3 +327,11 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Am Pi einmal per SSH:** `cd ~/peppa-box && git pull && sh software/dienst_einrichten.sh` (Watchdog, „nie aufgeben“ für Player und Raspotify, sudo-Freigabe `restart peppa-stille`). Ohne diesen Schritt läuft alles andere schon nach dem Update über die Seite.
 - **Am Pi prüfen:** Karte auflegen (Start wie bisher sofort), mehrere Karten schnell wechseln (am Ende spielt die letzte), `sudo systemctl restart raspotify` während Musik (geht nach einigen Sekunden an derselben Stelle weiter), Karte während des Hochfahrens auflegen.
 - **Idee:** kurze Ansage „Einen Moment …“ (ElevenLabs, Stimme Helmut), wenn eine Reparatur länger als ca. 5 s dauert, damit das Kind weiß, dass die Box arbeitet.
+
+## Nachtrag 03.11.2026 (2) – Touch-Modul geliefert, Mulde angepasst
+
+- Geliefert: **Adafruit 1982 in der STEMMA-QT-Ausführung** (zwei 4-polige JST-SH-Buchsen, Beschriftung VIN, 3Vo, GND, SCL, SDA, INT, ADDR unten; 11 … 0 und GND oben). Gemessen: **34 × 20 mm** (L × B).
+- Modell: `MPRB` 25 × 20 → 34 × 20 mm (gemessen), Mulde jetzt innen 34,6 × 20,6 mm, liegt weiter ganz rechts unter der Verteiler-Brücke (x 98,4–133,0, y 75,7–96,3). `check.py`: keine Kollision, Deckelteile von oben einsetzbar, Abstand zum Kartenfach 13,6 mm. Neu exportiert: `03_deckelrahmen.stl`, Coupons C2/C3, Ansichten.
+- Höhe des Moduls (Platine + Buchsen + Lötstellen) noch nicht gemessen (4,0 mm vorläufig).
+- Beiliegende Stiftleiste ist länger als die Lötreihe und wird nicht gebraucht (Kabel direkt in die Lötaugen). Belegung Vorschlag: E0 zurück, E1 Play, E2 vor, E3 Schlaf (in der Software änderbar).
+- Kupferfelder: Streifen nebeneinander in die Tasche, blanke Litze quer über alle Streifen, zweiter Streifen darüber (Kleber kann nichtleitend sein).

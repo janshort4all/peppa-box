@@ -57,7 +57,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `STACK_H` | 70 | Acrylplatte bis Oberkante graue Klemmen, ohne Kabel |
 | `PINS_H` | 60 | Acrylplatte bis Spitzen der gelben Stifte |
 | `STACK_PAT` | 58 / 49 | Lochbild der Bolzen unter der Acrylplatte |
-| `MPRB` | 34 / 20 / 4 | MPR121-Modul L, B, Höhe: Adafruit 1982 STEMMA-QT-Ausführung, L × B von Jan gemessen 03.11.; Höhe noch vorläufig |
+| `MPRB` | 34 / 20 / 5 | MPR121-Modul L, B, Höhe: Adafruit 1982 STEMMA-QT-Ausführung, L × B gemessen 03.11.; Höhe 5 mm festgelegt (inkl. Buchsen und Lötstellen) |
 
 ## Aus Datenblatt belegt (12)
 

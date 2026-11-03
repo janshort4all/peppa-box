@@ -332,6 +332,7 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 
 - Geliefert: **Adafruit 1982 in der STEMMA-QT-Ausführung** (zwei 4-polige JST-SH-Buchsen, Beschriftung VIN, 3Vo, GND, SCL, SDA, INT, ADDR unten; 11 … 0 und GND oben). Gemessen: **34 × 20 mm** (L × B).
 - Modell: `MPRB` 25 × 20 → 34 × 20 mm (gemessen), Mulde jetzt innen 34,6 × 20,6 mm, liegt weiter ganz rechts unter der Verteiler-Brücke (x 98,4–133,0, y 75,7–96,3). `check.py`: keine Kollision, Deckelteile von oben einsetzbar, Abstand zum Kartenfach 13,6 mm. Neu exportiert: `03_deckelrahmen.stl`, Coupons C2/C3, Ansichten.
-- Höhe des Moduls (Platine + Buchsen + Lötstellen) noch nicht gemessen (4,0 mm vorläufig).
+- Höhe des Moduls (Platine + Buchsen + Lötstellen): 5 mm vorgesehen (Jan, 03.11.). Prüfung ohne Kollision, Abstand zum Kartenfach 13,5 mm.
+- Die zwei weißen Buchsen sind STEMMA QT (JST SH, 4-polig, 1 mm Raster: GND, 3,3 V, SDA, SCL) zum lötfreien Anschluss von I2C. Werden nicht genutzt (Kabel gehen in die Lötaugen); Option: STEMMA-QT-Kabel statt 4 Lötstellen, dafür dünne Adern an den Klemmen.
 - Beiliegende Stiftleiste ist länger als die Lötreihe und wird nicht gebraucht (Kabel direkt in die Lötaugen). Belegung Vorschlag: E0 zurück, E1 Play, E2 vor, E3 Schlaf (in der Software änderbar).
 - Kupferfelder: Streifen nebeneinander in die Tasche, blanke Litze quer über alle Streifen, zweiter Streifen darüber (Kleber kann nichtleitend sein).

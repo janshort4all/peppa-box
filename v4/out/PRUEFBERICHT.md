@@ -38,7 +38,7 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | Abstand RC522-Stecker (Zone) ↔ Korpus | 5,0 |
 | Abstand RC522-Stecker (Zone) ↔ Deckelrahmen | 0,8 |
 | Abstand RC522-Stecker (Zone) ↔ Kartenfach | 1,7 |
-| Abstand Touch-Modul MPR121 ↔ Kartenfach | 13,6 |
+| Abstand Touch-Modul MPR121 ↔ Kartenfach | 13,5 |
 | Abstand RC522-Stecker (Zone) ↔ Schraubblock Deckelrahmen hinten | 3,7 |
 
 0,0 heißt: Teile liegen bewusst aneinander an (Lautsprecher auf der Mulde, Korpus auf dem Boden).

@@ -215,7 +215,8 @@ def zustand():
 
 
 def meldungen():
-    code, aus = befehl(["journalctl", "-u", "peppa-player", "-u", "peppa-web", "-n", "60",
+    code, aus = befehl(["journalctl", "-u", "peppa-player", "-u", "peppa-web", "-u", "raspotify",
+                        "-u", "peppa-stille", "-n", "100",
                         "--no-pager", "-o", "short-iso"], zeit=10)
     return {"ok": code == 0, "text": aus}
 

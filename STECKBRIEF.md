@@ -306,3 +306,8 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - Bohrung geht glatt bis zur Oberfläche. Beim Druck kopfüber liegt die Öffnung auf der Platte → keine Brücke, **Opferschicht entfällt** (`DISH_D`, `DISH_DEPTH`, `DISH_WALL`, `BTN_MEMBRANE` gelöscht). Elefantenfuß-Kompensation (ca. 0,15 mm) bleibt wichtig, sonst wird das Loch an der Oberfläche enger.
 - Unter dem Deckel unverändert: Kragen, Stößel, Tasterhalter, Schaltweg. Die Kappe ist oben 1,5 mm länger. Neu gebaut: `02_deckel_einfarbig`, `02a`, `02b`, `08_ein_taste_orange`, Coupons C2 (Deckel), C3 (Deckelstück, Kappe), C9; Schnitt `ein_taste_schnitt.png`. Prüfungen ohne Kollision.
 - Folge: Die Mulde schützte gegen versehentliches Drücken. Ausgleich in der Software: Ausschalten erst nach ca. 2 s Halten, kurzes Drücken nur Wecken/Anzeige.
+
+## Nachtrag 03.11.2026 – Kein Ton trotz erkannter Karte (Fehlersuche läuft)
+- Befund Jan (19:00): Karte wird erkannt, Player schickt den Startbefehl, Spotify antwortet **502 „Bad gateway“** (Spotify erreicht die Box nicht). Vorher mehrere Karten schnell hintereinander gewechselt. Auch nach „Musik neu starten“ und Neustart kein Ton. In der Spotify-App ist „Peppa Box“ auswählbar, springt aber sofort auf Pause → Raspotify/librespot spielt nicht (Verdacht: Audio-Key-Fehler, Anmeldung oder Ausgang `lautsprecher` nicht zu öffnen). Raspotify-Protokoll steht noch aus.
+- Eltern-Seite: „Letzte Meldungen“ zeigt jetzt auch `raspotify` und `peppa-stille` (100 Zeilen) und springt automatisch ans Ende (neueste Meldung unten). Update über die Seite, kein SSH nötig.
+- Geplant: Player fasst schnelle Kartenwechsel zusammen (nur letzter Befehl) und startet Raspotify bei 502 selbst neu.

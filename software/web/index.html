@@ -376,7 +376,7 @@ async function ausfuehren(was, pfad, ziel) {
 
 $('mdetails').addEventListener('toggle', async () => {
   if (!$('mdetails').open) return;
-  try { const m = await holen('/api/meldungen'); $('mtext').textContent = m.text || '(keine Meldungen)'; }
+  try { const m = await holen('/api/meldungen'); $('mtext').textContent = m.text || '(keine Meldungen)'; const k = $('mtext'); k.scrollTop = k.scrollHeight; }
   catch (e) { $('mtext').textContent = 'Keine Verbindung zur Box.'; }
 });
 

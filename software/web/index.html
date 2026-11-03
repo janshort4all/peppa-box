@@ -240,6 +240,10 @@ function dauer(s) {
   const t = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
   return t ? `${t} T ${h} Std` : h ? `${h} Std ${m} Min` : `${m} Min`;
 }
+function esc(t) {
+  return String(t).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+}
+
 function setze(id, text, klasse) {
   $(id).innerHTML = (klasse ? `<span class="punkt ${klasse}"></span>` : '') + text;
 }
@@ -279,6 +283,7 @@ async function zustand() {
 
   const p = z.player, sp = z.dienste.raspotify === 'active';
   if (!p.laeuft) setze('musik', 'Player aus', 'rot');
+  else if (p.problem) setze('musik', `kümmert sich <small>${esc(p.problem)}</small>`, 'warn');
   else if (!sp || !p.spotify_bereit) setze('musik', 'wartet auf Spotify', 'warn');
   else setze('musik', 'bereit', 'gut');
 

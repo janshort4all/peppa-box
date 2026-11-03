@@ -22,6 +22,8 @@ sudo tee /etc/systemd/system/peppa-player.service > /dev/null <<EOF
 Description=Peppa Box Player (Karten, Spotify)
 After=network-online.target raspotify.service
 Wants=network-online.target
+# nie aufgeben, egal wie oft er neu starten muss
+StartLimitIntervalSec=0
 
 [Service]
 User=$BENUTZER
@@ -29,7 +31,10 @@ WorkingDirectory=$ORDNER
 ExecStart=/usr/bin/python3 $ORDNER/peppa_player.py
 Environment=PYTHONUNBUFFERED=1
 Restart=always
-RestartSec=5
+RestartSec=3
+# Waechter: meldet sich der Player 30 s nicht (haengende Schleife), startet systemd ihn neu
+WatchdogSec=30
+NotifyAccess=main
 
 [Install]
 WantedBy=multi-user.target
@@ -122,8 +127,8 @@ EOF
 # --- sudo-Freigabe: genau diese Befehle, sonst nichts
 TMP="$(mktemp)"
 cat > "$TMP" <<EOF
-# Peppa Box: Befehle fuer die Eltern-Seite (peppa-web). Erzeugt von dienst_einrichten.sh.
-$BENUTZER ALL=(root) NOPASSWD: $SYSTEMCTL poweroff, $SYSTEMCTL reboot, $SYSTEMCTL restart peppa-player, $SYSTEMCTL restart raspotify
+# Peppa Box: Befehle fuer Eltern-Seite (peppa-web) und Selbstreparatur des Players. Erzeugt von dienst_einrichten.sh.
+$BENUTZER ALL=(root) NOPASSWD: $SYSTEMCTL poweroff, $SYSTEMCTL reboot, $SYSTEMCTL restart peppa-player, $SYSTEMCTL restart raspotify, $SYSTEMCTL restart peppa-stille
 EOF
 if sudo visudo -cf "$TMP" > /dev/null; then
     sudo install -m 0440 -o root -g root "$TMP" /etc/sudoers.d/peppa-box
@@ -148,7 +153,12 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
+Restart=always
 RestartSec=3
+
+[Unit]
+# nie aufgeben (sonst bliebe Raspotify nach mehreren Abstuerzen aus)
+StartLimitIntervalSec=0
 EOF
     # network-online.target wartet nur, wenn der Warte-Dienst des Netzwerkmanagers aktiv ist
     if systemctl cat NetworkManager-wait-online.service > /dev/null 2>&1; then

@@ -6,10 +6,16 @@ Zustand (Karte, Link, Spotify bereit, Ausgang, Ruhezeit, Auto-Aus) schreibt der 
 /dev/shm/peppa-box-status.json; die Eltern-Seite (Dienst peppa-web, peppa_web.py) zeigt ihn an.
 Die Automatik (Schlummer-Timer, Ruhezeit, Auto-Aus, Lautstärke-Grenzen) steht in automatik.py.
 Ansage „Peppa Box bereit – viel Spaß“, sobald Spotify die Box kennt und eine Karte Musik starten kann (toene.py).
+Spotify steuert die Steuerung (steuerung.py) in einem eigenen Faden: Sie fasst schnelle
+Kartenwechsel zusammen, prüft nach jedem Start, ob wirklich Musik läuft, und repariert Fehler selbst
+(Gerät neu suchen, Raspotify neu starten, nach Absturz weiterspielen). Der Kartenleser wartet nie auf
+das Netz. Liest der Leser wiederholt fehlerhaft, wird er neu eingerichtet. Läuft der Dienst mit
+systemd-Watchdog, meldet sich die Schleife jede Sekunde; hängt sie, startet systemd den Player neu.
 Start von Hand: python3 ~/peppa-box/software/peppa_player.py   (laeuft sonst als Dienst peppa-player)
 """
 import json
 import os
+import socket
 import time
 
 import automatik
@@ -18,12 +24,14 @@ import lautstaerke
 import spotify
 import toene
 from rc522 import RC522
+from steuerung import Steuerung
 
 GERAET = "Peppa Box"          # Name in /etc/raspotify/conf (LIBRESPOT_NAME)
 ABFRAGE = 1.0                 # Sekunden zwischen zwei Abfragen des Lesers
 WEG_NACH = 1.5                # Sekunden ohne Karte, bis "entfernt" gilt (= zwei verpasste Abfragen)
+LESER_NEU_NACH = 5            # so viele Lesefehler in Folge -> Leser neu einrichten
 STATUS_DATEI = einstellungen.lauf_pfad("status")    # im Arbeitsspeicher, schont die SD-Karte
-ZUSTAND = {"karte": None, "link": None, "spotify_bereit": False}
+ZUSTAND = {"karte": None, "link": None, "spotify_bereit": False, "problem": None}
 
 
 def log(text):
@@ -41,56 +49,99 @@ def status_schreiben():
         pass
 
 
-def warte_auf_geraet():
-    """Wartet, bis Raspotify bei Spotify angemeldet ist (nach dem Einschalten dauert das etwas).
-    Die erste Minute wird jede Sekunde gefragt (Ansage kommt sofort), danach alle 5 s."""
-    gemeldet = False
-    beginn = time.time()
-    while True:
-        status_schreiben()
-        try:
-            dev = spotify.geraet_id(GERAET)
-            if dev:
-                return dev
-            if not gemeldet:
-                namen = ", ".join(d["name"] for d in spotify.geraete()) or "keine"
-                log(f"Warte auf Spotify-Geraet '{GERAET}' (sichtbar: {namen}) ...")
-                gemeldet = True
-        except Exception as e:
-            if not gemeldet:
-                log(f"Warte auf Spotify ({e!r}) ...")
-                gemeldet = True
-        time.sleep(1 if time.time() - beginn < 60 else 5)
+def systemd_melden(text):
+    """sd_notify ohne Zusatzpaket (READY=1, WATCHDOG=1). Ohne systemd-Watchdog wirkungslos."""
+    adresse = os.environ.get("NOTIFY_SOCKET")
+    if not adresse:
+        return
+    if adresse.startswith("@"):
+        adresse = "\0" + adresse[1:]
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as s:
+            s.connect(adresse)
+            s.sendall(text.encode())
+    except OSError:
+        pass
+
+
+class SpotifyFuerAutomatik:
+    """Automatik (Timer, Ruhezeit) pausiert über diese Hülle: Die Steuerung weiß dann, dass die Pause
+    gewollt ist, und „repariert“ sie nicht. Ohne bekanntes Gerät wird nichts pausiert (sonst träfe
+    die Pause womöglich das Handy der Eltern)."""
+
+    def __init__(self, st):
+        self.st = st
+
+    def spielt(self, dev):
+        return spotify.spielt(dev) if dev else False
+
+    def pause(self, dev):
+        self.st.extern_pausiert()
+        if not dev:
+            return 404, None
+        return spotify.pause(dev)
+
+
+def leser_einrichten():
+    leser = RC522()
+    version = leser.version()
+    log(f"RC522 Version 0x{version:02X}.")
+    return leser
 
 
 def main():
-    leser = RC522()
-    log(f"RC522 Version 0x{leser.version():02X}.")
-    auto = automatik.Automatik(spotify, lautstaerke, einstellungen, log=log)
+    leser = leser_einrichten()
+    st = Steuerung(spotify, geraet=GERAET, log=log)
+    auto = automatik.Automatik(SpotifyFuerAutomatik(st), lautstaerke, einstellungen, log=log)
+
+    def bereit():                               # Ansage, einmal je Einschalten (nicht in der Ruhezeit "keine Musik")
+        if not auto.sperrt():
+            toene.einmal_je_einschalten("bereit", log=log)
+    st.bei_bereit = bereit
+
     auto.beim_start()                           # Startlautstärke, bevor irgendetwas spielt
     status_schreiben()
-    dev = warte_auf_geraet()
-    ZUSTAND["spotify_bereit"] = True
-    log("Bereit. Karte auflegen.")
-    if not auto.sperrt():                       # Ansage, einmal je Einschalten (nicht in der Ruhezeit "keine Musik")
-        toene.einmal_je_einschalten("bereit", log=log)
-    aktuell, zuletzt, letzte_sicht = None, None, 0.0
+    st.starten()
+    systemd_melden("READY=1")
+    log("Warte auf Spotify, Karten werden schon gelesen.")
+    aktuell, letzte_sicht, lesefehler = None, 0.0, 0
     while True:
         beginn = time.time()
         try:
             leser.antenne(True)
-            aktuell, zuletzt, letzte_sicht, dev = schritt(leser, aktuell, zuletzt, letzte_sicht, dev, auto)
-        except Exception as e:                  # Netz- oder Spotify-Fehler: melden, weiterlaufen
-            log(f"Fehler: {e!r} – laufe weiter")
+            aktuell, letzte_sicht = schritt(leser, aktuell, letzte_sicht, auto, st)
+            lesefehler = 0
+        except Exception as e:                  # Lesefehler: melden, weiterlaufen
+            lesefehler += 1
+            log(f"Lesefehler: {e!r} – laufe weiter")
         finally:
-            leser.antenne(False)                # Funkfeld zwischen den Abfragen aus
+            try:
+                leser.antenne(False)            # Funkfeld zwischen den Abfragen aus
+            except Exception:
+                pass
+        if lesefehler >= LESER_NEU_NACH:
+            lesefehler = 0
+            try:
+                leser.close()
+            except Exception:
+                pass
+            try:
+                leser = leser_einrichten()
+                log("Kartenleser neu eingerichtet.")
+            except Exception as e:
+                log(f"Kartenleser lässt sich nicht einrichten: {e!r}")
+        if not st.lebt():                       # Steuerung darf nie fehlen
+            log("Spotify-Steuerung lief nicht mehr, neu gestartet.")
+            st.starten()
         try:
-            auto.tick(dev)
+            auto.tick(st.dev)
         except Exception as e:                  # die Automatik darf die Kartenabfrage nie lahmlegen
             log(f"Automatik-Fehler: {e!r} – laufe weiter")
         ZUSTAND.update(auto.status)
+        ZUSTAND.update(st.status)
         ZUSTAND["karte"] = aktuell
         status_schreiben()
+        systemd_melden("WATCHDOG=1")
         time.sleep(max(0.05, ABFRAGE - (time.time() - beginn)))
 
 
@@ -104,14 +155,13 @@ def link_lesen(leser):
     return None
 
 
-def schritt(leser, aktuell, zuletzt, letzte_sicht, dev, auto):
-    """Ein Durchlauf: Karte lesen und bei Wechsel Spotify steuern. Gibt den neuen Zustand zurueck."""
+def schritt(leser, aktuell, letzte_sicht, auto, st):
+    """Ein Durchlauf: Karte lesen und bei Wechsel der Steuerung den Wunsch melden (wartet nie auf das Netz)."""
     uid = leser.read_uid()
     jetzt = time.time()
     if uid:
         letzte_sicht = jetzt
         if uid != aktuell:
-            vorher = aktuell
             aktuell = uid
             link = link_lesen(leser)
             ZUSTAND["link"] = link
@@ -127,26 +177,14 @@ def schritt(leser, aktuell, zuletzt, letzte_sicht, dev, auto):
                 log(f"Karte {uid}: Ruhezeit, es wird nicht abgespielt.")
                 uri = None
             if uri:
-                dev = spotify.geraet_id(GERAET) or dev
-                if uid == zuletzt:
-                    status, data = spotify.fortsetzen(dev)
-                    log(f"Weiter: {uri} (Spotify {status})")
-                else:
-                    status, data = spotify.abspielen(dev, uri)
-                    log(f"Spiele: {uri} (Spotify {status})")
-                if status >= 300:
-                    log(f"  Fehler: {data}")
-                zuletzt = uid
-            elif vorher and vorher == zuletzt:      # Karte ohne Link ersetzt eine spielende Karte
-                status, _ = spotify.pause(dev)
-                log(f"Pause (Spotify {status})")
+                st.karte_auf(uri)
+            else:
+                st.karte_weg()                  # Karte ohne Link ersetzt eine spielende Karte
     elif aktuell and jetzt - letzte_sicht > WEG_NACH:
-        if aktuell == zuletzt:
-            status, _ = spotify.pause(dev)
-            log(f"Karte weg, Pause (Spotify {status})")
+        st.karte_weg()
         aktuell = None
         ZUSTAND["link"] = None
-    return aktuell, zuletzt, letzte_sicht, dev
+    return aktuell, letzte_sicht
 
 
 if __name__ == "__main__":

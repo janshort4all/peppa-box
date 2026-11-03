@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 import secrets
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -21,6 +22,13 @@ TOKEN = os.path.join(CONF_DIR, "spotify_token.json")
 REDIRECT_URI = "http://127.0.0.1:8888/callback"
 SCOPES = "user-read-playback-state user-modify-playback-state"
 API = "https://api.spotify.com/v1"
+ZEITLIMIT = 8               # Sekunden je Anfrage; kurz, damit ein haengendes Netz die Box nicht lange blockiert
+_TOKEN_SPERRE = threading.Lock()
+
+
+class AnmeldungFehlt(RuntimeError):
+    """Kein gueltiger Refresh-Token: einmal spotify_login.py ausfuehren. Kein SystemExit, damit der
+    Player weiterlaeuft (Karte lesen, Eltern-Seite) und die Ursache meldet."""
 
 
 def _save(path, data):
@@ -87,14 +95,30 @@ def login_interaktiv():
 
 
 def access_token():
-    tok = _load(TOKEN)
-    if not tok or not tok.get("refresh_token"):
-        raise SystemExit("Noch nicht bei Spotify angemeldet. Bitte zuerst: python3 ~/peppa-box/software/spotify_login.py")
-    if time.time() < tok.get("expires_at", 0):
+    with _TOKEN_SPERRE:                     # Player und Steuerung erneuern nie gleichzeitig
+        tok = _load(TOKEN)
+        if not tok or not tok.get("refresh_token"):
+            raise AnmeldungFehlt("Noch nicht bei Spotify angemeldet. Bitte: python3 ~/peppa-box/software/spotify_login.py")
+        if time.time() < tok.get("expires_at", 0) and tok.get("access_token"):
+            return tok["access_token"]
+        try:
+            tok = _token_request({"grant_type": "refresh_token", "refresh_token": tok["refresh_token"],
+                                  "client_id": client_id()})
+        except urllib.error.HTTPError as e:
+            if e.code in (400, 401):        # Refresh-Token ungueltig (z. B. Zugriff in Spotify entzogen)
+                raise AnmeldungFehlt(f"Spotify-Anmeldung abgelaufen ({e.code}). Bitte: "
+                                     "python3 ~/peppa-box/software/spotify_login.py") from e
+            raise
         return tok["access_token"]
-    tok = _token_request({"grant_type": "refresh_token", "refresh_token": tok["refresh_token"],
-                          "client_id": client_id()})
-    return tok["access_token"]
+
+
+def token_verwerfen():
+    """Nach 401: beim naechsten Aufruf neuen Zugangs-Token holen."""
+    with _TOKEN_SPERRE:
+        tok = _load(TOKEN)
+        if tok:
+            tok["expires_at"] = 0
+            _save(TOKEN, tok)
 
 
 def api(method, path, body=None, params=None):
@@ -105,10 +129,17 @@ def api(method, path, body=None, params=None):
                                  headers={"Authorization": "Bearer " + access_token(),
                                           "Content-Type": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=ZEITLIMIT) as resp:
             return resp.status, _json_oder_none(resp.read())
     except urllib.error.HTTPError as e:
-        return e.code, _json_oder_none(e.read())
+        data = _json_oder_none(e.read())
+        if e.code == 429:                   # zu viele Anfragen: Wartezeit mitgeben
+            try:
+                warte = int(e.headers.get("Retry-After", "5"))
+            except (TypeError, ValueError):
+                warte = 5
+            data = dict(data if isinstance(data, dict) else {}, retry_after=warte)
+        return e.code, data
 
 
 def _json_oder_none(raw):
@@ -164,6 +195,24 @@ def spielt(device_id):
         return None
     geraet = data.get("device") or {}
     return bool(data.get("is_playing")) and geraet.get("id") == device_id
+
+
+def zustand():
+    """Wiedergabe-Zustand fuer die Pruefung nach einem Befehl.
+    dict(geraet, spielt, titel, position) | {"leer": True} (nichts aktiv) | None (keine Antwort)."""
+    status, data = api("GET", "/me/player")
+    if status == 204:
+        return {"leer": True}
+    if status != 200 or not isinstance(data, dict):
+        return None
+    item = data.get("item") or {}
+    return {"geraet": (data.get("device") or {}).get("id"), "spielt": bool(data.get("is_playing")),
+            "titel": item.get("id") or item.get("uri"), "position": data.get("progress_ms") or 0}
+
+
+def uebertragen(device_id, spielen=True):
+    """Letzte Wiedergabe (Playlist und Stelle) auf dieses Geraet holen, z. B. nach Neustart von Raspotify."""
+    return api("PUT", "/me/player", {"device_ids": [device_id], "play": bool(spielen)})
 
 
 def fortsetzen(device_id):

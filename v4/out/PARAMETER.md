@@ -2,7 +2,7 @@
 
 Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Modell alles neu: Löcher, Halter, Kollisionsprüfung.
 
-## Vorläufig – am echten Teil messen (17)
+## Vorläufig – am echten Teil messen (14)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -13,10 +13,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `RC_T` | 1,6 | RC522 Platinendicke |
 | `RC_BEND` | 8 | Platz für den Kabelbogen hinter den Buchsen |
 | `RC_HDR_OFF` | 0 | Mitte der Stiftleiste gegenüber Platinenmitte, + = vom Deckel weg (nicht gemessen, mittig angenommen) |
-| `ENC_OUT` | 14 | Achse ragt so weit aus der Wand. GEMESSEN 23 bei 2 mm Wand (= 22 bei 3 mm Wand, Achse 25 ab Gewindeanfang laut Datenblatt) → Knopf passt so nicht, Entscheidung offen (Knopf länger oder Achse kürzen) |
-| `NUT_REC` | 14 / 3 | Aussparung für Mutter+Scheibe im Knopf Ø, Tiefe |
 | `JK_HOLE` | 6,2 | Loch für Klinkengewinde (Gewinde unbekannt) |
-| `JK_WALL` | 2 | Wand an der Klinke |
 | `STRAP_HOLE` | 5,2 | Buchschraube noch nicht gekauft |
 | `PAT_END` | 3,5 | Lochmitte bis Pi-Ende des Stapels (Pi-Norm); ±3 mm deckt der Freiraum ab |
 | `UPS_LEVEL` | 35 | Acrylplatte bis Oberkante Akku-Board (Zellen + Board) |
@@ -24,7 +21,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `AUDIO_PLUG` | 20 | Platz hinter der Klinke des Pi: Klinkenstecker 90° gewinkelt (Goobay 67782) |
 | `MAXB` | 19 / 18 / 8 | Verstärker-Klon L, B, Höhe mit Klemme |
 
-## Mit Probedruck einstellen (10)
+## Mit Probedruck einstellen (11)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -38,8 +35,9 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `INS_GAP` | 0,6 | Tasche: Spalt an der Außenwand (Einleger laminiert ca. 0,25–0,35 mm) |
 | `BTN_GAP` | 0,25 | Luft je Seite zwischen Kappe und Deckelbohrung (Druck 02.11.: passt) |
 | `ENC_HOLE` | 7,4 | Loch für M7-Gewinde |
+| `KNOB_BORE` | 6,1 | Bohrung für die Schlitzachse Ø 6 (gedruckt meist 0,1–0,2 kleiner → Klemmsitz) |
 
-## Von dir gemessen (13)
+## Von dir gemessen (17)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -50,14 +48,18 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `RC_PIN_OUT` | 6 | Überstand der 90°-Stifte über die Platinenkante |
 | `RC_PLUG_OUT` | 14 | Platinenkante bis Ende Steckkabel-Hülse (gesteckt, Buchse sitzt bis an die Leiste) |
 | `SW_LEGS` | 13 | Breite über die Beinchen (Außenkante zu Außenkante), Jan ca. 13 mm; Taster 12 mm, Beinchen stehen seitlich über |
+| `ENC_SLOT_D` | 11 | Schlitztiefe ab ursprünglichem Achsende (nach dem Kürzen bleiben 5 mm) |
 | `ENC_SLOT` | 1,6 | Schlitzbreite Achse (Jan 03.11.: ca. 1,6, Schlitz 11 tief, Achse Ø 6) |
+| `JK_WALL` | 2 | Wand unter der Klinkenmutter (wie Prototyp, passt laut Jan; Gewinde ist knapp) |
 | `ACRYL` | 85 / 55 | Acrylplatte unter dem Stapel (von dir gemessen) |
 | `STACK_H` | 70 | Acrylplatte bis Oberkante graue Klemmen, ohne Kabel |
 | `PINS_H` | 60 | Acrylplatte bis Spitzen der gelben Stifte |
 | `STACK_PAT` | 58 / 49 | Lochbild der Bolzen unter der Acrylplatte |
+| `SCREW_L` | 12 | Einzige vorhandene Schrauben: 3,0 × 12, Senk- und Flachkopf (Jan 03.11.). Alle Dome und Kernlöcher darauf ausgelegt |
+| `JK_NUT` | 8 | Mutter der Klinkenbuchse Ø (Jan 03.11.) |
 | `MPRB` | 34 / 20 / 5 | MPR121-Modul L, B, Höhe: Adafruit 1982 STEMMA-QT-Ausführung, L × B gemessen 03.11.; Höhe 5 mm festgelegt (inkl. Buchsen und Lötstellen) |
 
-## Aus Datenblatt belegt (13)
+## Aus Datenblatt belegt (15)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -69,13 +71,15 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `NFC_D` | 25 | NFC-Aufkleber Ø |
 | `SW` | 12 | Kurzhubtaster 12 × 12 |
 | `SW_H` | 7,3 | Tasterhöhe gesamt, Gehäuseunterseite bis Stößeloberkante (Etikett BerryBase KHT1212PV73: H 7,30; nachmessen) |
+| `ENC_THREAD` | 7 | Gewindelänge ab Gehäusefläche (Datenblatt STEC11B, M7 × 0,75) |
+| `ENC_PUSH` | 0,5 | Hub des Drucktasters in der Achse (Datenblatt) |
 | `UPS` | 85 / 56 | Akku-Board Grundriss |
 | `OVERHANG` | 20 | Akku-Board steht so weit über den Pi hinaus (85 − 65), BOOT-Taste dort |
 | `USBC_LEGS` | 4,31 / 2,5 / 6,7 / 1,5 | Lötfahnen der Buchse unter der Platine (KiCad): seitlich ±4,31, 2,5 und 6,7 von der Platinenkante; Aussparung 1,5 tief im Dom |
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (81)
+## Gestaltung festgelegt (93)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -134,9 +138,12 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `SW_LEG_CLR` | 0,5 | Luft je Seite im Beinchen-Kanal des Tasterhalters |
 | `ENC_Y` | 84 | Drehgeber y |
 | `ENC_Z` | 60 | Drehgeber z |
-| `ENC_WALL` | 3 | Wand am Drehgeber = volle Wand (vorher 2,0 mit Senkung innen). Gewinde 7 mm (Datenblatt STEC11B, M7×0,75); am Prototyp bei 2 mm Wand 2 mm Gewinde über der Mutter (Jan 03.11.) → bei 3 mm Wand noch ca. 1 mm, Mutter voll im Gewinde |
+| `ENC_WALL` | 2,6 | Wand unter der Drehgeber-Mutter = volle Wand 3,0 minus glatte Fläche 0,4 (vorher 2,0 mit Senkung innen). Gewinde 7 mm (Datenblatt STEC11B, M7×0,75); am Prototyp bei 2 mm Wand 2 mm Gewinde über der Mutter (Jan 03.11.) → bei 3 mm Wand noch ca. 1 mm, Mutter voll im Gewinde |
+| `ENC_OUT` | 16 | Achse ragt so weit über die Wand-Außenfläche: Achse wird um 6 mm gekürzt (Jan 03.11.). Gemessen 23 bei 2 mm Wand = 22 bei 3 mm Wand; Achse 25 ab Gewindeanfang (Datenblatt) |
 | `KNOB_D` | 34 | Knopf-Ø |
-| `KNOB_L` | 16 | Knopflänge |
+| `KNOB_ROOF` | 2 | Knopf: Material vor dem Achsende |
+| `NUT_REC_D` | 15 | Aussparung im Knopf für Mutter (Eckmaß ca. 11,5) und Scheibe |
+| `KNOB_GAP` | 1 | Luft Knopf ↔ Wand (Fuzzy Skin ±0,25, Drucktaster 0,5 mm Hub) |
 | `JK_Y` | 84 | Klinke y |
 | `JK_Z` | 24 | Klinke z |
 | `STRAP_Y` | 104 | Riemenpunkt y |
@@ -156,6 +163,15 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `USB_PLUG` | 20 | Platz hinter der Anschlusskante: Stecker am Akku-Board gewinkelt oder höchstens 20 mm lang |
 | `USBC_PLUG` | 13 / 7 / 3 | Öffnung in der Rückwand für den Steckerkörper (B, H, Eckradius). USB-C-Spezifikation: Steckerkörper höchstens 12,35 × 6,5; Netzteilstecker laut Jan normgerecht |
 | `USBC_CH` | 0,6 | Fase außen an der USB-C-Öffnung |
+| `SPK_DOME_L` | 10 | Lautsprecher-Dome hinter der Frontplatte (vorher 7): Schraube 3,0 × 12 durch den Korbflansch |
+| `FUZZ_REC` | 0,4 | Glatte Flächen (ohne Fuzzy Skin) liegen so tief unter der Außenfläche: saubere Kante, wirkt gewollt; Muttern liegen eben |
+| `FUZZ_RIM` | 0,3 | Modifier „ohne Fuzzy“ reicht so weit über die glatte Fläche hinaus (Stufe selbst bleibt glatt) |
+| `BACK_PANEL` | 17 / 46,5 / 123 / 69,5 / 5 | Anschlussfeld hinten x0, z0, x1, z1, Eckradius: ein glattes Feld mit USB-C und Lüftung, mittig (x 70) |
+| `VENTS` | 6 / 2 / 6,4 / 50 / 66 | Lüftungsschlitze: Anzahl, Breite, Teilung, z unten, z oben; links im Anschlussfeld mit gleichem Rand wie USB-C rechts |
+| `LS_SPOT` | 10 | glatte Fläche um die Deckelschrauben hinten (Ø) |
+| `JK_SPOT` | 10 | glatte Fläche um die Klinke (Ø) = Mutter + 1 mm Rand |
+| `ENC_SPOT` | 18 | glatte Fläche um den Drehgeber (Ø), liegt unter dem Knopf (Ø 34) |
+| `SEAT_CH` | 0,6 | Fase 45° an der Kante des Gitter-Sitzes vorne (glatt, rahmt das Gitter) |
 | `BRIDGE_Y` | 74 / 98 | Verteiler-Brücke am Deckelrahmen: MPR121 + Klemmen für 3,3 V, SCL, GND B |
 | `LS_X` | 24 / 116 | Deckelschrauben hinten x |
 | `LS_Z` | 124 | Deckelschrauben hinten z |

@@ -8,16 +8,19 @@ from model import box, cyl_x, cyl_y, U
 
 
 def ohne_fuzzy():
+    """Alle glatten Flächen: genau die vertieften Flächen des Korpus, um FUZZ_RIM erweitert (die Stufe selbst bleibt glatt).
+    Dazu der Gitter-Sitz vorne mit Fase und Wänden."""
+    e = M.FUZZ_RIM
     sx0, sx1, sz0, sz1 = M.SEAT
-    ux, uz = M.usb_panel()
-    r = M.USBC_PLUG[0] / 2 + 4
+    c = M.SEAT_CH + e
+    px0, pz0, px1, pz1, pr = M.BACK_PANEL
     parts = {
-        "front_stoffrahmen": box(sx0 + 0.2, -2, sz0 + 0.2, sx1 - 0.2, 10, sz1 - 0.2),
-        "rechts_drehgeber": cyl_x(M.W - 6, M.W + 2, M.ENC_Y, M.ENC_Z, 12),
-        "rechts_klinke": cyl_x(M.W - 6, M.W + 2, M.JK_Y, M.JK_Z, 9),
-        "hinten_usbc": cyl_y(M.W - 6, M.W + 2, ux, uz, r),
+        "front_gittersitz": M.ext_xz(M.rr(sx0 - c, sz0 - c, sx1 + c, sz1 + c, M.SEAT_R + c), -2, 10),
+        "rechts_drehgeber": cyl_x(M.W - 6, M.W + 2, M.ENC_Y, M.ENC_Z, M.ENC_SPOT / 2 + e),
+        "rechts_klinke": cyl_x(M.W - 6, M.W + 2, M.JK_Y, M.JK_Z, M.JK_SPOT / 2 + e),
+        "hinten_anschlussfeld": M.ext_xz(M.rr(px0 - e, pz0 - e, px1 + e, pz1 + e, pr + e), M.W - 6, M.W + 2),
         "links_riemen": cyl_x(-2, 6, M.STRAP_Y, M.STRAP_Z, 6),
-        "hinten_deckelschrauben": U([cyl_y(M.W - 6, M.W + 2, x, M.LS_Z, 6) for x in M.LS_X]),
+        "hinten_deckelschrauben": U([cyl_y(M.W - 6, M.W + 2, x, M.LS_Z, M.LS_SPOT / 2 + e) for x in M.LS_X]),
     }
     return U(list(parts.values()))
 

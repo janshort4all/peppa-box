@@ -151,6 +151,7 @@ Druckbetttyp „Texturierte PEI-Platte“. Im Prozess-Bereich die erweiterten Ei
 | Geschwindigkeit → erste Schicht | Erste Schicht | 30 mm/s (50) – Haftung |
 | Geschwindigkeit → restliche Schichten | Außenwand / Innere Wand | 60 (160) / 120 (200) mm/s |
 | Geschwindigkeit → Beschleunigung | Außenwand | 2000 (5000) mm/s² |
+| Geschwindigkeit → Überhang-Geschwindigkeit | Verlangsamen bei Überhängen | **aus** (an) – sonst springt die Fuzzy-Außenwand zwischen 51 und 60 mm/s |
 | Sonstiges → Umrandung | Randtyp / Randbreite / Lücke | Nur Innenrand / 8 mm / 0 |
 | Sonstiges → Fuzzy Skin | Fuzzy Skin | Nur lackiert (Werte bleiben sichtbar; ohne Bemalung kein Fuzzy) |
 | | Generierungsmodus / Rauschtyp | Verschiebung / Klassisch |
@@ -160,10 +161,11 @@ Druckbetttyp „Texturierte PEI-Platte“. Im Prozess-Bereich die erweiterten Ei
 | Filament → Kühlung | Lüftergeschwindigkeit (beide Zeilen) | 20 % / 20 % (10 / 40) – Kühlung unabhängig von der Schichtdauer |
 | | Kühlung für Überhänge und Brücken erzwingen | an (bleibt) |
 | | Überhänge und externe Brücken Lüftergeschwindigkeit | 50 % (90) |
+| | Überhänge Kühlung Aktivierungsschwelle | **95 %** (10 % bei PETG/Rapid PETG) – sonst schaltet jeder nach außen springende Fuzzy-Punkt den Lüfter auf 50 % |
 | Filament → Druckbett (Texturierte PEI) | Erste Schicht / Andere Schichten | 80 / 75 °C (70 / 70) – gegen Abheben |
 | Drucker → Extruder | Z-Hub-Höhe | 0,4 (bleibt) |
 
-Naht aufmalen: ganzes Objekt markieren, Werkzeug „Naht aufmalen“, Pinselgröße 2, „Vertikal“ an; Menü Ansicht → Hinten;
+Naht aufmalen: ganzes Objekt markieren, Werkzeug „Naht aufmalen“, Pinselgröße 0,5 (schmaler Strich = Naht streut weniger), „Vertikal“ an; Menü Ansicht → Hinten;
 senkrechten Strich auf der Rundung rechts neben den Lüftungsschlitzen (Mitte zwischen Ende des glatten Feldes und Außenkante)
 von ganz unten bis ganz oben ziehen. Bild: `naht_aufmalen.png`.
 

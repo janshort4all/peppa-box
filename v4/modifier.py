@@ -1,10 +1,21 @@
-"""Modifier-Körper für den Slicer: in diesen Bereichen KEIN Fuzzy Skin (Passungen und Löcher bleiben maßhaltig)."""
+"""Modifier für den Slicer.
+
+NEU (04.11.2026): `01f_modifier_korpus_FUZZY_aussenhaut.stl` – eine 1 mm dünne Haut nur an den Außenflächen.
+Im Slicer: Objekt Fuzzy Skin „Deaktiviert“, dieser Modifier Fuzzy Skin „Kontur“.
+Der Slicer verfuzzt dann nur Wandstücke, die in dieser Haut liegen. Die Innenseite liegt 2–3 mm tiefer und
+bekommt nie Fuzzy – auch nicht in den Schichten, in denen Löcher den Wandring aufschneiden (Ursache der Bänder
+innen und der Linien außen beim Druck vom 04.11.).
+
+ALT (bis 03.11.): `01m_…OHNE_fuzzy` (Objekt „Kontur“, Modifier „keine“). Nicht mehr verwenden.
+`ohne_fuzzy()` bleibt als Geometrie der glatten Flächen erhalten (wird aus der Haut ausgespart).
+"""
 import os as _os
 ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
 
 import trimesh, numpy as np
 import model as M
-from model import box, cyl_x, cyl_y, U
+from model import box, cyl_x, cyl_y, U, slab
+from manifold3d import JoinType
 
 
 def ohne_fuzzy():
@@ -25,12 +36,31 @@ def ohne_fuzzy():
     return U(list(parts.values()))
 
 
+def aussenhaut():
+    """Fuzzy-Bereich: Ring von 1,5 mm vor der Außenfläche bis FUZZ_SHELL hinein, zwischen den Fasen unten und oben,
+    ohne die glatten Flächen (ohne_fuzzy)."""
+    z0, z1 = M.FUZZ_Z
+    ring = M.OUT.offset(1.5, JoinType.Round) - M.OUT.offset(-M.FUZZ_SHELL, JoinType.Round)
+    ring = ring.simplify(0.001)                      # doppelte Punkte aus dem Offset entfernen (sonst STL nicht dicht)
+    return slab(ring, z0, z1) - ohne_fuzzy()
+
+
+def _export(m, name, shift):
+    mm = m.translate(shift).to_mesh()
+    t = trimesh.Trimesh(np.asarray(mm.vert_properties)[:, :3], np.asarray(mm.tri_verts))
+    t.export(_os.path.join(ROOT, "v4/out", name))
+    return t
+
+
 if __name__ == "__main__":
     # gleich verschieben wie 01_korpus_beige.stl (Druckausrichtung, Ecke auf 0) → im Slicer deckungsgleich
     import check as K
     bb = K.orient("korpus", M.korpus()).bounding_box()
     kb = M.korpus().bounding_box()
-    m = ohne_fuzzy().translate([bb[0] - kb[0], bb[1] - kb[1], bb[2] - kb[2]]).to_mesh()
-    t = trimesh.Trimesh(np.asarray(m.vert_properties)[:, :3], np.asarray(m.tri_verts))
-    t.export(_os.path.join(ROOT, "v4/out/01m_modifier_korpus_OHNE_fuzzy.stl"))
-    print(t.bounds)
+    shift = [bb[0] - kb[0], bb[1] - kb[1], bb[2] - kb[2]]
+    t = _export(aussenhaut(), "01f_modifier_korpus_FUZZY_aussenhaut.stl", shift)
+    print("01f Außenhaut", t.bounds.round(2).tolist(), "wasserdicht", t.is_watertight)
+    alt = _os.path.join(ROOT, "v4/out/01m_modifier_korpus_OHNE_fuzzy.stl")
+    if _os.path.exists(alt):
+        _os.remove(alt)
+        print("alter Modifier 01m entfernt")

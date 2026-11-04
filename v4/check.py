@@ -184,3 +184,12 @@ if __name__ == "__main__":
         for z, (ar, xy) in sorted(groups.items(), key=lambda t: -t[1][0])[:6]:
             if ar > 3:
                 print(f"      z={z:6.1f}  {ar:7.1f} mm²  Bereich {xy[2]-xy[0]:.1f} × {xy[3]-xy[1]:.1f}")
+    print("== Fuzzy Skin (Nachbildung ElegooSlicer je 0,2-mm-Schicht, Modifier 01f Außenhaut) ==")
+    import fuzzy_check as FC
+    rows = FC.analyse(korpus=parts["korpus"])
+    innen = sum(r["innen_neu"] + r["kammer_neu"] + r["front_neu"] for r in rows)
+    aussen = [r["aussen_neu"] for r in rows if FC.LAYER < r["z_druck"] < M.FUZZ_Z[1] - M.BASE_T - FC.LAYER and r["z_druck"] > M.FUZZ_Z[0] - M.BASE_T]
+    print(f"  innen mit Fuzzy: {innen:.1f} mm (soll 0)" + ("" if innen < 1 else "  FEHLER"))
+    print(f"  außen mit Fuzzy: {min(aussen):.0f}–{max(aussen):.0f} mm je Schicht (Fasen unten/oben glatt)")
+    print("  alter Aufbau (01m ohne Fuzzy) hätte innen: " +
+          ", ".join(f"{a - FC.LAYER / 2:.1f}–{b + FC.LAYER / 2:.1f}" for a, b, _ in FC.bands(rows, "innen_alt")) + " mm Druckhöhe")

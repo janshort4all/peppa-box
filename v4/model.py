@@ -200,6 +200,12 @@ SPK_DOME_L = par("SPK_DOME_L", 10.0, "festgelegt", "Lautsprecher-Dome hinter der
 # Fuzzy Skin: glatte, leicht vertiefte Flächen an allem mit Passung (Entscheidung Jan 03.11.: Rückseite Variante B)
 FUZZ_REC = par("FUZZ_REC", 0.4, "festgelegt", "Glatte Flächen (ohne Fuzzy Skin) liegen so tief unter der Außenfläche: saubere Kante, wirkt gewollt; Muttern liegen eben")
 FUZZ_RIM = par("FUZZ_RIM", 0.3, "festgelegt", "Modifier „ohne Fuzzy“ reicht so weit über die glatte Fläche hinaus (Stufe selbst bleibt glatt)")
+FUZZ_SHELL = par("FUZZ_SHELL", 1.0, "festgelegt",
+                 "Modifier „Fuzzy Außenhaut“ (04.11.): Fuzzy nur in dieser Tiefe unter der Außenfläche. Enthält die Mitte der "
+                 "Außenwand-Linie (0,21 mm), erreicht nie die Innenseite (Wand 2,0–3,0). Grund: Löcher durch die Wand schneiden den "
+                 "Wandring auf, dann zählt der Slicer die Innenseite zur Kontur (Druck 04.11.: Fuzzy innen in Bändern)")
+FUZZ_Z = par("FUZZ_Z", (BASE_T + EDGE_V, HB - 1.0), "festgelegt",
+             "Fuzzy-Außenhaut von/bis z: Fase unten (V-Fuge) und Fase oben bleiben glatt und rahmen die Fläche")
 BACK_PANEL = par("BACK_PANEL", (17.0, 46.5, 123.0, 69.5, 5.0), "festgelegt",
                  "Anschlussfeld hinten x0, z0, x1, z1, Eckradius: ein glattes Feld mit USB-C und Lüftung, mittig (x 70)")
 VENTS = par("VENTS", (6, 2.0, 6.4, 50.0, 66.0), "festgelegt",

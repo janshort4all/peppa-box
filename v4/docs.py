@@ -101,7 +101,8 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | --- | --- | --- |
 | coupon_C7_lochbild_stapel | **Lochbild 58 × 49 mm des Akku-Stapels**, ca. 20 min | Stapel mit den vorhandenen Schrauben daraufsetzen: Fallen alle 4 Köpfe in die Mulden? Liegt die Acrylplatte innerhalb der Ecken-Marken? |
 | coupon_C8_bodenecke_* (2 Teile) | Schattenfuge Boden/Korpus, Zentrierkragen, Senkschraube 3,0 × 14 in den Dom | Rutscht der Kragen leicht hinein, ohne zu wackeln? Sitzt die Schraube bündig? |
-| coupon_C10_fuzzy_ecke (+ _MODIFIER) | Ecke hinten rechts mit Anschlussfeld-Kante und USB-C-Öffnung, ca. 30 min je Stück | Beide Dateien zusammen laden, Modifier ohne Fuzzy; 3–4 Kopien mit verschiedenen Fuzzy-Werten: Welche wirkt hochwertig? Bleibt die Kante des Feldes sauber? |
+| coupon_C10_fuzzy_ecke (+ _MODIFIER) | Ecke hinten rechts mit Anschlussfeld-Kante und USB-C-Öffnung, ca. 30 min je Stück | Beide Dateien zusammen laden, Objekt Fuzzy „Deaktiviert“, Modifier „Kontur“; 3–4 Kopien mit verschiedenen Fuzzy-Werten: Welche wirkt hochwertig? Bleibt die Kante des Feldes sauber? |
+| coupon_C11_korpus_oben (+ _MODIFIER) | **Probeabschnitt vor dem nächsten Korpus:** obere 36 mm mit voller Grundfläche (Riemenloch, Deckelschrauben, Kammerdecke), etwa ein Viertel der Korpus-Druckzeit | Genau wie den Korpus einrichten (Modifier, Naht aufmalen). Innen glatt? Außen keine Querlinie am Riemenloch? Naht eine gerade Linie an der aufgemalten Stelle? |
 | coupon_C1_wand_rechts_drehgeber_klinke | Loch und Wandstärke für Drehgeber (M7) und Klinke | Passt das Gewinde, greift die Mutter? |
 | coupon_C1_wand_hinten_usbc | Öffnung für den USB-C-Stecker, 2 Dome für die Soldered-Platine | Platine anschrauben: Buchse mittig hinter der Öffnung? Stecker rastet voll ein? |
 | coupon_C2_deckelecke_* (3 Teile) | Deckelspalt 0,4 mm, Auflage, hintere Deckelschraube | Spalt gleichmäßig? Klappert es? |
@@ -130,19 +131,27 @@ Der Boden darf auch orange sein: Dann läuft unten ein schmaler oranger Sockelst
 ## Einstellungen PETG auf der Centauri Carbon 2 (Startwerte)
 
 - Düse 0,4, Schichthöhe 0,2 mm, 3 Wandlinien, 15 % Gyroid
-- Korpus außen: **Fuzzy Skin** nur Kontur, Stärke 0,2–0,25 mm, Punktabstand 0,6–0,7 mm
+- Korpus: Fuzzy Skin **nur über den Modifier 01f** (siehe unten), Stärke 0,20, Punktabstand 0,30, Rauschtyp Classic, erste Schicht ohne
 - Boden, Deckel, Rahmen, Kartenfach, Knopf: ohne Fuzzy Skin
-- Keine Stützen. Brim für Kartenfach und die C1-Coupons
-- Naht hinten (Korpus); Deckel: Ironing (Bügeln) für die oberste Fläche
+- Keine Stützen. Brim für Kartenfach und die C1-Coupons; Korpus: Randtyp **Nur Innenrand** (innen, unsichtbar), 5 mm
+- Korpus-Naht: Nahtposition **Ausgerichtet**, Naht **aufmalen** (senkrechter Streifen mittig auf der hinteren linken Rundung, von unten bis oben), **Schrägnaht aus**
+- Korpus-Lüfter konstant: minimale = maximale Lüftergeschwindigkeit (Vorschlag 20 %), damit wechselnde Schichtzeiten die Kühlung nicht verändern
+- Deckel: Ironing (Bügeln) für die oberste Fläche
 - Rolle vorher trocknen (Elegoo: 60 °C, 8 h)
 
-### Fuzzy Skin gezielt ausnehmen (Modifier)
+### Fuzzy Skin nur außen (Modifier „Außenhaut“, seit 04.11.2026)
 
-1. `01_korpus_beige.stl` und `01m_modifier_korpus_OHNE_fuzzy.stl` **zusammen** markieren und in den Slicer ziehen.
+Warum: Jedes Loch durch die Wand (Klinke, Drehgeber, USB-C, Schlitze, Riemen, Deckelschrauben, Lautsprecher) schneidet den
+Wandring in diesen Schichten auf. Der Slicer zählt dann die ganze Innenseite zur „Kontur“ und verfuzzt sie mit. Der neue Modifier
+ist eine 1 mm dünne Haut nur an den Außenflächen – Fuzzy entsteht ausschließlich dort.
+
+1. `01_korpus_beige.stl` und `01f_modifier_korpus_FUZZY_aussenhaut.stl` **zusammen** markieren und in den Slicer ziehen.
 2. Die Frage „als ein Objekt mit mehreren Teilen laden?“ mit **Ja** beantworten – beide Teile behalten dann ihre exakte Lage.
-3. In der Objektliste den Teil `01m_…` rechts anklicken → **Typ ändern → Modifier**.
-4. Beim Korpus Fuzzy Skin = **Kontur**, beim Modifier Fuzzy Skin = **Keine**.
-5. Vorschau prüfen: Stoffrahmen-Vertiefung, Drehgeber, Klinke, USB-C, Riemenloch und Deckelschrauben glatt, der Rest körnig.
+3. In der Objektliste den Teil `01f_…` rechts anklicken → **Typ ändern → Modifizierer**.
+4. Prozess (global): Fuzzy Skin = **Deaktiviert**, Stärke 0,20, Punktabstand 0,30, Classic. Am Modifier: Einstellungen hinzufügen → Fuzzy Skin = **Kontur**.
+5. Vorschau prüfen (Linientyp-Ansicht, Schieberegler durch die Höhe): innen überall glatt, auch auf Höhe der Löcher;
+   außen körnig; Anschlussfeld, Gitter-Sitz, Loch-Flächen und die beiden Fasen (unten, oben) glatt.
+6. Der alte Modifier `01m_…OHNE_fuzzy` ist entfernt und darf nicht mehr verwendet werden.
 
 ## Module befestigen
 

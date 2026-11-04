@@ -81,7 +81,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (92)
+## Gestaltung festgelegt (94)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -167,6 +167,8 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `SPK_DOME_L` | 10 | Lautsprecher-Dome hinter der Frontplatte (vorher 7): Schraube 3,0 × 12 durch den Korbflansch |
 | `FUZZ_REC` | 0,4 | Glatte Flächen (ohne Fuzzy Skin) liegen so tief unter der Außenfläche: saubere Kante, wirkt gewollt; Muttern liegen eben |
 | `FUZZ_RIM` | 0,3 | Modifier „ohne Fuzzy“ reicht so weit über die glatte Fläche hinaus (Stufe selbst bleibt glatt) |
+| `FUZZ_SHELL` | 1 | Modifier „Fuzzy Außenhaut“ (04.11.): Fuzzy nur in dieser Tiefe unter der Außenfläche. Enthält die Mitte der Außenwand-Linie (0,21 mm), erreicht nie die Innenseite (Wand 2,0–3,0). Grund: Löcher durch die Wand schneiden den Wandring auf, dann zählt der Slicer die Innenseite zur Kontur (Druck 04.11.: Fuzzy innen in Bändern) |
+| `FUZZ_Z` | 4,8 / 139 | Fuzzy-Außenhaut von/bis z: Fase unten (V-Fuge) und Fase oben bleiben glatt und rahmen die Fläche |
 | `BACK_PANEL` | 17 / 46,5 / 123 / 69,5 / 5 | Anschlussfeld hinten x0, z0, x1, z1, Eckradius: ein glattes Feld mit USB-C und Lüftung, mittig (x 70) |
 | `VENTS` | 6 / 2 / 6,4 / 50 / 66 | Lüftungsschlitze: Anzahl, Breite, Teilung, z unten, z oben; links im Anschlussfeld mit gleichem Rand wie USB-C rechts |
 | `LS_SPOT` | 10 | glatte Fläche um die Deckelschrauben hinten (Ø) |

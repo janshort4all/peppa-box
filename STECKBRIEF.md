@@ -25,7 +25,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 | Bestellungen | BerryBase, Amazon (RC522, MAX98357A) geliefert. Reichelt: mehrere Artikel nicht lieferbar, wird gerade geklärt |
 | Pi | Raspberry Pi OS Lite 64-bit (Debian 13 Trixie, 06.10.2026) auf SanDisk Ultra 128 GB A1; Ton über die Pi-Klinke getestet, gut |
 | Stapel | Akku-Board + Pi + Klemmen-Aufsatz verschraubt, auf dem gedruckten Boden (Version mit DAC-Stiften) montiert, passt |
-| Druck | Boden (erste Version) gedruckt; Korpus-Prototyp läuft (0,28 mm Extra Draft, 2 Wandschleifen, 10 % Gyroid, ohne Fuzzy Skin) |
+| Druck | Korpus final am 04.11. mit Fuzzy gedruckt – nicht abgenommen (Fuzzy innen, Querlinien, Naht, kippelt). Neuer Aufbau steht, als Nächstes Probeabschnitt C11 (Nachtrag 04.11.) |
 | Verstärker | Stiftleiste und Lautsprecherklemme werden gerade gelötet |
 
 ## Hardware (endgültig)
@@ -54,7 +54,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 - **Front:** gedrucktes Gitter statt Stoff, orange, mit „Peppa Box“-Logo (Variante A empfohlen, siehe `gitter_logo_varianten.png`). **Noch nicht im Modell.**
 - Höhen: Klemmen 77,5 mm, Kartenfach ab 86,8 mm, Deckel-Module ab 117,4 mm.
 
-Druck (endgültig): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, Fuzzy Skin nur Kontur (0,2–0,25 / 0,6–0,7 mm) mit Modifier `01m_…`, keine Stützen.
+Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine Stützen. Fuzzy Skin 0,20 / 0,30 Classic **nur über den Modifier `01f_…FUZZY_aussenhaut`** (Objekt „Deaktiviert“, Modifier „Kontur“); der alte Modifier `01m_…` ist ungültig (siehe Nachtrag 04.11.).
 
 ## Software (Plan, Kapitel 9 im Konzept-Dokument)
 
@@ -386,3 +386,16 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - Korpus erst nach dieser Probe drucken; gewählte Werte hier eintragen.
 - **Ergänzung (22:30):** Jan will **Grip** beim Anfassen, aber hochwertig. Empfehlung daher **Dicke 0,20, Punktabstand 0,30** (Classic): Grip kommt über die Dicke, das feine Korn über den kleinen Punktabstand; aufgeplustert wirkt es erst bei großem Punktabstand. C10-Reihe neu: A 0,15/0,30 · **B 0,20/0,30** · C 0,20/0,40 · D 0,25/0,35.
 - **Entscheidung Jan (22:35):** keine Probe, Korpus direkt drucken mit **Fuzzy 0,20 / 0,30, Classic, nur Kontur**. Ablauf im ElegooSlicer: beide STL laden (als ein Objekt mit mehreren Teilen, sonst über „Modifikator hinzufügen → Laden"), `01m_…` als Modifikator mit Fuzzy „Keine", Lage prüfen (Rahmen vorne deckungsgleich mit dem Gitter-Sitz).
+
+## Nachtrag 04.11.2026 – Korpus-Druck ausgewertet: Fuzzy innen, Querlinien, Naht, Kippeln
+
+- **Befund Jan (7 Fotos):** Fuzzy Skin innen in waagerechten Bändern (Trennwand, Seiten- und Rückwand innen); außen Querlinien, die genau auf Höhe dieser Bänder liegen; Naht sieht aus wie eine Bruchkante; Korpus kippelt, eine Ecke unten hat sichtbar weniger Material. Druck nicht abgenommen.
+- **Ursache Fuzzy innen (geklärt, Quellcode ElegooSlicer v1.5.2.2 und v1.5.3.5 gelesen):** Der Slicer entscheidet je Schicht nur nach der Form, was „Kontur“ und was „Loch“ ist. Ein Loch durch die Wand schneidet den Wandring auf; die Schicht ist dann ein „C“ mit einer einzigen Kontur, die außen herum, durch das Loch und innen an der Wand zurück läuft. „Kontur“ verfuzzt dann die ganze Innenseite. Der Modifier `01m` schützte nur die kleinen glatten Flächen. Regionen mit verschiedenem Fuzzy werden für die Wände nicht getrennt (`fuzzy_skin` fehlt in `Layer::is_perimeter_compatible`); die Außenwand-Schleife wird an den Modifier-Grenzen nur zerteilt. **Planungsfehler:** Im Nachtrag 03.11. (5) waren nur die Lochwände bedacht, nicht die ganze Innenseite.
+- **Nachgerechnet** (`v4/fuzzy_check.py`, Bild `out/fuzzy_analyse.png`): Fuzzy innen im Elektronikraum bei Druckhöhe 16,8–23,2 (Klinke), 46–62 (Lüftung, USB-C, Drehgeber), 110–122,4 (Riemen, Deckelschrauben; bei 118,1 eine Schicht ohne); in der Lautsprecherkammer 29,6–103,4 (Lautsprecher-Ausschnitt) und 121–125. Bis zu ca. 560 mm zusätzliche Fuzzy-Linie je Schicht (außen ca. 400 mm). Passt zu den Fotos innen (drei Bänder an der Trennwand).
+- **Querlinien außen (Vermutung, per G-Code zu prüfen):** An jeder Bandkante springt die Schichtzeit. Im Profil „Elegoo PETG @ECC2“ hängt der Bauteillüfter an der Schichtzeit (10–40 %, Rampe zwischen 30 s und 12 s), Überhänge/Brücken 90 % → Kühlung springt mit. Die stärkste Linie (Foto 7, ca. 118 mm Druckhöhe, zwischen Riemenloch-Oberkante und Deckelschraube) fällt zusammen mit dem Wechsel Riemen-/Deckelschrauben-Band **und** dem Beginn der Kammerdecke (ca. 40 mm Brücke, eine Schicht von mehreren Minuten).
+- **Naht:** Nahtposition „Rückseite“ nimmt je Schicht den hintersten Punkt. Mit Fuzzy ist das auf der flachen Rückwand ein zufälliger Punkt der Zitterbewegung → die Naht springt von Schicht zu Schicht. Schrägnaht ist für glatte Wände gedacht.
+- **Kippeln (Vermutung):** Erste Schicht 7719 mm², davon 6937 mm² vorne (Kammerboden), hinten nur 783 mm² (2,2-mm-Wandstreifen und Dome), ohne Umrandung → vermutlich hat sich eine hintere Ecke beim Druck abgehoben. Das Modell ist unten exakt plan (geprüft). **Offen (Jan):** welche Ecke, wie viel Spalt, Unterkante dort über eine Länge hochgebogen oder nur an der Ecke?
+- **Umgesetzt:** Neuer Modifier `01f_modifier_korpus_FUZZY_aussenhaut.stl` = 1 mm dünne Haut nur an den Außenflächen (`FUZZ_SHELL`), ohne die glatten Flächen, Fasen unten (V-Fuge) und oben bleiben glatt (`FUZZ_Z`). Objekt Fuzzy „Deaktiviert“, Modifier „Kontur“ → Fuzzy nur dort, egal ob die Schicht ein Ring oder ein „C“ ist. Nachrechnung: innen 0 mm, außen wie vorher (Unterschied nur an den Fasen). `01m` gelöscht. Korpus-STL unverändert. C10 auf den neuen Modifier umgestellt; neu **C11** (`coupon_C11_korpus_oben` + Modifier): obere 36 mm des Korpus mit voller Grundfläche – Riemenloch, Deckelschrauben, Kammerdecke. `check.py` prüft jetzt je Schicht, dass innen kein Fuzzy entsteht.
+- **Einstellungen Korpus neu:** Nahtposition „Ausgerichtet“ + **Naht aufmalen** (senkrechter Streifen mittig auf der hinteren linken Rundung, von unten bis oben), Schrägnaht aus. Lüfter konstant: minimale = maximale Lüftergeschwindigkeit (Vorschlag 20 %). Randtyp „Nur Innenrand“ 5 mm (unsichtbar innen; füllt die 6 Schraublöcher Ø 2,5 unten in der ersten Schicht → danach mit Nadel/Bohrer frei machen). Elefantenfuß 0,15 und Z-Hop 0,4 wie bisher.
+- **Ablauf:** (1) Jan schickt den G-Code des Drucks vom 04.11. und das Projekt (.3mf) → Schichtzeit und Lüfter je Schicht auswerten, Linienhöhen zuordnen. (2) Korpus neu einrichten, G-Code vor dem Druck prüfen lassen. (3) C11 drucken und bewerten. (4) Korpus. Bleibt an der Kammerdecke eine Linie: Kammerdecke als eigenes Teil (offener Punkt 6).
+

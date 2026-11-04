@@ -123,12 +123,29 @@ def c9_kopfueber():
 
 def c10_fuzzy():
     """Fuzzy-Skin-Probe: Ecke hinten rechts (Anschlussfeld-Ende, USB-C-Öffnung, Eckradius, rechte Wand), aufrecht wie im Korpus.
-    Dazu das passende Stück des Modifiers „ohne Fuzzy“ – beide gleich verschoben, im Slicer zusammen laden.
+    Dazu das passende Stück des Modifiers „Fuzzy Außenhaut“ – beide gleich verschoben, im Slicer zusammen laden.
     Mehrfach drucken, je Kopie andere Fuzzy-Werte (Einstellungen pro Objekt)."""
     import modifier as MD
     cut = box(98, 110, 44, M.W, M.W, 76)
     k = M.korpus() ^ cut
-    mod = MD.ohne_fuzzy() ^ box(96, 108, 44, M.W + 3, M.W + 3, 76)
+    mod = MD.aussenhaut() ^ box(96, 108, 44, M.W + 3, M.W + 3, 76)
+    bb = k.bounding_box()
+    t = [-bb[0], -bb[1], -bb[2]]
+    return k.translate(t), mod.translate(t)
+
+
+C11_Z0 = 104.0      # Modell-z (Druckhöhe 100): unter dem Riemenloch, über dem Lautsprecher-Ausschnitt bis 107,5
+
+
+def c11_korpus_oben():
+    """Probeabschnitt Korpus oben, volle Grundfläche, ab Modell-z 104 (Druckhöhe 100) bis zur Oberkante, ca. 36 mm hoch.
+    Enthält, was beim Druck vom 04.11. Linien gemacht hat: Riemenloch, Deckelschrauben, Kammerdecke, Lautsprecher-Ausschnitt oben.
+    Prüft: Fuzzy nur außen, keine Querlinien, Naht an der aufgemalten Stelle, Fase oben glatt.
+    Dazu das passende Stück des Modifiers „Fuzzy Außenhaut“ (gleich verschoben)."""
+    import modifier as MD
+    cut = box(-5, -5, C11_Z0, M.W + 5, M.W + 5, M.HB + 1)
+    k = M.korpus() ^ cut
+    mod = MD.aussenhaut() ^ cut
     bb = k.bounding_box()
     t = [-bb[0], -bb[1], -bb[2]]
     return k.translate(t), mod.translate(t)
@@ -157,7 +174,10 @@ def all_coupons():
     out["C8_bodenecke_boden"] = b
     a, b = c10_fuzzy()
     out["C10_fuzzy_ecke"] = a
-    out["C10_fuzzy_ecke_MODIFIER_ohne_fuzzy"] = b
+    out["C10_fuzzy_ecke_MODIFIER_fuzzy_aussenhaut"] = b
+    a, b = c11_korpus_oben()
+    out["C11_korpus_oben"] = a
+    out["C11_korpus_oben_MODIFIER_fuzzy_aussenhaut"] = b
     a, b = c9_kopfueber()
     out["C9_deckel_kopfueber_felder"] = a
     out["C9_deckel_kopfueber_taste_schlitz"] = b

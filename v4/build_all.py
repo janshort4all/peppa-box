@@ -24,7 +24,7 @@ def tm(man):
 
 
 DRUCK = {   # Teil: (Datei, Farbe, Hinweis)
-    "korpus": ("01_korpus_beige.stl", "Beige", "aufrecht, Boden auf der Platte; Naht hinten; Brücke Kammerdecke ca. 40 mm"),
+    "korpus": ("01_korpus_beige.stl", "Beige", "aufrecht, Boden auf der Platte; Naht hinten; Kammerdecke als 45°-Satteldach (keine Brücke)"),
     "deckel_orange": ("02a_deckel_kern_orange.stl", "Orange", "Oberseite nach oben (kopfüber geplant, siehe C9); zusammen mit 02b als ein Objekt laden"),
     "deckel_beige": ("02b_deckel_haut_beige.stl", "Beige", "liegt passgenau auf 02a; kopfüber auf texturiertem PEI, sonst Ironing an"),
     "deckelrahmen": ("03_deckelrahmen.stl", "Schwarz/Grau", "Deckelseite auf der Platte"),

@@ -176,3 +176,7 @@ print(f"Fuzzy im glatten Anschlussfeld: {sum(r['fuzzy_glattfeld'] for r in res)}
 print(f"Lüfterbefehle je Schicht: Median {np.median([r['fan_n'] for r in res]):.0f}; Werte: {sorted(set(v for r in res for v in r['fan']))}")
 print(f"Schichtdauer Median {np.median(t):.0f} s; Schichten > 2× Median: " + ", ".join(f"{a:.1f} mm ({b:.0f} s)" for a, b in zip(z, t) if b > 2*np.median(t)))
 
+# Sprünge in der Schichtdauer (zeichnen sich bei PETG außen als Linie ab): Abweichung vom gleitenden Median ±10 Schichten
+med = np.array([np.median(t[max(0, i - 10):i + 11]) for i in range(len(t))])
+spr = [(a, b, c) for a, b, c in zip(z, t, med) if a > 3 and abs(b - c) > 0.25 * c]
+print(f"Schichtdauer-Sprünge > 25 % (ab 3 mm): {len(spr)}" + (": " + ", ".join(f"{a:.1f} mm ({b:.0f} s statt {c:.0f})" for a, b, c in spr[:20]) if spr else " – gut"))

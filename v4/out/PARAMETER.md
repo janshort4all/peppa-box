@@ -81,7 +81,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (93)
+## Gestaltung festgelegt (94)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -110,7 +110,8 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `SPK_Z` | 70 | Lautsprecher Mitte z |
 | `BAY_D` | 9,6 | Tiefe Lautsprecher-Mulde ab Front |
 | `DIV_Y` | 48 | Vorderkante Trennwand Lautsprecherkammer |
-| `CH_Z` | 122 | Unterkante Kammerdecke |
+| `CH_Z` | 122 | Bezugshöhe vorne oben (Zungenschlitze, Zungen am Deckelrahmen); die Kammerdecke selbst ist seit 04.11. ein Satteldach (ROOF) |
+| `ROOF` | 25 / 126,5 / 1,6 / 0,04 | Kammerdecke als 45°-Satteldach (First y, First-Unterkante z am rechten Ende, Dicke senkrecht zur Fläche, Neigung des Firsts entlang x). Ersetzt die flache Decke bei z 122–125: die war eine 40-mm-Brücke, Schichten bis 5½ min statt ca. 1 min (G-Code 04.11.), dort lag die stärkste Querlinie. 45° druckt ohne Brücke. Der First steigt nach rechts um 0,04 mm/mm (5,4 mm über die Breite): First und Traufen beginnen und enden nicht in einer Schicht, sondern über ca. 27 Schichten – sonst gäbe es dort wieder einen Sprung der Schichtdauer. Abstände in check.py |
 | `PADS` | zurück 30 / 30 / 22; play 70 / 30 / 30; vor 110 / 30 / 22; schlaf 70 / 64 / 18 | Touch-Felder x, y, Ø |
 | `PAD_RING` | 1,1 | Breite der Ringnut um jedes Touchfeld |
 | `SYM_GAP` | 1,8 | Mindestabstand Symbol ↔ Ringnut (Probedruck 27.10.: Dreiecke lagen auf der Nut) |

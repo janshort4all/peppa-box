@@ -76,7 +76,13 @@ SPK_MAG = par("SPK_MAG", 60.0, "belegt", "Magnet-Ø")
 SPK_PITCH = par("SPK_PITCH", 58.5, "vorläufig", "Lochabstand (Zeichnungswert ohne Beschriftung)")
 BAY_D = par("BAY_D", 9.6, "festgelegt", "Tiefe Lautsprecher-Mulde ab Front")
 DIV_Y = par("DIV_Y", 48.0, "festgelegt", "Vorderkante Trennwand Lautsprecherkammer")
-CH_Z = par("CH_Z", 122.0, "festgelegt", "Unterkante Kammerdecke")
+CH_Z = par("CH_Z", 122.0, "festgelegt", "Bezugshöhe vorne oben (Zungenschlitze, Zungen am Deckelrahmen); die Kammerdecke selbst ist seit 04.11. ein Satteldach (ROOF)")
+ROOF = par("ROOF", (25.0, 126.5, 1.6, 0.04), "festgelegt",
+           "Kammerdecke als 45°-Satteldach (First y, First-Unterkante z am rechten Ende, Dicke senkrecht zur Fläche, Neigung des "
+           "Firsts entlang x). Ersetzt die flache Decke bei z 122–125: die war eine 40-mm-Brücke, Schichten bis 5½ min statt "
+           "ca. 1 min (G-Code 04.11.), dort lag die stärkste Querlinie. 45° druckt ohne Brücke. Der First steigt nach rechts um "
+           "0,04 mm/mm (5,4 mm über die Breite): First und Traufen beginnen und enden nicht in einer Schicht, sondern über "
+           "ca. 27 Schichten – sonst gäbe es dort wieder einen Sprung der Schichtdauer. Abstände in check.py")
 
 # Deckel-Bedienung (aus v3)
 PADS = par("PADS", {"zurück": (30, 30, 22), "play": (70, 30, 30), "vor": (110, 30, 22), "schlaf": (70, 64, 18)},
@@ -295,6 +301,37 @@ INN_SLAB = lambda z0, z1: slab(INN, z0, z1)
 # Korpus
 # =====================================================================================
 
+def _roof_prof(dz=0.0, unten=None):
+    """Profil (y, z) des Satteldachs am rechten Ende (x = W): Unterkante z_u(y) = First − |y − First_y| (45°), um dz angehoben.
+    unten=None: Band zwischen Unterkante und Unterkante + Dicke; sonst Fläche von z=unten bis zur (angehobenen) Unterkante."""
+    yr, zr, t, _ = ROOF
+    tv = t * math.sqrt(2.0)
+    y0, y1 = -2.0, DIV_Y + 5.0
+    zu = lambda y: zr - abs(y - yr)
+    if unten is None:
+        pts = [(y0, zu(y0)), (yr, zr), (y1, zu(y1)), (y1, zu(y1) + tv), (yr, zr + tv), (y0, zu(y0) + tv)]
+    else:
+        pts = [(y0, unten), (y1, unten), (y1, zu(y1) + dz), (yr, zr + dz), (y0, zu(y0) + dz)]
+    return CrossSection([pts]) if CrossSection([pts]).area() > 0 else CrossSection([pts[::-1]])
+
+
+def _roof_shear(m):
+    """First fällt nach links: z' = z − s·(W − x)."""
+    s = ROOF[3]
+    return m.transform(np.array([[1.0, 0, 0, 0], [0, 1.0, 0, 0], [s, 0, 1.0, -s * W]], dtype=np.float32))
+
+
+def roof():
+    """Satteldach als Körper (über die ganze Breite, wird mit der Kammer geschnitten)."""
+    return _roof_shear(ext_yz(_roof_prof(), -1, W + 1))
+
+
+def roof_unter(oberkante=False):
+    """Raum unter dem Dach (Kammer-Luft) bzw. mit oberkante=True alles bis zur Dach-Oberkante."""
+    tv = ROOF[2] * math.sqrt(2.0) if oberkante else 0.0
+    return _roof_shear(ext_yz(_roof_prof(dz=tv, unten=-20.0), -1, W + 1))
+
+
 def korpus():
     z0 = BASE_T
     body = Manifold.batch_hull([slab(OUT.offset(-EDGE_V, JoinType.Round), z0, z0 + 0.01), slab(OUT, z0 + EDGE_V, HB - 1.0),
@@ -326,14 +363,15 @@ def korpus():
     for (x, z) in spk_holes:
         add.append(ext_xz(tear(BOSS_D / 2).mirror([0, 1]).translate([x, z]), y0 - 0.5, y0 + SPK_DOME_L))   # Tropfen nach unten: ohne Stütze
 
-    # Trennwand, Kammerdecke
-    add.append(INN_SLAB(FLOOR, CH_Z) ^ box(0, DIV_Y, 0, W, DIV_Y + 3, HB))
-    add.append(INN_SLAB(CH_Z, CH_Z + 3) ^ box(0, 0, 0, W, DIV_Y + 3, HB))
+    # Trennwand bis unter das Dach, Kammerdecke als 45°-Satteldach
+    kammer = INN_SLAB(0, HB) ^ box(0, 0, 0, W, DIV_Y + 3, HB)
+    add.append((INN_SLAB(FLOOR, CH_Z) ^ box(0, DIV_Y, 0, W, DIV_Y + 3, HB)) ^ roof_unter(oberkante=True))
+    add.append(roof() ^ kammer)
 
-    # Zungen-Aufnahmen vorne (für den Deckelrahmen)
+    # Zungen-Aufnahmen vorne (für den Deckelrahmen): stehen auf dem Dach
     tongue_blocks = []
     for x in (40.0, 100.0):
-        blk = box(x - 9, 7.4, CH_Z + 3, x + 9, 14.4, RING_Z0 - 0.5)
+        blk = box(x - 9, 7.4, 95.0, x + 9, 14.4, RING_Z0 - 0.5) - roof_unter()
         tongue_blocks.append(blk)
     add += tongue_blocks
 

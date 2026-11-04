@@ -36,7 +36,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 
 | Datei | Farbe | Ausrichtung / Hinweis |
 | --- | --- | --- |
-| 01_korpus_beige.stl | Beige | aufrecht, Boden auf der Platte; Naht hinten; Brücke Kammerdecke ca. 40 mm |
+| 01_korpus_beige.stl | Beige | aufrecht, Boden auf der Platte; Naht hinten; Kammerdecke als 45°-Satteldach (keine Brücke) |
 | 02a_deckel_kern_orange.stl | Orange | Oberseite nach oben (kopfüber geplant, siehe C9); zusammen mit 02b als ein Objekt laden |
 | 02b_deckel_haut_beige.stl | Beige | liegt passgenau auf 02a; kopfüber auf texturiertem PEI, sonst Ironing an |
 | 03_deckelrahmen.stl | Schwarz/Grau | Deckelseite auf der Platte |
@@ -73,9 +73,10 @@ Druckbetttyp „Texturierte PEI-Platte“. Im Prozess-Bereich die erweiterten Ei
 | Qualität → Präzision | Elefantenfußkompensation | 0,15 (0,1) |
 | Qualität → Wandgenerator | Wandgenerator | Klassisch (bleibt) |
 | Qualität → Wände und Oberflächen | Anordnung der Wände | Innen/Außen (bleibt) |
-| Qualität → Brücken | Dicke externe Brücken | an (aus) – Kammerdecke 40 mm |
+| Qualität → Brücken | Dicke externe Brücken | an (aus) – Lautsprecherausschnitt oben 28 mm |
 | Struktur → Wände | Wandschleifen | 3 (2) |
 | Struktur → Füllung | Fülldichte / Füllmuster | 15 % / Gyroid (Geradlinig) |
+| Struktur → Obere/Untere Schichten | Muster der Oberfläche | **Konzentrisch** (Monotonische Linie) – die Deckelauflage innen bestand aus 3,2 m kurzer Linien: eine Schicht 158 s statt 60 s |
 | Geschwindigkeit → erste Schicht | Erste Schicht | 30 mm/s (50) – Haftung |
 | Geschwindigkeit → restliche Schichten | Außenwand / Innere Wand | 60 (160) / 120 (200) mm/s |
 | Geschwindigkeit → Beschleunigung | Außenwand | 2000 (5000) mm/s² |
@@ -90,8 +91,17 @@ Druckbetttyp „Texturierte PEI-Platte“. Im Prozess-Bereich die erweiterten Ei
 | | Kühlung für Überhänge und Brücken erzwingen | an (bleibt) |
 | | Überhänge und externe Brücken Lüftergeschwindigkeit | 50 % (90) |
 | | Überhänge Kühlung Aktivierungsschwelle | **95 %** (10 % bei PETG/Rapid PETG) – sonst schaltet jeder nach außen springende Fuzzy-Punkt den Lüfter auf 50 % |
+| Filament → Kühlung, Zeile „Minimale Lüftergeschwindigkeit“ | Schichtdauer | **100 s** (30) – muss über der Zeile darunter liegen; Lüfter bleibt bei 20 % |
+| Filament → Kühlung, Zeile „Schwellenwert für die maximale Lüftergeschwindigkeit“ | Schichtdauer | **70 s** (12) – jede Schicht dauert mindestens 70 s, gleichmäßige Abkühlung |
+| | Verlangsamen Sie den Druck für eine bessere Schichtkühlung | an (bleibt) |
+| | Äußere Wände nicht verlangsamen | **an** (aus) – gebremst werden nur Innenwände und Füllung, die sichtbare Wand läuft immer mit 60 mm/s |
 | Filament → Druckbett (Texturierte PEI) | Erste Schicht / Andere Schichten | 80 / 75 °C (70 / 70) – gegen Abheben |
 | Drucker → Extruder | Z-Hub-Höhe | 0,4 (bleibt) |
+
+Warum die Mindest-Schichtdauer: Sprünge in der Schichtdauer zeichnen sich bei PETG außen als Linie ab. Die harte Linie im ersten Druck
+auf etwa 118 mm Druckhöhe kam von der flachen Kammerdecke (40-mm-Brücke, eine Schicht 5½ min statt 1 min). Die Decke ist jetzt ein
+45°-Satteldach (innen, unsichtbar, kein Zusammenbau); die 70 s gleichen die restlichen kleinen Sprünge aus. Kostet rund 1 Stunde Druckzeit.
+Bilder: `kammerdecke_satteldach.png`, `kammerdecke_schichtzeit.png`.
 
 Naht aufmalen: ganzes Objekt markieren, Werkzeug „Naht aufmalen“, Pinselgröße 0,5 (schmaler Strich = Naht streut weniger), „Vertikal“ an; Menü Ansicht → Hinten;
 senkrechten Strich auf der Rundung rechts neben den Lüftungsschlitzen (Mitte zwischen Ende des glatten Feldes und Außenkante)

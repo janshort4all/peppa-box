@@ -63,7 +63,7 @@ def pruefbericht_md(parts, ph):
               "„Zone“ = Freiraum, den Kabel oder Stecker brauchen, kein Bauteil.", "",
               "## Druckbarkeit (Centauri Carbon 2, Bauraum 256 × 256 × 256 mm)", "",
               "| Datei | Größe in Druckausrichtung (mm) | Bewusste Brücken |", "| --- | --- | --- |"]
-    bridges = {"korpus": "Kammerdecke ca. 40 mm, Lautsprecherausschnitt oben 28 mm, Kernlöcher der Dome, Schlitze 2 mm",
+    bridges = {"korpus": "Lautsprecherausschnitt oben 28 mm, Kernlöcher der Dome, Schlitze 2 mm (Kammerdecke seit 04.11. als 45°-Satteldach, keine Brücke mehr)",
                "deckel_orange": "Taschen unter den Touch-Feldern (Ø 20–28 mm, verdeckt)",
                "deckelrahmen": "Boden Tasterhalter 12 mm", "kartenfach": "Seitenwand über dem Kartenschlitz 5 mm",
                "boden": "Decke der Senkbohrungen M2,5 (Ring 1,8 mm)"}
@@ -145,9 +145,10 @@ Druckbetttyp „Texturierte PEI-Platte“. Im Prozess-Bereich die erweiterten Ei
 | Qualität → Präzision | Elefantenfußkompensation | 0,15 (0,1) |
 | Qualität → Wandgenerator | Wandgenerator | Klassisch (bleibt) |
 | Qualität → Wände und Oberflächen | Anordnung der Wände | Innen/Außen (bleibt) |
-| Qualität → Brücken | Dicke externe Brücken | an (aus) – Kammerdecke 40 mm |
+| Qualität → Brücken | Dicke externe Brücken | an (aus) – Lautsprecherausschnitt oben 28 mm |
 | Struktur → Wände | Wandschleifen | 3 (2) |
 | Struktur → Füllung | Fülldichte / Füllmuster | 15 % / Gyroid (Geradlinig) |
+| Struktur → Obere/Untere Schichten | Muster der Oberfläche | **Konzentrisch** (Monotonische Linie) – die Deckelauflage innen bestand aus 3,2 m kurzer Linien: eine Schicht 158 s statt 60 s |
 | Geschwindigkeit → erste Schicht | Erste Schicht | 30 mm/s (50) – Haftung |
 | Geschwindigkeit → restliche Schichten | Außenwand / Innere Wand | 60 (160) / 120 (200) mm/s |
 | Geschwindigkeit → Beschleunigung | Außenwand | 2000 (5000) mm/s² |
@@ -162,8 +163,17 @@ Druckbetttyp „Texturierte PEI-Platte“. Im Prozess-Bereich die erweiterten Ei
 | | Kühlung für Überhänge und Brücken erzwingen | an (bleibt) |
 | | Überhänge und externe Brücken Lüftergeschwindigkeit | 50 % (90) |
 | | Überhänge Kühlung Aktivierungsschwelle | **95 %** (10 % bei PETG/Rapid PETG) – sonst schaltet jeder nach außen springende Fuzzy-Punkt den Lüfter auf 50 % |
+| Filament → Kühlung, Zeile „Minimale Lüftergeschwindigkeit“ | Schichtdauer | **100 s** (30) – muss über der Zeile darunter liegen; Lüfter bleibt bei 20 % |
+| Filament → Kühlung, Zeile „Schwellenwert für die maximale Lüftergeschwindigkeit“ | Schichtdauer | **70 s** (12) – jede Schicht dauert mindestens 70 s, gleichmäßige Abkühlung |
+| | Verlangsamen Sie den Druck für eine bessere Schichtkühlung | an (bleibt) |
+| | Äußere Wände nicht verlangsamen | **an** (aus) – gebremst werden nur Innenwände und Füllung, die sichtbare Wand läuft immer mit 60 mm/s |
 | Filament → Druckbett (Texturierte PEI) | Erste Schicht / Andere Schichten | 80 / 75 °C (70 / 70) – gegen Abheben |
 | Drucker → Extruder | Z-Hub-Höhe | 0,4 (bleibt) |
+
+Warum die Mindest-Schichtdauer: Sprünge in der Schichtdauer zeichnen sich bei PETG außen als Linie ab. Die harte Linie im ersten Druck
+auf etwa 118 mm Druckhöhe kam von der flachen Kammerdecke (40-mm-Brücke, eine Schicht 5½ min statt 1 min). Die Decke ist jetzt ein
+45°-Satteldach (innen, unsichtbar, kein Zusammenbau); die 70 s gleichen die restlichen kleinen Sprünge aus. Kostet rund 1 Stunde Druckzeit.
+Bilder: `kammerdecke_satteldach.png`, `kammerdecke_schichtzeit.png`.
 
 Naht aufmalen: ganzes Objekt markieren, Werkzeug „Naht aufmalen“, Pinselgröße 0,5 (schmaler Strich = Naht streut weniger), „Vertikal“ an; Menü Ansicht → Hinten;
 senkrechten Strich auf der Rundung rechts neben den Lüftungsschlitzen (Mitte zwischen Ende des glatten Feldes und Außenkante)

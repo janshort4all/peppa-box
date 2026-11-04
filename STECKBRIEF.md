@@ -25,7 +25,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 | Bestellungen | BerryBase, Amazon (RC522, MAX98357A) geliefert. Reichelt: mehrere Artikel nicht lieferbar, wird gerade geklärt |
 | Pi | Raspberry Pi OS Lite 64-bit (Debian 13 Trixie, 06.10.2026) auf SanDisk Ultra 128 GB A1; Ton über die Pi-Klinke getestet, gut |
 | Stapel | Akku-Board + Pi + Klemmen-Aufsatz verschraubt, auf dem gedruckten Boden (Version mit DAC-Stiften) montiert, passt |
-| Druck | Korpus final am 04.11. mit Fuzzy gedruckt – nicht abgenommen (Fuzzy innen, Querlinien, Naht, kippelt). Neuer Aufbau steht, als Nächstes Probeabschnitt C11 (Nachtrag 04.11.) |
+| Druck | Korpus am 04.11. gedruckt – nicht abgenommen (Fuzzy innen, Querlinien, Naht, kippelt). Neuer Aufbau steht, Kammerdecke jetzt Satteldach (Nachträge 04.11. bis (5)). Als Nächstes: Jan richtet neu ein, G-Code vor dem Druck an Claude, dann Korpus über Nacht |
 | Verstärker | Stiftleiste und Lautsprecherklemme werden gerade gelötet |
 
 ## Hardware (endgültig)
@@ -44,7 +44,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 
 ## Gehäuse (Modell v4, parametrisch in `v4/model.py`)
 
-- **Korpus** unten offen, Lautsprecherkammer mit eigenem Boden (2,4 mm), Kammerdecke als Brücke ca. 40 mm. Deckelauflage ringsum geschlossen.
+- **Korpus** unten offen, Lautsprecherkammer mit eigenem Boden (2,4 mm), Kammerdecke als 45°-Satteldach (seit 04.11., vorher 40-mm-Brücke). Deckelauflage ringsum geschlossen.
 - **Boden = Elektronikträger**, 4 mm, außen 0,4 mm kleiner (Schattenfuge), Zentrierkragen hinten. Wird von unten eingesetzt, 6 Senkschrauben 3,0 × 14 in Dome (4 Ecken, 2 an der Kammerwand). Einbau inkl. Hubweg geprüft.
 - **Stapel auf dem Boden:** Überhang mit BOOT-Taste links, gelbe Stifte vorne, Anschlusskante (USB-C, Schalter, Pi-Klinke) hinten. 4 Auflagen mit Mulde; Befestigung später mit M2,5-Schrauben von unten (alte Länge + ca. 5 mm, Linsen-/Flachkopf). **Offen:** Länge der vorhandenen Schrauben.
 - **Hinten auf dem Boden:** Mulden für WAGO GND A, WAGO 5 V, Verstärker. Rechter Teil frei (Kabelreserve, Elko).
@@ -71,7 +71,7 @@ Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine St�
 3. Länge der M2,5-Schrauben unter der Acrylplatte messen → Auflagenhöhe anpassen.
 4. Nach Lieferung von Reichelt messen: Lautsprecher-Lochabstand, Gewindelängen Drehgeber und Klinke, Tasterhöhe; RC522- und MAX-Maße; NFC-Aufkleber-Dicke.
 5. Coupons drucken und auswerten: C2, C4, C6, C7, C8.
-6. Korpus-Prototyp: Boden einsetzen, Schrauben, Kammerdecke ansehen. Ist die Decke schlecht → Kammerdecke als eigenes Teil.
+6. Korpus-Prototyp: Boden einsetzen, Schrauben. Kammerdecke ist seit 04.11. ein Satteldach im Korpus (einteilig, Entscheidung Jan) – nach dem Druck außen auf ca. 95–125 mm Druckhöhe auf Linien ansehen.
 7. Gitter mit Logo ins Modell aufnehmen (+ Coupon).
 8. Optional: Lichtleiter für die Lade-LED, Ideen zur optischen Individualisierung (Seitenteile, Deckeleinlage, Magnete).
 
@@ -424,4 +424,15 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Naht:** 640 von 680 Schichten auf der aufgemalten Rundung, aber in einem 4 mm breiten Band (Sprung von Schicht zu Schicht im Mittel 1,1 mm). Ursache im Quellcode: Bei Fuzzy wählt der Slicer im bemalten Streifen den mittleren „spitzen“ Punkt – Fuzzy macht fast jeden Punkt spitz, also streut die Naht über die Streifenbreite. → Streifen neu mit **Pinselgröße 0,5**. Jan hat die Ecke **hinten rechts** bemalt (von vorne gesehen; in der Rückansicht links). In 38 Schichten (Höhe der USB-C-Öffnung) ist die Wand in zwei Stücke geteilt; das große Stück beginnt dann vorne in der Lautsprecher-Mulde (unter dem Gitter, unsichtbar).
 - **Nicht übernommen:** Druckbett 70/70 °C statt 80/75 (gegen das Abheben hinten links). Düse 235/240 °C statt Profil 250 °C – nachfragen, ob bewusst.
 - **Offenes Risiko Kammerdecke:** Schichten 118,2–121,0 mm dauern 85–334 s statt ca. 66 s (Brücke 12,9 m bei 50 mm/s, innere Brücke 13 m). Genau dort lag die stärkste Linie im ersten Druck. Per Einstellung nicht zu beheben. Möglichkeiten: Kammerdecke als eigenes Teil (Entscheidung Jan) oder drucken und ansehen. Kleinere Spitzen: 1,6–2,4 mm (Kammerboden, nah an der Unterkante) und 128,8 mm (158 s).
+
+## Nachtrag 04.11.2026 (5) – Harte Linie oben: Kammerdecke als Satteldach, Mindest-Schichtdauer
+
+- **Frage Jan:** Lösung für die harte Linie oben (im ersten Druck ca. 118 mm Druckhöhe), weiter **einteilig, nichts zusammenbauen**; an dieser Stelle war bisher nichts geändert.
+- **Ursache (G-Code geprüft, Nachtrag (4)):** Die flache Kammerdecke war eine 40-mm-Brücke. Diese Schichten dauern 85–334 s statt ca. 66 s; die Außenwand darunter kühlt in der langen Schicht ganz aus → Linie. Bei PETG zeichnet sich jeder Sprung der Schichtdauer außen ab.
+- **Geändert im Modell (`ROOF`, `roof()`, `roof_unter()`):** Kammerdecke als **45°-Satteldach** innen, Wand 1,6 mm (senkrecht zur Fläche), First bei y = 25 mm. Der First **steigt von links nach rechts um ca. 5,4 mm** (0,04 mm je mm), damit sich das Dach nicht in einer Schicht schließt, sondern über ca. 27 Schichten. Beide Dachflächen wachsen von der Front- bzw. Trennwand aus, ohne Brücke und ohne Stützen. Die Zungenblöcke für den Deckelrahmen sitzen auf dem Dach. `CH_Z` bleibt Bezug für Zungenschlitze und Deckelrahmen.
+- **Geprüft:** Kammer weiter dicht (Schnitte alle 0,05 mm, kein Luftweg); Lautsprecher frei (ca. 3,5 mm unter dem Dach), Einbau von vorn frei; Deckelrahmen 0,25–0,5 mm Luft wie vorher; keine Kollision; Fuzzy innen 0; Überhang des Korpus 5792 → 403 mm² (Rest wie vorher: Lautsprecherausschnitt, Dome). Volumen 312,5 → 301,2 cm³. Geschätzte Schichtdauer (Bild `out/kammerdecke_schichtzeit.png`): sanfter Anstieg auf ca. 83 s statt Spitzen bis 334 s. Schnittbild `out/kammerdecke_satteldach.png` (`v4/dach_bild.py`).
+- **Zweite Spitze 128,8 mm (158 s):** Oberseite der Deckelauflage innen, 3,2 m kurze Linien (Muster „Monotonische Linie“ quer über einen 2,3-mm-Ring, jede Linie bremst bei 2000 mm/s²). → **Muster der Oberfläche: Konzentrisch** (wenige lange Runden, ca. 1 min schneller in dieser Schicht; auch die sichtbare Oberkante des Rands wird umlaufend gezogen).
+- **Mindest-Schichtdauer 70 s:** Filament → Kühlung, Zeile „Schwellenwert für die maximale Lüftergeschwindigkeit“ Schichtdauer **70 s** (12), Zeile „Minimale Lüftergeschwindigkeit“ Schichtdauer **100 s** (30), „Äußere Wände nicht verlangsamen“ **an**. Lüfter bleibt bei 20 %. Gebremst werden nur Innenwände und Füllung (im Quellcode geprüft: Außenwand wird dann nicht als anpassbar markiert). Damit dauert ab ca. 40 mm jede Schicht mindestens 70 s (bisher 57–66 s, mit kleinen Sprüngen bei 125,4 und oben am Rand). Kostet rund 1 h (nachgerechnet auf dem G-Code vom 04.11.: 70 s → +0,95 h, 80 s → +2,6 h).
+- `v4/gcode_pruefung.py` meldet jetzt zusätzlich Sprünge der Schichtdauer > 25 % gegenüber dem gleitenden Median (auf dem G-Code vom 04.11.: 15 Schichten, alle an Kammerdecke, 125,4, 128,8 und Oberkante).
+- **Für Jan:** neues `01_korpus_beige.stl` laden (Modifier `01f` unverändert), Naht neu aufmalen (Pinselgröße 0,5), restliche Einstellungen laut README (Druckbett 80/75, Verlangsamen bei Überhängen aus, Muster der Oberfläche Konzentrisch, Schichtdauer 70/100, Äußere Wände nicht verlangsamen), slicen, G-Code und Projekt vor dem Druck an Claude.
 

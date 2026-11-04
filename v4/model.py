@@ -192,8 +192,12 @@ USBC = par("USBC", {"x": 112.0, "z": 60.0, "pcb": 22.0, "pcb_t": 1.6, "loch_abst
             "x 112 statt 114: 2 mm mehr Abstand zur Innenecke")
 USBC_LEGS = par("USBC_LEGS", (4.31, 2.5, 6.7, 1.5), "belegt",
                 "Lötfahnen der Buchse unter der Platine (KiCad): seitlich ±4,31, 2,5 und 6,7 von der Platinenkante; Aussparung 1,5 tief im Dom")
-USBC_PLUG = par("USBC_PLUG", (13.0, 7.0, 3.0), "festgelegt",
-                "Öffnung in der Rückwand für den Steckerkörper (B, H, Eckradius). USB-C-Spezifikation: Steckerkörper höchstens 12,35 × 6,5; Netzteilstecker laut Jan normgerecht")
+USBC_PLUG = par("USBC_PLUG", (10.8, 7.0, 2.0), "gemessen / festgelegt",
+                "Öffnung in der Rückwand für den Steckerkörper (B, H, Eckradius). Steckergehäuse Jan 04.11.: 10 × 6 mm "
+                "(vorher 13 × 7 nach USB-C-Höchstmaß 12,35 × 6,5). Breite +0,4 je Seite; Höhe +0,5 je Seite (Oberkante ist eine "
+                "Brücke und hängt leicht durch). Eckradius 2 passt für Gehäuseecken ab ca. R 0,5. Das Gehäuse taucht ca. 2,9 mm in die "
+                "Wand ein, bis zum Buchsenmund an der Innenseite; deshalb muss die Öffnung gehäusegroß sein und unter der Buchse "
+                "bleibt die Platinenkante (1,6 mm) sichtbar")
 USBC_CH = par("USBC_CH", 0.6, "festgelegt", "Fase außen an der USB-C-Öffnung")
 SCREW_L = par("SCREW_L", 12.0, "gemessen", "Einzige vorhandene Schrauben: 3,0 × 12, Senk- und Flachkopf (Jan 03.11.). Alle Dome und Kernlöcher darauf ausgelegt")
 SPK_DOME_L = par("SPK_DOME_L", 10.0, "festgelegt", "Lautsprecher-Dome hinter der Frontplatte (vorher 7): Schraube 3,0 × 12 durch den Korbflansch")

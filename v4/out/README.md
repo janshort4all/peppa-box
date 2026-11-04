@@ -61,7 +61,7 @@ Der Boden darf auch orange sein: Dann läuft unten ein schmaler oranger Sockelst
 - Düse 0,4, Schichthöhe 0,2 mm, 3 Wandlinien, 15 % Gyroid
 - Korpus: Fuzzy Skin **nur über den Modifier 01f** (siehe unten), Stärke 0,20, Punktabstand 0,30, Rauschtyp Classic, erste Schicht ohne
 - Boden, Deckel, Rahmen, Kartenfach, Knopf: ohne Fuzzy Skin
-- Keine Stützen. Brim für Kartenfach und die C1-Coupons; Korpus: Randtyp **Nur Innenrand** (innen, unsichtbar), 5 mm
+- Keine Stützen. Brim für Kartenfach und die C1-Coupons; Korpus: Randtyp **Nur Innenrand** (innen, unsichtbar), 8 mm, Lücke 0 (danach die 6 Schraublöcher unten frei machen)
 - Korpus-Naht: Nahtposition **Ausgerichtet**, Naht **aufmalen** (senkrechter Streifen mittig auf der hinteren linken Rundung, von unten bis oben), **Schrägnaht aus**
 - Korpus-Lüfter konstant: minimale = maximale Lüftergeschwindigkeit (Vorschlag 20 %), damit wechselnde Schichtzeiten die Kühlung nicht verändern
 - Deckel: Ironing (Bügeln) für die oberste Fläche

@@ -81,7 +81,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (94)
+## Gestaltung festgelegt (93)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -162,7 +162,6 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WIRE_CLR` | 15 | Platz für die Kabel an jeder Klemmreihe |
 | `STACK_CLR` | 3 | Luft rings um den Stapel |
 | `USB_PLUG` | 20 | Platz hinter der Anschlusskante: Stecker am Akku-Board gewinkelt oder höchstens 20 mm lang |
-| `USBC_PLUG` | 13 / 7 / 3 | Öffnung in der Rückwand für den Steckerkörper (B, H, Eckradius). USB-C-Spezifikation: Steckerkörper höchstens 12,35 × 6,5; Netzteilstecker laut Jan normgerecht |
 | `USBC_CH` | 0,6 | Fase außen an der USB-C-Öffnung |
 | `SPK_DOME_L` | 10 | Lautsprecher-Dome hinter der Frontplatte (vorher 7): Schraube 3,0 × 12 durch den Korbflansch |
 | `FUZZ_REC` | 0,4 | Glatte Flächen (ohne Fuzzy Skin) liegen so tief unter der Außenfläche: saubere Kante, wirkt gewollt; Muttern liegen eben |

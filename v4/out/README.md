@@ -91,8 +91,9 @@ Druckbetttyp „Texturierte PEI-Platte“. Im Prozess-Bereich die erweiterten Ei
 | Filament → Druckbett (Texturierte PEI) | Erste Schicht / Andere Schichten | 80 / 75 °C (70 / 70) – gegen Abheben |
 | Drucker → Extruder | Z-Hub-Höhe | 0,4 (bleibt) |
 
-Naht aufmalen: Werkzeug „Naht aufmalen“, Pinselgröße 2, „Vertikal“ an; Rückansicht; senkrechten Streifen auf der hinteren
-linken Rundung (neben den Lüftungsschlitzen, ca. 5 mm innerhalb der Außenkante) von ganz unten bis ganz oben ziehen.
+Naht aufmalen: ganzes Objekt markieren, Werkzeug „Naht aufmalen“, Pinselgröße 2, „Vertikal“ an; Menü Ansicht → Hinten;
+senkrechten Strich auf der Rundung rechts neben den Lüftungsschlitzen (Mitte zwischen Ende des glatten Feldes und Außenkante)
+von ganz unten bis ganz oben ziehen. Bild: `naht_aufmalen.png`.
 
 Boden, Deckel, Rahmen, Kartenfach, Knopf: ohne Fuzzy Skin. Brim für Kartenfach und die C1-Coupons. Deckel: Ironing für die oberste Fläche.
 Rolle vorher trocknen (Elegoo: 60 °C, 8 h).

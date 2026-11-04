@@ -128,16 +128,46 @@ kopfüber auf texturiertem PEI (erst Coupon C9 prüfen, dann im Slicer umdrehen)
 
 Der Boden darf auch orange sein: Dann läuft unten ein schmaler oranger Sockelstreifen um die Box.
 
-## Einstellungen PETG auf der Centauri Carbon 2 (Startwerte)
+## Einstellungen PETG auf der Centauri Carbon 2
 
-- Düse 0,4, Schichthöhe 0,2 mm, 3 Wandlinien, 15 % Gyroid
-- Korpus: Fuzzy Skin **nur über den Modifier 01f** (siehe unten), Stärke 0,20, Punktabstand 0,30, Rauschtyp Classic, erste Schicht ohne
-- Boden, Deckel, Rahmen, Kartenfach, Knopf: ohne Fuzzy Skin
-- Keine Stützen. Brim für Kartenfach und die C1-Coupons; Korpus: Randtyp **Nur Innenrand** (innen, unsichtbar), 8 mm, Lücke 0 (danach die 6 Schraublöcher unten frei machen)
-- Korpus-Naht: Nahtposition **Ausgerichtet**, Naht **aufmalen** (senkrechter Streifen mittig auf der hinteren linken Rundung, von unten bis oben), **Schrägnaht aus**
-- Korpus-Lüfter konstant: minimale = maximale Lüftergeschwindigkeit (Vorschlag 20 %), damit wechselnde Schichtzeiten die Kühlung nicht verändern
-- Deckel: Ironing (Bügeln) für die oberste Fläche
-- Rolle vorher trocknen (Elegoo: 60 °C, 8 h)
+Ausgangspunkt: Drucker „Elegoo Centauri Carbon 2 0.4 nozzle“, Filament „Elegoo PETG @ECC2“, Prozess „0.20mm Standard @Elegoo CC2 0.4 nozzle“,
+Druckbetttyp „Texturierte PEI-Platte“. Im Prozess-Bereich die erweiterten Einstellungen einschalten. In Klammern: Profilwert vorher.
+
+### Korpus (Stand 04.11.2026, Ziel höchste Außenqualität)
+
+| Reiter → Gruppe | Einstellung | Wert |
+| --- | --- | --- |
+| Qualität → Schichthöhe | Schichthöhe / Höhe der ersten Schicht | 0,2 / 0,2 (bleibt) |
+| Qualität → Naht | Nahtposition | Ausgerichtet (bleibt) + Naht aufmalen |
+| | Schrägnaht (Beta) | Keine |
+| | Naht Zwischenraum | 10 % (bleibt) |
+| | Wischbewegung nach innen | an (aus) |
+| Qualität → Präzision | Elefantenfußkompensation | 0,15 (0,1) |
+| Qualität → Wandgenerator | Wandgenerator | Klassisch (bleibt) |
+| Qualität → Wände und Oberflächen | Anordnung der Wände | Innen/Außen (bleibt) |
+| Qualität → Brücken | Dicke externe Brücken | an (aus) – Kammerdecke 40 mm |
+| Struktur → Wände | Wandschleifen | 3 (2) |
+| Struktur → Füllung | Fülldichte / Füllmuster | 15 % / Gyroid (Geradlinig) |
+| Geschwindigkeit → erste Schicht | Erste Schicht | 30 mm/s (50) – Haftung |
+| Geschwindigkeit → restliche Schichten | Außenwand / Innere Wand | 60 (160) / 120 (200) mm/s |
+| Geschwindigkeit → Beschleunigung | Außenwand | 2000 (5000) mm/s² |
+| Sonstiges → Umrandung | Randtyp / Randbreite / Lücke | Nur Innenrand / 8 mm / 0 |
+| Sonstiges → Fuzzy Skin | Fuzzy Skin | Nur lackiert (Werte bleiben sichtbar; ohne Bemalung kein Fuzzy) |
+| | Generierungsmodus / Rauschtyp | Verschiebung / Klassisch |
+| | Punktabstand / Stärke | 0,30 / 0,20 |
+| | Fuzzy Skin auf die erste Schicht anwenden | aus |
+| Modifizierer `01f` → Sonstiges | Fuzzy Skin | **Kontur** |
+| Filament → Kühlung | Lüftergeschwindigkeit (beide Zeilen) | 20 % / 20 % (10 / 40) – Kühlung unabhängig von der Schichtdauer |
+| | Kühlung für Überhänge und Brücken erzwingen | an (bleibt) |
+| | Überhänge und externe Brücken Lüftergeschwindigkeit | 50 % (90) |
+| Filament → Druckbett (Texturierte PEI) | Erste Schicht / Andere Schichten | 80 / 75 °C (70 / 70) – gegen Abheben |
+| Drucker → Extruder | Z-Hub-Höhe | 0,4 (bleibt) |
+
+Naht aufmalen: Werkzeug „Naht aufmalen“, Pinselgröße 2, „Vertikal“ an; Rückansicht; senkrechten Streifen auf der hinteren
+linken Rundung (neben den Lüftungsschlitzen, ca. 5 mm innerhalb der Außenkante) von ganz unten bis ganz oben ziehen.
+
+Boden, Deckel, Rahmen, Kartenfach, Knopf: ohne Fuzzy Skin. Brim für Kartenfach und die C1-Coupons. Deckel: Ironing für die oberste Fläche.
+Rolle vorher trocknen (Elegoo: 60 °C, 8 h).
 
 ### Fuzzy Skin nur außen (Modifier „Außenhaut“, seit 04.11.2026)
 
@@ -148,7 +178,7 @@ ist eine 1 mm dünne Haut nur an den Außenflächen – Fuzzy entsteht ausschlie
 1. `01_korpus_beige.stl` und `01f_modifier_korpus_FUZZY_aussenhaut.stl` **zusammen** markieren und in den Slicer ziehen.
 2. Die Frage „als ein Objekt mit mehreren Teilen laden?“ mit **Ja** beantworten – beide Teile behalten dann ihre exakte Lage.
 3. In der Objektliste den Teil `01f_…` rechts anklicken → **Typ ändern → Modifizierer**.
-4. Prozess (global): Fuzzy Skin = **Deaktiviert**, Stärke 0,20, Punktabstand 0,30, Classic. Am Modifier: Einstellungen hinzufügen → Fuzzy Skin = **Kontur**.
+4. Prozess (global): Fuzzy Skin = **Nur lackiert**, Stärke 0,20, Punktabstand 0,30, Klassisch. Modifizierer in der Objektliste anklicken → Reiter Sonstiges → Fuzzy Skin = **Kontur**.
 5. Vorschau prüfen (Linientyp-Ansicht, Schieberegler durch die Höhe): innen überall glatt, auch auf Höhe der Löcher;
    außen körnig; Anschlussfeld, Gitter-Sitz, Loch-Flächen und die beiden Fasen (unten, oben) glatt.
 6. Der alte Modifier `01m_…OHNE_fuzzy` ist entfernt und darf nicht mehr verwendet werden.

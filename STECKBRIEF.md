@@ -54,7 +54,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 - **Front:** gedrucktes Gitter statt Stoff, orange, mit „Peppa Box“-Logo (Variante A empfohlen, siehe `gitter_logo_varianten.png`). **Noch nicht im Modell.**
 - Höhen: Klemmen 77,5 mm, Kartenfach ab 86,8 mm, Deckel-Module ab 117,4 mm.
 
-Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine Stützen. Fuzzy Skin 0,20 / 0,30 Classic **nur über den Modifier `01f_…FUZZY_aussenhaut`** (Objekt „Deaktiviert“, Modifier „Kontur“); der alte Modifier `01m_…` ist ungültig (siehe Nachtrag 04.11.).
+Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine Stützen. Fuzzy Skin 0,20 / 0,30 Classic **nur über den Modifier `01f_…FUZZY_aussenhaut`** (Prozess „Nur lackiert“, Modifier „Kontur“; alle Korpus-Einstellungen in `v4/out/README.md`); der alte Modifier `01m_…` ist ungültig (siehe Nachtrag 04.11.).
 
 ## Software (Plan, Kapitel 9 im Konzept-Dokument)
 
@@ -407,4 +407,11 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Geändert:** `USBC_PLUG` 13 × 7, R 3 → **10,8 × 7,0, R 2** (Breite +0,4 je Seite; Höhe bleibt, weil oben eine Brücke durchhängt und bisher nur 0,5 je Seite Luft waren). Lüftungsschlitze rücken dadurch 1,1 mm nach rechts (gleicher Rand links/rechts im Feld). Prüfungen ohne Kollision, Fuzzy innen 0. Korpus-STL und Coupon C1 hinten neu gebaut.
 - **Offen USB-C:** (1) Jan prüft, ob sein Stecker beim jetzigen Druck ganz und gerade hineingeht (Platine auf den Domen) – auf dem Foto sitzt die Buchse eher im oberen Teil der Öffnung; liegt die Platine auf den Lötfahnen statt auf den Domen, muss die Höhe nachgezogen werden. (2) Platinenkante innen mit schwarzem Stift färben → in der geschlossenen Box nur dunkler Schlitz mit Metallbuchse. (3) Alternative für später: Buchse bis ca. 0,4 mm hinter die Außenfläche nach vorn in eine Tasche der Wand setzen, Öffnung nur noch um die Metallbuchse (ca. 9,5 × 4); Gehäuse bleibt außen. Knapp: Norm-Stecker 6,65 mm Hülse vs. 6,20 mm Buchse lässt ca. 0,45 mm. Nur mit Messung der Hülsenlänge seines Steckers und Probedruck.
 - **Vor dem Korpus-Druck (Jan druckt direkt den ganzen Korpus, ohne C11):** Projekt einrichten (01_korpus + 01f als Modifizierer, Naht aufmalen, Einstellungen laut README), slicen, dann **Datei → Projekt speichern als** (.3mf) und **Exportiere G-Code** (.gcode) – beides an Claude schicken. Prüfung: Fuzzy je Schicht, Nahtlage, Lüfter und Schichtzeit je Schicht (besonders Kammerdecke bei ca. 118 mm), Innenrand.
+
+## Nachtrag 04.11.2026 (3) – Slicer-Einstellungen Korpus festgelegt
+
+- Jan richtet den Korpus neu ein (Modell + Modifier geladen) und will Schritt für Schritt geführt werden, Ziel höchste Qualität. Die Bildschirmfotos der Einstellungen aus einem früheren Chat liegen hier nicht vor; Namen und Profilwerte stammen aus dem ElegooSlicer-Quellcode (v1.5.3.5, deutsche Übersetzung, Profile „0.20mm Standard @Elegoo CC2 0.4 nozzle“, „Elegoo PETG @ECC2“, „Elegoo Centauri Carbon 2 0.4 nozzle“).
+- **Prozess global Fuzzy „Nur lackiert“ statt „Deaktiviert“:** Bei „Deaktiviert“ blendet ElegooSlicer Stärke, Punktabstand usw. aus (`ConfigManipulation.cpp`). „Nur lackiert“ ohne Bemalung erzeugt kein Fuzzy, die Werte bleiben einstellbar und gelten für den Modifier mit.
+- Vollständige Tabelle in `v4/out/README.md` (Korpus). Abweichungen vom Profil: Wandschleifen 3, Gyroid, Elefantenfuß 0,15, Wischbewegung nach innen, Dicke externe Brücken, erste Schicht 30 mm/s, Außenwand 60 / Innenwand 120 mm/s, Beschleunigung Außenwand 2000, Innenrand 8 mm/Lücke 0, Lüfter fest 20 %, Überhang-/Brückenlüfter 50 %, Druckbett 80/75 °C (texturierte PEI). Schrägnaht Keine, Nahtposition Ausgerichtet + aufgemalt („Vertikal“ im Werkzeug). Z-Hub 0,4 ist schon Profilwert.
+- Danach: Vorschau prüfen, Projekt (.3mf) und G-Code an Claude.
 

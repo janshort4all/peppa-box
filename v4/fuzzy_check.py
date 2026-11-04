@@ -188,7 +188,7 @@ def bild(rows, z_schnitt=54.1, fn="fuzzy_analyse.png"):
     fig = plt.figure(figsize=(15, 9.6), dpi=110)
     gs = GridSpec(2, 2, height_ratios=[1.25, 1], hspace=0.28, wspace=0.08)
     for k, (titel, reg, modus) in enumerate((("Gedruckt (alt): Objekt „Kontur“, Modifier 01m „ohne Fuzzy“", r_alt, "alt"),
-                                             ("Neu: Objekt „Deaktiviert“, Modifier 01f „Kontur“ (1 mm Außenhaut)", r_neu, "neu"))):
+                                             ("Neu: Prozess „Nur lackiert“, Modifier 01f „Kontur“ (1 mm Außenhaut)", r_neu, "neu"))):
         ax = fig.add_subplot(gs[0, k])
         for p in cs.to_polygons():
             p = np.asarray(p)

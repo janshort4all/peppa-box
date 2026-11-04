@@ -1,7 +1,7 @@
 """Modifier für den Slicer.
 
 NEU (04.11.2026): `01f_modifier_korpus_FUZZY_aussenhaut.stl` – eine 1 mm dünne Haut nur an den Außenflächen.
-Im Slicer: Objekt Fuzzy Skin „Deaktiviert“, dieser Modifier Fuzzy Skin „Kontur“.
+Im Slicer: Prozess Fuzzy Skin „Nur lackiert“ (ohne Bemalung = kein Fuzzy; „Deaktiviert“ wirkt gleich, blendet aber die Werte aus), dieser Modifier Fuzzy Skin „Kontur“.
 Der Slicer verfuzzt dann nur Wandstücke, die in dieser Haut liegen. Die Innenseite liegt 2–3 mm tiefer und
 bekommt nie Fuzzy – auch nicht in den Schichten, in denen Löcher den Wandring aufschneiden (Ursache der Bänder
 innen und der Linien außen beim Druck vom 04.11.).

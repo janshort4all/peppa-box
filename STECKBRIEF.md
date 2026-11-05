@@ -453,3 +453,9 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Hinweis Brücken:** Richtung wählt der Slicer selbst. Play (Dreieck und beide Balken) wird in y-Richtung überbrückt, also die Balken der Länge nach (11,5 mm statt quer 2,6 mm); „zurück“ schräg mit bis 11,7 mm (quer wären 8,8). Für PETG unkritisch, die Böden können aber leicht durchhängen. Möglich, falls C12 oder der Deckel das zeigt: dünner Modifier nur für Schicht 5 (z 0,82–0,98) mit „Brückenwinkel“ je Feld (Play/Mond 180°, zurück/vor 90°).
 - Farbe beim Prüfen: Filament 2 hat im Projekt die Anzeigefarbe #F3D59A, beim Korpus war Beige #F4E2C1 – gleiche Rolle wie beim Korpus nehmen.
 
+
+## Nachtrag 05.11.2026 – Klinkenbuchse 1503 09: Lötfahnen gemessen
+
+- Bezeichnung nach Foto von oben (Gewinde oben): A oben mittig am Gewinde, B rechts Mitte, C rechts unten, D links innen, E links am Rand.
+- Gemessen (Jan, Durchgang): ohne Stecker B–C und D–E verbunden, A allein. Mit Kabel: Steckerspitze → B, Ring → E.
+- **Belegung:** A = Masse (Hülse), B = L (Spitze), C = Öffner L → Pin 37 (GPIO 26), E = R (Ring), D = Öffner R (frei, nicht abschneiden).

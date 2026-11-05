@@ -83,7 +83,9 @@ def main(f):
         br = [LineString([(a, b), (c, d)]) for typ, t, a, b, c, d in l["segs"] if typ == "Bridge"]
         if br:
             fl = unary_union([b_.buffer(0.2, cap_style=2) for b_ in br]).intersection(felder).area
-            print(f"  Schicht {l['n']}: Brücke über den Feldern {fl:.0f} mm² (Felder {felder.area:.0f} mm²) – scheint durch die Haut")
+            ang = [math.degrees(math.atan2(b_.coords[1][1] - b_.coords[0][1], b_.coords[1][0] - b_.coords[0][0])) % 180 for b_ in br if b_.length > 1]
+            print(f"  Schicht {l['n']}: Brücke über den Feldern {fl:.0f} mm² (Vertiefungen {sym.area:.0f}, Felder {felder.area:.0f} mm²); "
+                  f"Richtung (Bett) 10/50/90 %: {np.percentile(ang, [10, 50, 90]).round(0).tolist() if ang else '-'}°")
     # 3) Fahrwege über Vertiefungen in den Haut-Schichten (nur wenn die Haut Löcher hat)
     inner = sym.buffer(-0.15)
     for l in L[1:haut]:

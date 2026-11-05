@@ -42,11 +42,11 @@ LID_SINK = par("LID_SINK", 1.2, "festgelegt", "Deckel liegt so tief unter der Ka
 LEDGE = par("LEDGE", 2.5, "festgelegt", "Auflage-Schräge 45° innen")
 GAP_LID = par("GAP_LID", 0.4, "Probedruck", "Spalt Deckel–Wand je Seite")
 SKIN = par("SKIN", 0.8, "festgelegt", "beige Deckschicht über orangem Kern (D1); 0,8 = 4 Schichten à 0,2 bzw. 5 à 0,16 (vorher 0,7, lag zwischen zwei Schichten)")
-SYM_INLAY = par("SYM_INLAY", 1, "festgelegt", "Symbole und Ringe bündig in Orange eingelegt (CANVAS druckt in den 4 Haut-Schichten beide Farben), statt 0,8 mm vertieft. "
+SYM_INLAY = par("SYM_INLAY", 0, "festgelegt", "Symbole und Ringe bündig in Orange eingelegt (CANVAS druckt in den 4 Haut-Schichten beide Farben), statt 0,8 mm vertieft. "
                 "Grund (Druck 05.11.): Kopfüber werden die Vertiefungen in Schicht 5 überbrückt; der Slicer dehnt die Brücke auf den ganzen Kreis aus "
                 "(1760 mm² Brücke für 597 mm² Vertiefung) – die runden orangen Brückenfäden scheinen durch die 0,8 mm beige Haut, Böden sehen wie Fäden aus, "
                 "um jedes Loch 3 Wände, Fäden und Nahtpunkte an den Lochkanten. Eingelegt liegt die ganze Oberseite auf der Platte, ohne Loch und ohne Brücke. "
-                "Nicht mehr ertastbar (Entscheidung 27.10. dafür aufgegeben, Jan 05.11.: muss absolut perfekt aussehen). 0 = alte Vertiefung")
+                "Nicht mehr ertastbar → von Jan am 05.11. abgelehnt (Tasten müssen ertastbar bleiben). 0 = Vertiefung (gilt)")
 CLR = par("CLR", 0.3, "Probedruck", "Spiel für Passungen")
 PILOT = par("PILOT", 2.5, "Probedruck", "Kernloch für 3-mm-Kunststoffschraube in PETG")
 HOLE3 = par("HOLE3", 3.4, "festgelegt", "Durchgangsloch 3-mm-Schraube")
@@ -657,6 +657,24 @@ def deckel(einfarbig=False):
     if einfarbig:
         return core - cu
     return core - cu, skin - cu
+
+
+def deckel_opfer(sel=None):
+    """Opfer-Einleger (PLA) genau in den Vertiefungen der Symbole und Ringe, SKIN hoch. Kopfüber gedruckt liegt er in Schicht 1–4
+    in den Löchern der beigen Haut; die erste orange Schicht wird dann auf PLA gedruckt statt als Brücke über Luft (dicht, eben,
+    gleiche Richtung in allen Symbolen). PETG haftet nicht an PLA: nach dem Druck mit einer Nadel heraushebeln."""
+    sym = pad_symbols()
+    m = lid_plate() ^ slab(sym, LID_TOP - SKIN, LID_TOP + 1)
+    return m if sel is None else m ^ sel
+
+
+def deckel_bruecken_modifier(sel=None, rand=0.4):
+    """Modifier nur für die erste orange Schicht (kopfüber Schicht 5, Schnitt bei z 0,9): Fußabdruck der Vertiefungen + rand.
+    Eigener Bereich → der Slicer kann die Brücke nicht mehr über den ganzen Kreis ausdehnen (Druck 05.11.: 1760 mm² Brücke für
+    597 mm² Vertiefung); hinter dem Beige liegt sonst überall dichte Füllung. Dort „Externe Brücken Füllrichtung“ fest einstellen."""
+    fp = pad_symbols().offset(rand, JoinType.Round, circular_segments=SEG).simplify(0.001)
+    m = slab(fp, LID_TOP - SKIN - 0.18, LID_TOP - SKIN - 0.02)
+    return m if sel is None else m ^ sel
 
 
 def deckel_haut_modifier(sel=None):

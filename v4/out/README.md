@@ -20,7 +20,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 
 | Datei | Prüft | Was du mir zurückmeldest |
 | --- | --- | --- |
-| coupon_C12_deckel_oberseite_* (3 Teile) | **Probe vor dem Deckel:** obere 2,4 mm vorne rechts (Play, Vor, Mond, Kante mit Fase), kopfüber, Symbole bündig eingelegt, ca. 15 g | Wie den Deckel einrichten (02a/02b/02m-Gegenstücke). Oberfläche in den Kreisen genauso ruhig wie außen? Symbolkanten scharf, kein oranger Schimmer im Beige? |
+| coupon_C12_deckel_oberseite_* (5 Dateien) | **Probe vor dem Deckel:** obere 2,4 mm vorne rechts (Play, Vor, Mond, Kante mit Fase), kopfüber, Symbole vertieft, ca. 15 g | Wie den Deckel einrichten: Variante A mit `_opfer_PLA`, Variante B mit `_MODIFIER_bruecke_richtung`, beide mit `_MODIFIER_haut_1wand`. Beige in den Kreisen so ruhig wie außen? Symbolböden eben bzw. Fäden parallel? |
 | coupon_C7_lochbild_stapel | **Lochbild 58 × 49 mm des Akku-Stapels**, ca. 20 min | Stapel mit den vorhandenen Schrauben daraufsetzen: Fallen alle 4 Köpfe in die Mulden? Liegt die Acrylplatte innerhalb der Ecken-Marken? |
 | coupon_C8_bodenecke_* (2 Teile) | Schattenfuge Boden/Korpus, Zentrierkragen, Senkschraube 3,0 × 14 in den Dom | Rutscht der Kragen leicht hinein, ohne zu wackeln? Sitzt die Schraube bündig? |
 | coupon_C10_fuzzy_ecke (+ _MODIFIER) | Ecke hinten rechts mit Anschlussfeld-Kante und USB-C-Öffnung, ca. 30 min je Stück | Beide Dateien zusammen laden, Objekt Fuzzy „Deaktiviert“, Modifier „Kontur“; 3–4 Kopien mit verschiedenen Fuzzy-Werten: Welche wirkt hochwertig? Bleibt die Kante des Feldes sauber? |
@@ -39,7 +39,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | --- | --- | --- |
 | 01_korpus_beige.stl | Beige | aufrecht, Boden auf der Platte; Naht hinten; Kammerdecke als 45°-Satteldach (keine Brücke) |
 | 02a_deckel_kern_orange.stl | Orange | kopfüber (Oberseite auf der Platte, hinten bleibt hinten); mit 02b zusammen als ein Objekt mit zwei Teilen laden |
-| 02b_deckel_haut_beige.stl | Beige | kopfüber, die 4 untersten Schichten ohne Symbole; 02a füllt die Symbole bündig aus |
+| 02b_deckel_haut_beige.stl | Beige | kopfüber, die 4 untersten Schichten ohne Symbole; Symbole und Ringe 0,8 mm vertieft (ertastbar) |
 | 03_deckelrahmen.stl | Schwarz/Grau | Deckelseite auf der Platte |
 | 04_kartenfach.stl | Schwarz/Grau | auf der Seite, Kartenschlitz senkrecht; Brim |
 | 05_boden_traeger.stl | Beige | flach, Unterseite auf der Platte; trägt die ganze Elektronik |
@@ -53,7 +53,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 Die Dateien liegen bereits in Druckausrichtung, auch der Deckel: `02a` und `02b` liegen seit 05.11. **kopfüber**
 (Oberseite auf der Platte, hinten bleibt hinten). Das Tastenloch ist offen (keine Mulde, keine Opferschicht mehr).
 `02a` und `02b` gemeinsam laden („als ein Objekt mit mehreren Teilen“), 02a Orange und 02b Beige zuweisen – dann macht
-CANVAS in den 4 Haut-Schichten je einen Farbwechsel (Symbole bündig eingelegt). Dazu `02m` als Modifizierer. Einstellungen: Abschnitt „Deckel“ unten. Die beiden `ansicht_…`-Dateien nur zum Anschauen.
+CANVAS genau einen Farbwechsel (Variante A: dazu PLA-Einleger `02p`, Variante B: Modifizierer `02r`), immer mit Modifizierer `02m`. Einstellungen: Abschnitt „Deckel“ unten. Die beiden `ansicht_…`-Dateien nur zum Anschauen.
 
 Der Boden darf auch orange sein: Dann läuft unten ein schmaler oranger Sockelstreifen um die Box.
 
@@ -111,44 +111,55 @@ von ganz unten bis ganz oben ziehen. Bild: `naht_aufmalen.png`.
 Boden, Deckel, Rahmen, Kartenfach, Knopf: ohne Fuzzy Skin. Brim für Kartenfach und die C1-Coupons. Deckel: eigener Abschnitt unten.
 Rolle vorher trocknen (Elegoo: 60 °C, 8 h).
 
-### Deckel (Stand 05.11.2026 abends, kopfüber, Symbole bündig eingelegt, ohne Fuzzy)
+### Deckel (Stand 05.11.2026 spät, kopfüber, Symbole 0,8 mm vertieft und ertastbar, ohne Fuzzy)
 
-Die sichtbare Oberseite entsteht komplett auf der texturierten PEI-Platte: beige Haut **und** orange Symbole/Ringe liegen in
-Schicht 1–4 nebeneinander (CANVAS wechselt in jeder dieser Schichten einmal die Farbe), ab Schicht 5 nur Orange. Keine Löcher in
-der Haut, keine Brücken, nichts kann durchscheinen. Symbole sind dafür nicht mehr ertastbar.
-Warum (Druck 05.11. nachmittags, Symbole 0,8 mm vertieft): Der Slicer hat die Vertiefungen in Schicht 5 überbrückt und die Brücke
-auf den ganzen Kreis ausgedehnt (1760 mm² Brücke für 597 mm² Vertiefung). Die runden, mit Abstand liegenden orangen Brückenfäden
-scheinen durch die 0,8 mm beige Haut („Orange guckt durch wie Fäden“), die Symbolböden sind selbst Brückenfäden, um jedes Loch
-liegen in Schicht 2–4 drei Wandringe (sichtbare Bahnen), an den Lochkanten Nahtpunkte und einzelne Fäden. Bild `deckel_ursache.png`.
+Die Oberseite entsteht auf der texturierten PEI-Platte. Beige sind die 4 untersten Schichten (0,8 mm), ab Schicht 5 Orange.
+Befund Druck 05.11. (Bild `deckel_ursache.png`): Fläche außerhalb der Kreise sehr gut. In den Kreisen: Der Slicer hat die
+Vertiefungen in Schicht 5 überbrückt und die Brücke auf den ganzen Kreis ausgedehnt (1760 mm² Brücke für 597 mm² Vertiefung).
+Hinter 0,8 mm Beige lagen dort runde Brückenfäden mit Lücken statt dichter Füllung → Orange scheint wie Fäden durch; dazu 3 Wandringe
+je Loch in Schicht 2–4, Punktreihen (Überlappung 5 %), Nahtpunkte und Härchen an den Lochkanten. Die 0,8 mm Beige selbst sind nicht
+zu dünn: Außerhalb der Kreise ist es dieselbe Haut, dort liegt dahinter dichte Füllung.
 
-Ausgangspunkt sind die Korpus-Einstellungen (Profil „… - Peppa“); geändert wird nur, was hier steht. **Als eigenen Prozess
-speichern** (z. B. „… - Peppa Deckel“). In Klammern: Wert beim Korpus.
+**Variante A (empfohlen): PLA-Opfer-Einleger.** `02p` füllt die Vertiefungen in Schicht 1–4 mit PLA. Die erste orange Schicht
+wird darauf als normale dichte Füllung gedruckt – keine Brücke, keine Fäden, Böden eben und in allen Symbolen in derselben Richtung.
+PETG haftet nicht an PLA: Einleger nach dem Druck mit einer Nadel heraushebeln (zusammen ca. 0,6 g). Dafür eine PLA-Rolle in
+einen freien CANVAS-Platz (am besten Orange, dann fallen Reste nicht auf).
+
+**Variante B (ohne PLA): Fäden als Stilmittel, alle in eine Richtung.** `02r` ist ein Modifizierer nur für Schicht 5 über den
+Vertiefungen (+0,4 mm). Dort „Externe Brücken Füllrichtung“ fest; die Brücke bleibt auf die Symbole begrenzt, dahinter dichte Füllung.
+
+Ausgangspunkt sind die Korpus-Einstellungen (Profil „… - Peppa“); als eigenen Prozess speichern. In Klammern: Wert beim Korpus.
 
 | Reiter → Gruppe | Einstellung | Wert |
 | --- | --- | --- |
-| Objektliste | `02a`, `02b`, `02m` zusammen laden („ein Objekt mit mehreren Teilen“) | 02a → Orange, 02b → Beige (Rechtsklick → Filament wechseln); 02m → Rechtsklick → Typ ändern → **Modifizierer** |
-| Modifizierer `02m` | Wandschleifen | **1** – in den 4 Haut-Schichten liegen hinter der ersten Schicht überall gleich gerichtete Bahnen statt Ringen |
-| Qualität → Schichthöhe | Schichthöhe / erste Schicht | 0,2 / 0,2 (bleibt) – die Haut ist genau 4 Schichten |
-| Qualität → Naht | Nahtposition | **Rückseite** (Ausgerichtet + aufgemalt) – Hinterkante im Deckelspalt; nichts aufmalen |
+| Objektliste | Teile laden („ein Objekt mit mehreren Teilen“) | A: `02a`, `02b`, `02p`, `02m` · B: `02a`, `02b`, `02r`, `02m` |
+| | Filamente | 02a → Orange, 02b → Beige, 02p → PLA (Rechtsklick → Filament wechseln); 02m und 02r → Typ ändern → **Modifizierer** |
+| Modifizierer `02m` | Wandschleifen | **1** – in den Haut-Schichten nur eine Wand um jedes Loch (keine Ringe hinter der Sichtfläche) |
+| Modifizierer `02r` (nur B) | Struktur → Erweitert → Externe Brücken Füllrichtung | **45°** (0 = automatisch) – Fäden in allen Symbolen parallel zu den Linien der Oberfläche, längste Brücke 10,8 mm |
+| Qualität → Brücken (nur B) | Dicke externe Brücken / Externe Brücken Dichte | **aus** (an) / **110 %** (100) – flache, dicht liegende Fäden |
+| Qualität → Schichthöhe | Schichthöhe / erste Schicht | 0,2 / 0,2 (bleibt) |
+| Qualität → Naht | Nahtposition | **Rückseite** (Ausgerichtet + aufgemalt) |
 | Qualität → Präzision | Elefantenfußkompensation | 0,15 (bleibt) |
-| Qualität → Wandgenerator | Wandgenerator | **Arachne** (Klassisch) – schmale Stellen (Ringe 1,1 mm, Steg zwischen den Pause-Balken) ohne Lückenfüllung |
-| Qualität → Wände und Oberflächen | Nur eine Wand in der ersten Schicht | an |
-| | Vermeiden von Wandüberquerungen | an |
+| Qualität → Wandgenerator | Wandgenerator | **Arachne** (Klassisch) – Ringe 1,1 mm und schmale Stege ohne Lückenfüllung |
+| Qualität → Wände und Oberflächen | Nur eine Wand in der ersten Schicht / Vermeiden von Wandüberquerungen | an / an |
 | Struktur → Obere/Untere Schichten | Untere Schalenschichten | **8** (3) |
-| | Überlappung des oberen/unteren massiven Füllung/Wand | **25 %** (5 %) – gegen die Punktreihen neben Kanten und Ringen |
-| | Muster der unteren Fläche | Monotonisch (bleibt) – das ist die sichtbare Oberseite |
+| | Überlappung des oberen/unteren massiven Füllung/Wand | **25 %** (5 %) – gegen die Punktreihen |
+| | Muster der unteren Fläche | Monotonisch (bleibt) |
 | Struktur → Füllung | Fülldichte / Füllmuster | **25 %** / Gyroid (15 %) |
 | Geschwindigkeit → erste Schicht | Füllung | **50 mm/s** (105) |
 | Sonstiges → Umrandung | Randtyp | **Keine Umrandung** (Nur Innenrand) |
-| Sonstiges → Fuzzy Skin | Fuzzy Skin | Deaktiviert, kein Fuzzy-Modifier |
-| Multimaterial → Reinigungsturm | Aktivieren | an – nötig, 4 Farbwechsel in den Haut-Schichten |
-| Reinigungsvolumen (Knopf neben den Filamenten) | Multiplikator | **1,5** (1) – Beige nach Orange darf keinen orangen Schimmer behalten |
-| Filament | Beide Farben | wie beim Korpus (250 °C, Bett 80/75 °C, Lüfter 20 %, Schichtdauer 70/100) |
+| Sonstiges → Fuzzy Skin | Fuzzy Skin | Deaktiviert |
+| Multimaterial → Reinigungsturm | Aktivieren | an |
+| Reinigungsvolumen | Multiplikator | **1,5** (1) |
+| Drucker/Platte (nur A) | Betttemperaturtyp | **Nach der höchsten Temperatur** – Bett bleibt bei den PETG-Werten 80/75 °C |
+| Filament PLA (nur A) | Düse | 230 °C; Einstellungen → Steuerung → Slicen: „Entfernen der Einschränkung für gemischte Temperaturen“ an (sonst lässt der Slicer PLA und PETG nicht zusammen zu) |
+| Filament Beige/Orange | | wie beim Korpus (250 °C, Bett 80/75 °C, Lüfter 20 %, Schichtdauer 70/100) |
 
-Vorher: Platte mit Spülmittel waschen, danach nicht mehr auf die Druckfläche fassen. Haube zu. Auf der Platte abkühlen lassen.
-Vorschau prüfen: in Schicht 1–4 Symbole und Ringe orange, Rest beige; in Schicht 1–4 nur eine Wand um jedes Symbol; keine „Überbrückung“.
+Vorher: Platte mit Spülmittel waschen, nicht mehr anfassen. Variante A: Haube oben offen lassen (PLA mag die warme Kammer nicht,
+der flache Deckel verzieht sich nicht). Nach dem Druck auf der Platte abkühlen lassen, PLA-Einleger heraushebeln (bleiben sie auf
+der Platte, dort abnehmen). Vorschau: Schicht 1–4 Beige + Einleger (A); Schicht 5 über den Symbolen keine „Überbrückung“ (A)
+bzw. nur über den Symbolen, alle Linien parallel (B). Zuerst `coupon_C12_deckel_oberseite_*` mit derselben Variante.
 `08_ein_taste_orange.stl` (Kopf unten, keine Umrandung) bekommt dieselbe Oberfläche. Bild: `deckel_draufsicht.png`.
-Probe zuerst: `coupon_C12_deckel_oberseite_*` (3 Teile, genauso laden wie den Deckel).
 
 ### Fuzzy Skin nur außen (Modifier „Außenhaut“, seit 04.11.2026)
 

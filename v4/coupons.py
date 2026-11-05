@@ -124,12 +124,14 @@ def c9_kopfueber():
 def c12_deckel_oberseite():
     """Probe Deckel-Oberseite, zweifarbig wie der echte Deckel: obere 2,4 mm vorne rechts (Play, Vor, Mond, Vorder- und
     Seitenkante mit Fase), kopfüber, mit Modifier für die Haut-Schichten. Prüft Oberfläche auf der texturierten Platte,
-    eingelegte Symbole (seit 05.11.) und die Farbwechsel."""
+    vertiefte Symbole mit Variante A (PLA-Opfer-Einleger) oder B (Brücken-Modifier mit fester Richtung), Farbwechsel."""
     kern, haut = M.deckel()
     sel = box(52, -1, M.LID_TOP - 2.4, M.W + 1, 78, M.LID_TOP + 1)
     a, b = kern ^ sel, haut ^ sel
-    mod = M.deckel_haut_modifier(box(51, -2, M.LID_TOP - 2.4, M.W + 2, 79, M.LID_TOP + 1))
-    return M.deckel_kopfueber(a, a + b), M.deckel_kopfueber(b, a + b), M.deckel_kopfueber(mod, a + b)
+    big = box(51, -2, M.LID_TOP - 2.4, M.W + 2, 79, M.LID_TOP + 1)
+    ref = a + b
+    k = lambda m: M.deckel_kopfueber(m, ref)
+    return (k(a), k(b), k(M.deckel_haut_modifier(big)), k(M.deckel_opfer(sel)), k(M.deckel_bruecken_modifier(sel)))
 
 
 def c10_fuzzy():
@@ -189,10 +191,12 @@ def all_coupons():
     a, b = c11_korpus_oben()
     out["C11_korpus_oben"] = a
     out["C11_korpus_oben_MODIFIER_fuzzy_aussenhaut"] = b
-    a, b, c = c12_deckel_oberseite()
+    a, b, c, d, e = c12_deckel_oberseite()
     out["C12_deckel_oberseite_kern_orange"] = a
     out["C12_deckel_oberseite_haut_beige"] = b
     out["C12_deckel_oberseite_MODIFIER_haut_1wand"] = c
+    out["C12_deckel_oberseite_opfer_PLA"] = d
+    out["C12_deckel_oberseite_MODIFIER_bruecke_richtung"] = e
     a, b = c9_kopfueber()
     out["C9_deckel_kopfueber_felder"] = a
     out["C9_deckel_kopfueber_taste_schlitz"] = b

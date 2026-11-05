@@ -38,6 +38,6 @@ ax.text(M.BTN_X, M.BTN_Y - M.BTN_D / 2 - 3, "Ein-Taste", ha="center", va="top", 
 ax.text(70, M.SLOT_Y + 5, "Kartenschlitz", ha="center", va="bottom", fontsize=8.5, color="#5a4a30")
 ax.text(70, -4, "vorne (Lautsprecher)", ha="center", va="top", fontsize=9, color="#555")
 ax.set_xlim(-3, 143); ax.set_ylim(-9, 143); ax.set_aspect("equal"); ax.axis("off")
-ax.set_title("Deckel von oben: beige Haut 0,8 mm, Symbole und Ringe orange bündig eingelegt, Ein-Taste orange bündig", fontsize=10)
+ax.set_title("Deckel von oben: beige Haut 0,8 mm, Symbole und Ringe orange (0,8 mm vertieft, ertastbar), Ein-Taste orange bündig", fontsize=10)
 out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out", "deckel_draufsicht.png")
 fig.savefig(out, bbox_inches="tight"); print(out)

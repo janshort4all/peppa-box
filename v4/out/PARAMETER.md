@@ -20,7 +20,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `AUDIO_PLUG` | 20 | Platz hinter der Klinke des Pi: Klinkenstecker 90° gewinkelt (Goobay 67782) |
 | `MAXB` | 19 / 18 / 8 | Verstärker-Klon L, B, Höhe mit Klemme |
 
-## Mit Probedruck einstellen (11)
+## Mit Probedruck einstellen (12)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -34,9 +34,10 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `INS_GAP` | 0,6 | Tasche: Spalt an der Außenwand (Einleger laminiert ca. 0,25–0,35 mm) |
 | `BTN_GAP` | 0,25 | Luft je Seite zwischen Kappe und Deckelbohrung (Druck 02.11.: passt) |
 | `ENC_HOLE` | 7,4 | Loch für M7-Gewinde |
-| `KNOB_BORE` | 6,1 | Bohrung für die Schlitzachse Ø 6 (gedruckt meist 0,1–0,2 kleiner → Klemmsitz) |
+| `KNOB_BORE` | 6,1 | Bohrung für die Schlitzachse Ø 6 (gedruckt meist 0,1–0,2 kleiner → Klemmsitz), nur im geschlitzten Teil der Achse (federt dort) |
+| `KNOB_GUIDE` | 6,3 | Bohrung im ungeschlitzten Teil der Achse (federt nicht): nur Führung, damit der lange Knopf nicht auf ganzer Länge klemmt |
 
-## Von dir gemessen (20)
+## Von dir gemessen (21)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -47,8 +48,9 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `RC_PIN_OUT` | 6 | Überstand der 90°-Stifte über die Platinenkante |
 | `RC_PLUG_OUT` | 14 | Platinenkante bis Ende Steckkabel-Hülse (gesteckt, Buchse sitzt bis an die Leiste) |
 | `SW_LEGS` | 13 | Breite über die Beinchen (Außenkante zu Außenkante), Jan ca. 13 mm; Taster 12 mm, Beinchen stehen seitlich über |
+| `ENC_OUT` | 21,8 | Achse ragt so weit über die Wand-Außenfläche. Achse wird NICHT gekürzt (Jan 05.11.). Gemessen am finalen Korpus: Achsende bis Mutterauflage (glatte Fläche, 0,4 unter der Wand) 22,2 → 21,8 über der Wand (Modell vorher 22,0) |
 | `ENC_LUG` | 2,5 / 2 / 1,5 | Nase am Drehgeber (Jan 03.11.): Gewinde-Außenkante bis Nase 2,5, Nase 2,0 breit, steht 1,5 vor. Einbau: Nase nach oben (zum Deckel) |
-| `ENC_SLOT_D` | 11 | Schlitztiefe ab ursprünglichem Achsende (nach dem Kürzen bleiben 5 mm) |
+| `ENC_SLOT_D` | 11,3 | Schlitztiefe ab Achsende (Jan 05.11.: 11,3; Achse wird nicht gekürzt) |
 | `ENC_SLOT` | 1,6 | Schlitzbreite Achse (Jan 03.11.: ca. 1,6, Schlitz 11 tief, Achse Ø 6) |
 | `JK_WALL` | 2 | Wand unter der Klinkenmutter (wie Prototyp, passt laut Jan; Gewinde ist knapp) |
 | `STRAP_HOLE` | 7,9 | Buchschraube: Schaft Ø 7,5 (Jan 03.11.) + 0,4 Spiel; Kopf liegt auf dem Riemen (Riemen ca. 3 mm dick) |
@@ -81,7 +83,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (95)
+## Gestaltung festgelegt (96)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -143,11 +145,12 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `ENC_Y` | 84 | Drehgeber y |
 | `ENC_Z` | 60 | Drehgeber z |
 | `ENC_WALL` | 2,6 | Wand unter der Drehgeber-Mutter = volle Wand 3,0 minus glatte Fläche 0,4 (vorher 2,0 mit Senkung innen). Gewinde 7 mm (Datenblatt STEC11B, M7×0,75); am Prototyp bei 2 mm Wand 2 mm Gewinde über der Mutter (Jan 03.11.) → bei 3 mm Wand noch ca. 1 mm, Mutter voll im Gewinde |
-| `ENC_OUT` | 16 | Achse ragt so weit über die Wand-Außenfläche: Achse wird um 6 mm gekürzt (Jan 03.11.). Gemessen 23 bei 2 mm Wand = 22 bei 3 mm Wand; Achse 25 ab Gewindeanfang (Datenblatt) |
 | `KNOB_D` | 34 | Knopf-Ø |
 | `KNOB_ROOF` | 2 | Knopf: Material vor dem Achsende |
 | `NUT_REC_D` | 15 | Aussparung im Knopf für Mutter (Eckmaß ca. 11,5) und Scheibe |
 | `KNOB_GAP` | 1 | Luft Knopf ↔ Wand (Fuzzy Skin ±0,25, Drucktaster 0,5 mm Hub) |
+| `KNOB_TIP` | 0 | Luft Achsende ↔ Knopfboden: 0 = Knopf bis Anschlag aufschieben, Lage eindeutig (vorher 0,4, als die Achslänge noch nicht gemessen war). Ist die Achse länger (z. B. 22,2 ab Scheibe), sitzt der Knopf nur weiter außen |
+| `KNOB_RIB` | 8 | Länge des Stegs im Achsschlitz (Mitnahme), Schlitz 11,3 tief |
 | `JK_Y` | 84 | Klinke y |
 | `JK_Z` | 24 | Klinke z |
 | `STRAP_Y` | 104 | Riemenpunkt y |

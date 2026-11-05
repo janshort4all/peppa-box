@@ -146,18 +146,21 @@ ENC_Y = par("ENC_Y", 84.0, "festgelegt", "Drehgeber y")
 ENC_Z = par("ENC_Z", 60.0, "festgelegt", "Drehgeber z")
 ENC_HOLE = par("ENC_HOLE", 7.4, "Probedruck", "Loch für M7-Gewinde")
 ENC_WALL = par("ENC_WALL", 2.6, "festgelegt", "Wand unter der Drehgeber-Mutter = volle Wand 3,0 minus glatte Fläche 0,4 (vorher 2,0 mit Senkung innen). Gewinde 7 mm (Datenblatt STEC11B, M7×0,75); am Prototyp bei 2 mm Wand 2 mm Gewinde über der Mutter (Jan 03.11.) → bei 3 mm Wand noch ca. 1 mm, Mutter voll im Gewinde")
-ENC_OUT = par("ENC_OUT", 16.0, "festgelegt", "Achse ragt so weit über die Wand-Außenfläche: Achse wird um 6 mm gekürzt (Jan 03.11.). Gemessen 23 bei 2 mm Wand = 22 bei 3 mm Wand; Achse 25 ab Gewindeanfang (Datenblatt)")
+ENC_OUT = par("ENC_OUT", 21.8, "gemessen", "Achse ragt so weit über die Wand-Außenfläche. Achse wird NICHT gekürzt (Jan 05.11.). Gemessen am finalen Korpus: Achsende bis Mutterauflage (glatte Fläche, 0,4 unter der Wand) 22,2 → 21,8 über der Wand (Modell vorher 22,0)")
 ENC_THREAD = par("ENC_THREAD", 7.0, "belegt", "Gewindelänge ab Gehäusefläche (Datenblatt STEC11B, M7 × 0,75)")
-ENC_NUT = par("ENC_NUT", (2.5, 0.5, 12.0), "gemessen / vorläufig", "Mutter Höhe 2,5 und ca. 10 breit (Jan); Scheibe 0,5 dick und Ø 12 angenommen (liegen bei)")
+ENC_NUT = par("ENC_NUT", (2.5, 0.5, 12.0), "gemessen / vorläufig", "Mutter Höhe 2,5 und ca. 10 breit (Jan 03.11.); Scheibe 0,5 dick und Ø 12 angenommen (liegen bei). 05.11.: Achsende bis Mutter 20,2, bis Auflage 22,2 → über der Wand nur 2,0 (mit/ohne Scheibe offen). Für den Knopf ohne Einfluss: Aussparung reicht bis zum Gewindeende")
 ENC_LUG = par("ENC_LUG", (2.5, 2.0, 1.5), "gemessen", "Nase am Drehgeber (Jan 03.11.): Gewinde-Außenkante bis Nase 2,5, Nase 2,0 breit, steht 1,5 vor. Einbau: Nase nach oben (zum Deckel)")
-ENC_SLOT_D = par("ENC_SLOT_D", 11.0, "gemessen", "Schlitztiefe ab ursprünglichem Achsende (nach dem Kürzen bleiben 5 mm)")
+ENC_SLOT_D = par("ENC_SLOT_D", 11.3, "gemessen", "Schlitztiefe ab Achsende (Jan 05.11.: 11,3; Achse wird nicht gekürzt)")
 ENC_PUSH = par("ENC_PUSH", 0.5, "belegt", "Hub des Drucktasters in der Achse (Datenblatt)")
 ENC_SLOT = par("ENC_SLOT", 1.6, "gemessen", "Schlitzbreite Achse (Jan 03.11.: ca. 1,6, Schlitz 11 tief, Achse Ø 6)")
 KNOB_D = par("KNOB_D", 34.0, "festgelegt", "Knopf-Ø")
 KNOB_ROOF = par("KNOB_ROOF", 2.0, "festgelegt", "Knopf: Material vor dem Achsende")
 NUT_REC_D = par("NUT_REC_D", 15.0, "festgelegt", "Aussparung im Knopf für Mutter (Eckmaß ca. 11,5) und Scheibe")
 KNOB_GAP = par("KNOB_GAP", 1.0, "festgelegt", "Luft Knopf ↔ Wand (Fuzzy Skin ±0,25, Drucktaster 0,5 mm Hub)")
-KNOB_BORE = par("KNOB_BORE", 6.1, "Probedruck", "Bohrung für die Schlitzachse Ø 6 (gedruckt meist 0,1–0,2 kleiner → Klemmsitz)")
+KNOB_BORE = par("KNOB_BORE", 6.1, "Probedruck", "Bohrung für die Schlitzachse Ø 6 (gedruckt meist 0,1–0,2 kleiner → Klemmsitz), nur im geschlitzten Teil der Achse (federt dort)")
+KNOB_GUIDE = par("KNOB_GUIDE", 6.3, "Probedruck", "Bohrung im ungeschlitzten Teil der Achse (federt nicht): nur Führung, damit der lange Knopf nicht auf ganzer Länge klemmt")
+KNOB_TIP = par("KNOB_TIP", 0.0, "festgelegt", "Luft Achsende ↔ Knopfboden: 0 = Knopf bis Anschlag aufschieben, Lage eindeutig (vorher 0,4, als die Achslänge noch nicht gemessen war). Ist die Achse länger (z. B. 22,2 ab Scheibe), sitzt der Knopf nur weiter außen")
+KNOB_RIB = par("KNOB_RIB", 8.0, "festgelegt", "Länge des Stegs im Achsschlitz (Mitnahme), Schlitz 11,3 tief")
 JK_Y = par("JK_Y", 84.0, "festgelegt", "Klinke y")
 JK_Z = par("JK_Z", 24.0, "festgelegt", "Klinke z")
 JK_HOLE = par("JK_HOLE", 6.2, "vorläufig", "Loch für Klinkengewinde (Gewinde unbekannt)")
@@ -992,12 +995,13 @@ def knob_geo():
     x0 = W + KNOB_GAP
     rec_end = max(thread_end, W - FUZZ_REC + ENC_NUT[0] + ENC_NUT[1]) + ENC_PUSH + 0.4
     tip = W + ENC_OUT
-    bore_end = tip + 0.4
+    bore_end = tip + KNOB_TIP
     return x0, rec_end, bore_end, bore_end + KNOB_ROOF
 
 
 def drehknopf():
-    """Orange Knopf auf der gekürzten Schlitzachse: Klemmsitz Ø 6,1 + Steg im Schlitz, deckt Mutter und glatte Fläche ab."""
+    """Orange Knopf auf der ganzen (ungekürzten) Schlitzachse: Führung im ungeschlitzten Teil, Klemmsitz Ø 6,1 im geschlitzten Teil,
+    Steg im Schlitz; deckt Mutter und glatte Fläche ab."""
     x0, rec_end, bore_end, x1 = knob_geo()
     L = x1 - x0
     k = Manifold.batch_hull([cyl_x(x0, x1 - 2, ENC_Y, ENC_Z, KNOB_D / 2),
@@ -1007,9 +1011,12 @@ def drehknopf():
         k = k - cyl_x(x0 + 1.5, x1 - 3, ENC_Y + math.cos(a) * (KNOB_D / 2 + 0.6), ENC_Z + math.sin(a) * (KNOB_D / 2 + 0.6), 1.3)
     k = k - box(x1 - 0.6, ENC_Y - 0.9, ENC_Z + 6, x1 + 1, ENC_Y + 0.9, ENC_Z + 13)   # Markierung
     k = k - cyl_x(x0 - 1, rec_end, ENC_Y, ENC_Z, NUT_REC_D / 2)
-    k = k - cyl_x(rec_end - 0.1, bore_end, ENC_Y, ENC_Z, KNOB_BORE / 2)
-    slot_len = ENC_SLOT_D - (W + 22.0 - (W + ENC_OUT))                          # nach dem Kürzen verbleibende Schlitztiefe
-    rib0 = bore_end - max(1.0, min(slot_len - 0.5, 4.5))
+    tip = W + ENC_OUT
+    slot_bot = tip - ENC_SLOT_D                                                 # Schlitzgrund: darunter federt die Achse nicht
+    clamp0 = max(rec_end, slot_bot + 0.5)
+    k = k - cyl_x(rec_end - 0.1, clamp0 + 0.01, ENC_Y, ENC_Z, KNOB_GUIDE / 2)  # Führung
+    k = k - cyl_x(clamp0, bore_end, ENC_Y, ENC_Z, KNOB_BORE / 2)                # Klemmsitz
+    rib0 = bore_end - max(1.0, min(ENC_SLOT_D - 0.5, KNOB_RIB))
     k = k + box(rib0, ENC_Y - 3.2, ENC_Z - ENC_SLOT / 2 + 0.1, bore_end, ENC_Y + 3.2, ENC_Z + ENC_SLOT / 2 - 0.1)
     return k
 

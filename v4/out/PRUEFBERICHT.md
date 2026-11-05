@@ -55,7 +55,7 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | 04_kartenfach.stl | 14 × 52 × 88 | Seitenwand über dem Kartenschlitz 5 mm |
 | 05_boden_traeger.stl | 140 × 140 × 8 | Decke der Senkbohrungen M2,5 (Ring 1,8 mm) |
 | 06_stoffrahmen.stl | 114 × 114 × 5 | – |
-| 07_drehknopf_orange.stl | 34 × 34 × 17 | – |
+| 07_drehknopf_orange.stl | 34 × 34 × 23 | – |
 | 08_ein_taste_orange.stl | 17 × 17 × 13 | – |
 | 09_riemen_gegenplatte.stl | 18 × 24 × 4 | – |
 

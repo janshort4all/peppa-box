@@ -233,6 +233,25 @@ der Platte, dort abnehmen). Vorschau: Schicht 1–4 Beige + Einleger (A); Schich
 bzw. nur über den Symbolen, alle Linien parallel (B). Zuerst `coupon_C12_deckel_oberseite_*` mit derselben Variante.
 `08_ein_taste_orange.stl` (Kopf unten, keine Umrandung) bekommt dieselbe Oberfläche. Bild: `deckel_draufsicht.png`.
 
+### Drehknopf (Stand 05.11.2026, volle Achse, ohne Fuzzy)
+
+`07_drehknopf_orange.stl`: Ø 34 × 22,8 mm, ca. 24 g. Die Drehgeberachse wird **nicht** gekürzt. Stirnfläche unten auf der
+texturierten PEI-Platte → dieselbe matte Oberfläche wie die Tasten im Deckel; dieselbe orange Rolle wie beim Deckel.
+Innen: Führung Ø 6,3 im ungeschlitzten Teil der Achse, Klemmsitz Ø 6,1 nur im geschlitzten Teil (federt), Steg 8 mm im Schlitz.
+Bild: `drehknopf_schnitt.png`.
+
+| Reiter | Einstellung | Wert |
+| --- | --- | --- |
+| Qualität | Schichthöhe | **0,12 mm** (erste Schicht 0,2) – feinere Schichtlinien auf dem Mantel |
+| Qualität | Nahtposition | Ausgerichtet + **Naht aufmalen** in eine Rille **links (−X)**, gegenüber der Markierung (liegt beim Laden rechts, +X); Schrägnaht keine |
+| Festigkeit | Wandschleifen / Füllung | 3 / 25 % Gyroid |
+| Sonstiges | Fuzzy Skin | **Keine** – Griff geben die 24 Rillen; Fuzzy würde ihre Kanten verwischen |
+| Sonstiges | Randtyp | Keine Umrandung |
+| Filament | | wie beim Deckel; die Mindest-Schichtdauer bremst bei dem kleinen Teil Innenwände und Füllung – gewollt, die Rillenkanten kühlen besser |
+
+Aufstecken: Steg in den Achsschlitz ausrichten, Knopf gerade **bis Anschlag** aufschieben (Achsende liegt am Knopfboden) –
+dann bleibt 1 mm Luft zur Wand. Die Markierung ist nur Zierde: Der Drehgeber dreht endlos, sie zeigt keine Lautstärke an.
+
 ### Fuzzy Skin nur außen (Modifier „Außenhaut“, seit 04.11.2026)
 
 Warum: Jedes Loch durch die Wand (Klinke, Drehgeber, USB-C, Schlitze, Riemen, Deckelschrauben, Lautsprecher) schneidet den

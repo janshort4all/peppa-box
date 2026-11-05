@@ -26,7 +26,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 | Bestellungen | BerryBase, Amazon (RC522, MAX98357A) geliefert. Reichelt: mehrere Artikel nicht lieferbar, wird gerade geklärt |
 | Pi | Raspberry Pi OS Lite 64-bit (Debian 13 Trixie, 06.10.2026) auf SanDisk Ultra 128 GB A1; Ton über die Pi-Klinke getestet, gut |
 | Stapel | Akku-Board + Pi + Klemmen-Aufsatz verschraubt, auf dem gedruckten Boden (Version mit DAC-Stiften) montiert, passt |
-| Druck | **Korpus 04./05.11. gedruckt – perfekt, abgenommen** (Satteldach, Einstellungen README). Als Nächstes: Deckel zweifarbig kopfüber, vorher Probe C12 (Nachtrag 05.11.) |
+| Druck | **Korpus 04./05.11. gedruckt – perfekt, abgenommen.** Deckel 05.11. (Symbole vertieft) nicht abgenommen → Symbole jetzt bündig eingelegt, als Nächstes Probe C12, dann Deckel (Nachtrag 05.11. (3)) |
 | Verstärker | Stiftleiste und Lautsprecherklemme werden gerade gelötet |
 
 ## Hardware (endgültig)
@@ -473,3 +473,14 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Am Pi prüfen:** Update über die Seite; Netzteil stecken → „lädt“; ziehen → „Akkubetrieb“ mit %; geladen lassen bis die blaue LED ausgeht → Anzeige „voll“? `shunt_mv` dann notieren.
 - Offen: Prozent während des Ladens (z. B. letzten Wert vor dem Einstecken merken) – erst wenn die Anzeige so passt.
 - 21:21: Nach dem Update zeigte die Seite „null %“, weil im Handy noch die alte Seite lief (neuer Server, alter Code). Behoben: Nach einem Update lädt die Seite sich selbst neu (`warteBisZurueck(true)` → `location.reload()`). Dieses eine Mal noch von Hand neu laden.
+
+## Nachtrag 05.11.2026 (3) – Deckel-Druck ausgewertet, Symbole jetzt bündig eingelegt
+
+- **Befund Jan (3 Fotos):** Fläche außerhalb der Kreise sehr gut. Innerhalb der Kreise unschön: man sieht die Bahnen (Ringe um die Symbole, Lückenfüllung), Orange scheint durch die helle Schicht wie Fäden, Symbolböden sehen wie Fäden aus, kleine Fehlstellen (Punktreihen, weiße Härchen an Lochkanten und in den Vertiefungen). Nicht abgenommen – Anspruch absolut perfekt.
+- **Ursache (G-Code geprüft, Bild `v4/out/deckel_ursache.png`):** (1) Schicht 5, die erste orange Schicht, überbrückt die Vertiefungen; der Slicer dehnt die Brücke auf den ganzen Kreis aus (1760 mm² Brücke, 597 mm² Vertiefung, Felder 1722 mm²). Hinter 0,8 mm durchscheinendem Beige liegen dort runde, mit Abstand gelegte Brückenfäden statt dichter Füllung → „Orange guckt durch wie Fäden“, nur in den Kreisen. Die Symbolböden sind selbst Brückenfäden (dicke Brücken). (2) In Schicht 2–4 je Loch 3 Wände → Ringe hinter der ersten Schicht. (3) Überlappung Füllung/Wand an Ober-/Unterseite nur 5 % → Punktreihen neben Kanten. (4) Jedes Loch hat Nahtpunkte; einzelne Fäden in den Vertiefungen.
+- **Gegenmaßnahme Modell:** `SYM_INLAY` = 1: Symbole und Ringe sind **bündig in Orange eingelegt** (gehören zu `02a`, ein Körper mit dem Kern); `02b` ist die Haut ohne Symbole. Die ganze Oberseite liegt auf der Platte, keine Löcher in der Haut, keine Brücke (Überhang Deckel 6 mm², nur Schlitzfase). CANVAS wechselt in Schicht 1–4 je einmal die Farbe. **Nicht mehr ertastbar** – Entscheidung 27.10. dafür aufgegeben. Neu `02m_modifier_deckel_haut_1wand.stl` (`deckel_haut_modifier()`, z 0–0,85 kopfüber): Wandschleifen 1 in den Haut-Schichten. C12 neu mit 3 Teilen (Kern+Einleger, Haut, Modifier).
+- **Gegenmaßnahme Einstellungen (README Deckel):** Wandgenerator Arachne (schmale Ringe 1,1 mm und Stege ohne Lückenfüllung), Überlappung des oberen/unteren massiven Füllung/Wand 25 % (5), Reinigungsvolumen Multiplikator 1,5, Modifier 02m Wandschleifen 1; Rest wie bisher.
+- `v4/gcode_deckel_pruefung.py` neu: Farbe je Schicht innerhalb/außerhalb der Symbole, Innenwände und Brücken in den Haut-Schichten, Brückenfläche über den Feldern, Fahrwege, Naht, Zahl der Farbwechsel.
+- **Ablauf:** zuerst C12 (ca. 15 g) mit genau den Deckel-Einstellungen, Foto an Claude; dann Deckel, G-Code vorher prüfen lassen. Der Deckel vom 05.11. bleibt als Passprobe für Rahmen, Kartenfach, Taste und Touchfelder (kein Ausschuss).
+- Möglich, falls Ertastbarkeit wichtiger wird: nur die Ringe als Rille lassen, Symbole eingelegt – bringt aber wieder Löcher in die Haut (Nahtpunkte, Wandringe an den Rillen); nicht empfohlen.
+

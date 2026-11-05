@@ -1,92 +1,115 @@
-"""G-Code-Prüfung Deckel (kopfüber, zweifarbig): Farbwechsel-Schicht, erste Schicht, Brücken über den Symbolen,
-Fahrwege über den Vertiefungen (Fäden), Naht. Aufruf: python3 gcode_deckel_pruefung.py deckel.gcode
-Lage auf dem Bett wird aus der Außenwand von Schicht 2 bestimmt (Deckel um y gedreht, wie M.deckel_kopfueber)."""
-import re, sys, math, collections, json
-f = sys.argv[1]
-layers = []; cur = None; tool = None; x = y = z = 0.0; e_rel = True; typ = None; F = 0
-for ln in open(f, encoding='utf-8', errors='ignore'):
-    if ln.startswith(';LAYER_CHANGE'):
-        cur = dict(z=None, tool=tool, types=collections.defaultdict(float), speeds=collections.defaultdict(list), fan=[], travels_over=0, n=len(layers)+1, segs=collections.defaultdict(list), tools=set([tool]))
-        layers.append(cur); continue
-    if ln.startswith(';Z:') and cur is not None: cur['z'] = float(ln[3:]); continue
-    if ln.startswith(';TYPE:'): typ = ln[6:].strip(); continue
-    m = re.match(r'^T(\d+)', ln)
-    if m:
-        tool = int(m.group(1))
-        if cur: cur['tools'].add(tool); cur['tool'] = tool
-        continue
-    if ln.startswith('M106') and cur is not None:
-        s = re.search(r'S(\d+)', ln); p = re.search(r'P(\d+)', ln)
-        if s and not p: cur['fan'].append(int(s.group(1)))
-        continue
-    if ln.startswith('G1') or ln.startswith('G0') or ln.startswith('G2') or ln.startswith('G3'):
-        d = dict((k, float(v)) for k, v in re.findall(r'([XYZEF])(-?[\d.]+)', ln.split(';')[0]))
-        nx, ny = d.get('X', x), d.get('Y', y)
-        if 'Z' in d: z = d['Z']
-        if 'F' in d: F = d['F']
-        L = math.hypot(nx - x, ny - y)
-        if cur is not None and L > 0:
-            if d.get('E', 0) > 0:
-                cur['types'][typ] += L; cur['speeds'][typ].append(F / 60)
-                cur['segs'][typ].append((x, y, nx, ny, d['E']))
-            else:
-                cur['segs']['_travel'].append((x, y, nx, ny, 0))
-        x, y = nx, ny
-if False: json.dump([dict(n=l['n'], z=l['z'], tools=sorted(t for t in l['tools'] if t is not None), types={k: round(v) for k, v in l['types'].items()},
-                vmin={k: round(min(v)) for k, v in l['speeds'].items()}, vmax={k: round(max(v)) for k, v in l['speeds'].items()},
-                fan=sorted(set(l['fan']))) for l in layers], open('schichten.json', 'w'), indent=0)
-if False: pickle.dump([dict(n=l['n'], z=l['z'], segs=dict(l['segs'])) for l in layers], open('segs.pkl', 'wb'))
+"""G-Code-Prüfung Deckel (kopfüber, zweifarbig). Aufruf: python3 gcode_deckel_pruefung.py deckel.gcode
 
+Prüft: Farbe je Schicht und je Fläche (Symbole/Ringe orange, Rest beige in den Haut-Schichten), Brücken über den Feldern,
+Wände in den Haut-Schichten (Modifier 02m: 1 Wand), Fahrwege über Vertiefungen (nur alter Aufbau), Naht, erste Schicht.
+Lage auf dem Bett: Mitte der Außenwand von Schicht 2 = Deckelmitte (Deckel um y gedreht, wie M.deckel_kopfueber).
+"""
+import os, re, sys, math, collections
 import numpy as np
-sys.path.insert(0, __import__('os').path.dirname(__import__('os').path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import model as M
 from shapely.geometry import Polygon, LineString
 from shapely.ops import unary_union
 from shapely import make_valid
-print(f"Schichten {len(layers)}")
-for l in layers[:6]:
-    print(f"  Schicht {l['n']} z {l['z']}: Filament {sorted(t for t in l['tools'] if t is not None)} {dict((k, round(v)) for k, v in l['types'].items())}")
-ow = np.array([(a, b, c_, d) for a, b, c_, d, e in layers[1]['segs']['Outer wall']])
-cx = (ow[:, [0, 2]].min() + ow[:, [0, 2]].max()) / 2; cy = (ow[:, [1, 3]].min() + ow[:, [1, 3]].max()) / 2
-lb = M.LID_CS.bounds(); lx, ly = (lb[0] + lb[2]) / 2, (lb[1] + lb[3]) / 2      # Deckel ist symmetrisch: Mitte ↔ Mitte
-OX = cx + lx; OY = cy - ly
-print(f"Lage: Bett X = {OX:.2f} − x, Bett Y = y + {OY:.2f}")
-fx = lambda x, y: (OX - x, y + OY)
-def cs2shp(cs):
-    g = None
-    for q in cs.to_polygons():
-        q = np.asarray(q)
-        if len(q) < 3: continue
-        q = make_valid(Polygon([fx(*a) for a in q])); g = q if g is None else g.symmetric_difference(q)
-    return g
-sym, sym_only = cs2shp(M.pad_symbols()), cs2shp(M.pad_symbols(rings=False))
-tool1 = [l['n'] for l in layers if len([t for t in l['tools'] if t is not None]) > 1]
-print("Farbwechsel in Schicht", tool1, "(soll 5: Schicht 1–4 beige = 0,8 mm)")
-first = layers[0]['types']
-print("Schicht 1:", "Rand/Umrandung vorhanden!" if any(k in ('Brim', 'Skirt') for k in first) else "keine Umrandung", "| Innenwand:", round(first.get('Inner wall', 0)), "mm (soll 0)")
-inner = sym.buffer(-0.15)
-for l in layers[1:4]:
-    tr = [LineString([(a, b), (c_, d)]) for a, b, c_, d, e in l['segs'].get('_travel', [])]
-    hit = [t for t in tr if t.intersects(inner)]
-    print(f"Schicht {l['n']}: Fahrwege über Symbolen/Ringen {len(hit)}, längste Strecke über Luft {max([t.intersection(inner).length for t in hit] or [0]):.1f} mm")
-l5 = layers[4]
-br = [LineString([(a, b), (c_, d)]) for a, b, c_, d, e in l5['segs'].get('Bridge', [])]
-cov = sym.intersection(unary_union([b.buffer(0.21, cap_style=2) for b in br])).area / sym.area if br else 0
-print(f"Schicht 5: Vertiefungen zu {cov*100:.0f} % als Brücke")
-for g in (sym_only.geoms if hasattr(sym_only, 'geoms') else [sym_only]):
-    bb = [b for b in br if b.intersects(g)]
-    cx, cy = g.centroid.x, g.centroid.y
-    print(f"  Symbol bei Deckel-x {OX - cx:.0f}, y {cy - OY:.0f}: längste Brückenbahn über Luft {max([b.intersection(g).length for b in bb] or [0]):.1f} mm")
-seam = []
-for l in layers:
-    segs = l['segs'].get('Outer wall', [])
-    if not segs: continue
-    loops, cur_ = [], [segs[0]]
-    for s0, s1 in zip(segs, segs[1:]):
-        if math.hypot(s1[0] - s0[2], s1[1] - s0[3]) > 0.5: loops.append(cur_); cur_ = []
-        cur_.append(s1)
-    loops.append(cur_)
-    big = max(loops, key=lambda lp: sum(math.hypot(q[2] - q[0], q[3] - q[1]) for q in lp))
-    seam.append((round(OX - big[0][0], 1), round(big[0][1] - OY, 1)))
-xs_, ys_ = [a for a, b in seam], [b for a, b in seam]
-print(f"Naht Außenkontur (Deckelkoordinaten, y 0 = vorne): x {min(xs_)}–{max(xs_)}, y {min(ys_)}–{max(ys_)}")
+
+FARBE = {}          # Werkzeug-Nummer → Name, aus den Kopfzeilen (filament_colour) nicht sicher → nur Nummern ausgeben
+
+
+def lesen(f):
+    layers, cur, tool, typ = [], None, None, None
+    x = y = 0.0
+    for ln in open(f, encoding="utf-8", errors="ignore"):
+        if ln.startswith(";LAYER_CHANGE"):
+            cur = dict(n=len(layers) + 1, z=None, segs=[], travel=[], tools=[tool])
+            layers.append(cur); continue
+        if ln.startswith(";Z:") and cur is not None:
+            cur["z"] = float(ln[3:]); continue
+        if ln.startswith(";TYPE:"):
+            typ = ln[6:].strip(); continue
+        m = re.match(r"^T(\d+)", ln)
+        if m:
+            tool = int(m.group(1))
+            if cur is not None: cur["tools"].append(tool)
+            continue
+        if ln[:3] in ("G1 ", "G0 ", "G2 ", "G3 "):
+            d = dict((k, float(v)) for k, v in re.findall(r"([XYZEF])(-?[\d.]+)", ln.split(";")[0]))
+            nx, ny = d.get("X", x), d.get("Y", y)
+            if cur is not None and (nx, ny) != (x, y):
+                if d.get("E", 0) > 0:
+                    cur["segs"].append((typ, tool, x, y, nx, ny))
+                else:
+                    cur["travel"].append((x, y, nx, ny))
+            x, y = nx, ny
+    return layers
+
+
+def main(f):
+    L = lesen(f)
+    print(f"Schichten {len(L)}")
+    ow = np.array([s[2:] for s in L[1]["segs"] if s[0] == "Outer wall"])
+    cx = (ow[:, [0, 2]].min() + ow[:, [0, 2]].max()) / 2; cy = (ow[:, [1, 3]].min() + ow[:, [1, 3]].max()) / 2
+    lb = M.LID_CS.bounds()
+    OX, OY = cx + (lb[0] + lb[2]) / 2, cy - (lb[1] + lb[3]) / 2
+    fx = lambda x, y: (OX - x, y + OY)
+
+    def shp(cs):
+        g = None
+        for q in cs.to_polygons():
+            q = np.asarray(q)
+            if len(q) < 3: continue
+            q = make_valid(Polygon([fx(*a) for a in q])); g = q if g is None else g.symmetric_difference(q)
+        return g
+    sym = shp(M.pad_symbols())
+    felder = unary_union([Polygon([fx(x + d / 2 * math.cos(t), y + d / 2 * math.sin(t)) for t in np.linspace(0, 2 * math.pi, 90)])
+                          for x, y, d in M.PADS.values()])
+    haut = int(round(M.SKIN / 0.2))
+    print(f"Lage: Bett X = {OX:.2f} − x, Bett Y = y + {OY:.2f}; Haut = Schicht 1–{haut}")
+
+    # 1) Farben je Schicht und je Fläche
+    for l in L[:haut + 1]:
+        tl = [t for t in dict.fromkeys(l["tools"]) if t is not None]
+        im, aus = collections.Counter(), collections.Counter()
+        for typ, t, a, b, c, d in l["segs"]:
+            if typ == "Prime tower": continue
+            mid = LineString([(a, b), (c, d)]).interpolate(0.5, normalized=True)
+            (im if sym.buffer(-0.25).contains(mid) else aus if not sym.buffer(0.25).contains(mid) else collections.Counter())[t] += math.hypot(c - a, d - b)
+        typen = collections.Counter()
+        for typ, t, a, b, c, d in l["segs"]:
+            typen[typ] += math.hypot(c - a, d - b)
+        print(f"  Schicht {l['n']} (z {l['z']}): Werkzeuge {tl}; in Symbolen/Ringen {dict((k, round(v)) for k, v in im.items())} mm, "
+              f"außerhalb {dict((k, round(v)) for k, v in aus.items())} mm; Innenwand {round(typen.get('Inner wall', 0))} mm, Brücke {round(typen.get('Bridge', 0))} mm")
+    # 2) Brücken über den Feldern (alter Aufbau: Böden der Vertiefungen)
+    for l in L[:haut + 3]:
+        br = [LineString([(a, b), (c, d)]) for typ, t, a, b, c, d in l["segs"] if typ == "Bridge"]
+        if br:
+            fl = unary_union([b_.buffer(0.2, cap_style=2) for b_ in br]).intersection(felder).area
+            print(f"  Schicht {l['n']}: Brücke über den Feldern {fl:.0f} mm² (Felder {felder.area:.0f} mm²) – scheint durch die Haut")
+    # 3) Fahrwege über Vertiefungen in den Haut-Schichten (nur wenn die Haut Löcher hat)
+    inner = sym.buffer(-0.15)
+    for l in L[1:haut]:
+        hit = [LineString([(a, b), (c, d)]) for a, b, c, d in l["travel"]]
+        hit = [t for t in hit if t.intersects(inner)]
+        if hit:
+            print(f"  Schicht {l['n']}: {len(hit)} Fahrwege über Symbol-/Ringflächen (bei eingelegten Symbolen harmlos, bei Vertiefungen Fadengefahr)")
+    # 4) erste Schicht und Naht
+    first = collections.Counter(s[0] for s in L[0]["segs"])
+    print("Schicht 1:", "UMRANDUNG vorhanden!" if any(k in ("Brim", "Skirt") for k in first) else "keine Umrandung")
+    seam = []
+    for l in L:
+        segs = [s for s in l["segs"] if s[0] == "Outer wall"]
+        if not segs: continue
+        loops, cur_ = [], [segs[0]]
+        for s0, s1 in zip(segs, segs[1:]):
+            if math.hypot(s1[2] - s0[4], s1[3] - s0[5]) > 0.5: loops.append(cur_); cur_ = []
+            cur_.append(s1)
+        loops.append(cur_)
+        big = max(loops, key=lambda lp: sum(math.hypot(q[4] - q[2], q[5] - q[3]) for q in lp))
+        seam.append((round(OX - big[0][2], 1), round(big[0][3] - OY, 1)))
+    print(f"Naht Außenkontur (Deckelkoordinaten, y 0 = vorne): x {min(a for a, b in seam)}–{max(a for a, b in seam)}, "
+          f"y {min(b for a, b in seam)}–{max(b for a, b in seam)}")
+    wechsel = sum(1 for l in L for a, b in zip(l["tools"], l["tools"][1:]) if a is not None and b is not None and a != b)
+    print(f"Farbwechsel gesamt: {wechsel}")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1])

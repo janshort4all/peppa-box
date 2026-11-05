@@ -26,7 +26,7 @@ def tm(man):
 DRUCK = {   # Teil: (Datei, Farbe, Hinweis)
     "korpus": ("01_korpus_beige.stl", "Beige", "aufrecht, Boden auf der Platte; Naht hinten; Kammerdecke als 45°-Satteldach (keine Brücke)"),
     "deckel_orange": ("02a_deckel_kern_orange.stl", "Orange", "kopfüber (Oberseite auf der Platte, hinten bleibt hinten); mit 02b zusammen als ein Objekt mit zwei Teilen laden"),
-    "deckel_beige": ("02b_deckel_haut_beige.stl", "Beige", "kopfüber, liegt deckungsgleich unter 02a auf der texturierten PEI-Platte (die 4 untersten Schichten)"),
+    "deckel_beige": ("02b_deckel_haut_beige.stl", "Beige", "kopfüber, die 4 untersten Schichten ohne Symbole; 02a füllt die Symbole bündig aus"),
     "deckelrahmen": ("03_deckelrahmen.stl", "Schwarz/Grau", "Deckelseite auf der Platte"),
     "kartenfach": ("04_kartenfach.stl", "Schwarz/Grau", "auf der Seite, Kartenschlitz senkrecht; Brim"),
     "boden": ("05_boden_traeger.stl", "Beige", "flach, Unterseite auf der Platte; trägt die ganze Elektronik"),
@@ -47,6 +47,11 @@ def export_parts(parts):
         p = os.path.join(OUT, fn)
         tm(o).export(p)
         files[fn] = (k, col, note, o.bounding_box())
+    # Modifier für die Haut-Schichten des Deckels (Wandschleifen 1), gleich gedreht und verschoben wie 02a/02b
+    lid_ref = parts["deckel_orange"] + parts["deckel_beige"]
+    mod = M.deckel_kopfueber(M.deckel_haut_modifier(), lid_ref)
+    tm(mod).export(os.path.join(OUT, "02m_modifier_deckel_haut_1wand.stl"))
+    files["02m_modifier_deckel_haut_1wand.stl"] = ("deckel", "Modifizierer", "mit 02a + 02b laden, Typ Modifizierer, Wandschleifen 1", mod.bounding_box())
     # einfarbiger Deckel für Prototypen: gleiche Form wie 02a + 02b, als ein Körper (Symbole SKIN tief vertieft)
     one = M.deckel(einfarbig=True).translate([0, 0, -M.LID_BOT])
     tm(one).export(os.path.join(OUT, "02_deckel_einfarbig.stl"))

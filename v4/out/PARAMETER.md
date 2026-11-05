@@ -81,7 +81,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (94)
+## Gestaltung festgelegt (95)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -99,6 +99,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `LID_SINK` | 1,2 | Deckel liegt so tief unter der Kante |
 | `LEDGE` | 2,5 | Auflage-Schräge 45° innen |
 | `SKIN` | 0,8 | beige Deckschicht über orangem Kern (D1); 0,8 = 4 Schichten à 0,2 bzw. 5 à 0,16 (vorher 0,7, lag zwischen zwei Schichten) |
+| `SYM_INLAY` | 1 | Symbole und Ringe bündig in Orange eingelegt (CANVAS druckt in den 4 Haut-Schichten beide Farben), statt 0,8 mm vertieft. Grund (Druck 05.11.): Kopfüber werden die Vertiefungen in Schicht 5 überbrückt; der Slicer dehnt die Brücke auf den ganzen Kreis aus (1760 mm² Brücke für 597 mm² Vertiefung) – die runden orangen Brückenfäden scheinen durch die 0,8 mm beige Haut, Böden sehen wie Fäden aus, um jedes Loch 3 Wände, Fäden und Nahtpunkte an den Lochkanten. Eingelegt liegt die ganze Oberseite auf der Platte, ohne Loch und ohne Brücke. Nicht mehr ertastbar (Entscheidung 27.10. dafür aufgegeben, Jan 05.11.: muss absolut perfekt aussehen). 0 = alte Vertiefung |
 | `HOLE3` | 3,4 | Durchgangsloch 3-mm-Schraube |
 | `BOSS_D` | 9 | Dom-Ø, groß genug für spätere M3-Einsätze |
 | `SEAT` | 12 / 128 / 12 / 128 | Stoffrahmen-Vertiefung x0,x1,z0,z1 |

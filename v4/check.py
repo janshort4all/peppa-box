@@ -179,7 +179,13 @@ if __name__ == "__main__":
     print("  ok" if not bad else "  GESPIEGELT: " + ", ".join(bad))
     print("== Druck ==")
     for k, m in parts.items():
-        o = orient(k, m)
+        if k == "deckel_beige":
+            continue
+        if k == "deckel_orange":                     # beide Deckelteile liegen aufeinander: zusammen prüfen
+            k, m = "deckel (02a + 02b zusammen, kopfüber)", parts["deckel_orange"] + parts["deckel_beige"]
+            o = orient("deckel_orange", m)
+        else:
+            o = orient(k, m)
         bb = o.bounding_box()
         tot, groups = overhangs(o)
         print(f"  {k}: {bb[3]:.1f} × {bb[4]:.1f} × {bb[5]:.1f} mm, Überhang {tot:.0f} mm²")

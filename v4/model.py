@@ -42,6 +42,11 @@ LID_SINK = par("LID_SINK", 1.2, "festgelegt", "Deckel liegt so tief unter der Ka
 LEDGE = par("LEDGE", 2.5, "festgelegt", "Auflage-Schräge 45° innen")
 GAP_LID = par("GAP_LID", 0.4, "Probedruck", "Spalt Deckel–Wand je Seite")
 SKIN = par("SKIN", 0.8, "festgelegt", "beige Deckschicht über orangem Kern (D1); 0,8 = 4 Schichten à 0,2 bzw. 5 à 0,16 (vorher 0,7, lag zwischen zwei Schichten)")
+SYM_INLAY = par("SYM_INLAY", 1, "festgelegt", "Symbole und Ringe bündig in Orange eingelegt (CANVAS druckt in den 4 Haut-Schichten beide Farben), statt 0,8 mm vertieft. "
+                "Grund (Druck 05.11.): Kopfüber werden die Vertiefungen in Schicht 5 überbrückt; der Slicer dehnt die Brücke auf den ganzen Kreis aus "
+                "(1760 mm² Brücke für 597 mm² Vertiefung) – die runden orangen Brückenfäden scheinen durch die 0,8 mm beige Haut, Böden sehen wie Fäden aus, "
+                "um jedes Loch 3 Wände, Fäden und Nahtpunkte an den Lochkanten. Eingelegt liegt die ganze Oberseite auf der Platte, ohne Loch und ohne Brücke. "
+                "Nicht mehr ertastbar (Entscheidung 27.10. dafür aufgegeben, Jan 05.11.: muss absolut perfekt aussehen). 0 = alte Vertiefung")
 CLR = par("CLR", 0.3, "Probedruck", "Spiel für Passungen")
 PILOT = par("PILOT", 2.5, "Probedruck", "Kernloch für 3-mm-Kunststoffschraube in PETG")
 HOLE3 = par("HOLE3", 3.4, "festgelegt", "Durchgangsloch 3-mm-Schraube")
@@ -636,6 +641,8 @@ def deckel(einfarbig=False):
     else:
         core = plate ^ box(-1, -1, LID_BOT - 1, W + 1, W + 1, LID_TOP - SKIN)
         skin = plate ^ box(-1, -1, LID_TOP - SKIN, W + 1, W + 1, LID_TOP + 1)
+        if SYM_INLAY:   # Symbole/Ringe als oranger Einleger in der Haut: gehört zum orangen Teil (ein Körper mit dem Kern)
+            core = core + (skin ^ slab(sym, LID_TOP - SKIN - 0.05, LID_TOP + 1))
         skin = skin - slab(sym, LID_TOP - SKIN - 0.05, LID_TOP + 1)
     cut = [slot_cut(), slot_chamfer()]
     # Taste: glatte Bohrung bis zur Oberfläche, keine Mulde. Kopfüber liegt die Öffnung auf der Platte → keine Brücke, keine Opferschicht
@@ -650,6 +657,14 @@ def deckel(einfarbig=False):
     if einfarbig:
         return core - cu
     return core - cu, skin - cu
+
+
+def deckel_haut_modifier(sel=None):
+    """Modifier für die 4 Haut-Schichten (kopfüber Schicht 1–4, nicht Schicht 5): dort „Wandschleifen 1“, damit hinter der
+    durchscheinenden ersten Schicht überall gleich gerichtete Füllbahnen liegen statt 3 Ringen um jedes Symbol.
+    Höhe bis 0,05 über der Haut (Schicht 5 wird bei 0,9 geschnitten), seitlich 1 mm über den Deckel hinaus."""
+    m = slab(LID_CS.offset(1.0, JoinType.Round, circular_segments=SEG).simplify(0.001), LID_TOP - SKIN - 0.05, LID_TOP)
+    return m if sel is None else m ^ sel
 
 
 def deckel_kopfueber(m, bezug=None):

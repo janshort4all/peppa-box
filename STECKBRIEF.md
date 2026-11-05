@@ -12,6 +12,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 - Möglichst wenig löten (erste Lötarbeiten).
 - Keine Gewindeeinsätze. Schrauben gehen direkt in den Kunststoff, Dome 9 mm, damit Einsätze später möglich bleiben.
 - Listen mit anklickbaren Links.
+- **Anschlüsse am Klemmen-Aufsatz immer mit dessen Aufdruck benennen** (gelbe Stifte: P26, P18, GND, 3V3 …; Federklemmen: Buchstabe A–P bzw. Zahl 1–8 und Aufdruck), nie mit Pi-Pinnummern wie „Pin 37“. Ausdrücklicher Wunsch Jan (05.11.).
 - Vor jedem Kauf prüfen, ob das Teil exakt passt.
 - Kein Maß einfach annehmen. Ist etwas nicht belegt, das sagen oder nachfragen.
 - Vor jeder Anschlussanleitung die Produktseite bzw. das Datenblatt des Bauteils prüfen (Jumper, Lötbrücken, Spannung, Pinbelegung) und die Quelle nennen. Nicht geprüfte Aussagen ausdrücklich als Vermutung kennzeichnen.
@@ -459,4 +460,5 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - Bezeichnung nach Foto von oben (Gewinde oben): A oben mittig am Gewinde, B rechts Mitte, C rechts unten, D links innen, E links am Rand.
 - Gemessen (Jan, Durchgang): ohne Stecker B–C und D–E verbunden, A allein. Mit Kabel: Steckerspitze → B, Ring → E.
 - **Belegung:** A = Masse (Hülse), B = L (Spitze), C = Öffner L → Pin 37 (GPIO 26), E = R (Ring), D = Öffner R (frei, nicht abschneiden).
-- Kabel Goobay (gewinkelter Stecker, gemessen): Spitze = weiß → B, Ring = rot → E, Hülse = Geflecht → A. Neuer Draht C → Pin 37. Bild: `plan/buchse_verdrahtung.jpg`.
+- Kabel Goobay (gewinkelter Stecker, gemessen): Spitze = weiß → B, Ring = rot → E, Hülse = Geflecht → A. Neuer Draht C → gelber Stift **P26** (GPIO 26; P26 hat keine Federklemme). Bild: `plan/buchse_verdrahtung.jpg`.
+- P26 liegt nur auf den gelben Stiften (Aufdruck untere Stiftleiste, obere Beschriftungsreihe, 2. von links). Anschluss: Steckkabel mit Buchse halbieren, abgeschnittenes Ende an Fahne C löten, Buchse auf den Stift P26.

@@ -10,7 +10,7 @@ Jeder Wert steht in P mit Status:
 import math
 import numpy as np
 import manifold3d as m3
-from manifold3d import Manifold, CrossSection, JoinType
+from manifold3d import Manifold, CrossSection, JoinType, FillRule
 
 SEG = 72
 m3.set_circular_segments(SEG)
@@ -967,6 +967,7 @@ def boden():
 # =====================================================================================
 
 def stoffrahmen():
+    """Überholt 05.11.2026: ersetzt durch das gedruckte Gitter `gitter()`; nicht mehr in build()."""
     sx0, sx1, sz0, sz1 = SEAT
     m = FAB_T + CLR
     x0, x1, z0, z1 = sx0 + m, sx1 - m, sz0 + m, sz1 - m
@@ -986,6 +987,165 @@ def stoffrahmen():
     for (x, z) in frame_pins():
         fr = fr + cyl_y(SEAT_D - 0.1, SEAT_D + 2.4, x, z, PIN_D / 2 - 0.05)
     return fr
+
+
+# --- Gitter vorne mit Logo (ersetzt Stoff + Stoffrahmen, Nachtrag 05.11.2026 (6)) ---
+GR_T = par("GR_T", 3.6, "festgelegt", "Gitterdicke (18 Schichten); liegt hinten auf der Sitzfläche (y = SEAT_D), Vorderfläche 0,2 hinter der Korpusfront")
+GR_HOLE = par("GR_HOLE", (3.3, 4.2), "festgelegt", "Löcher Ø und Teilung im Wabenraster, mittig zu (70, 70); Steg 0,9 = 2 Linien")
+GR_RIM = par("GR_RIM", 4.5, "festgelegt", "geschlossener Rand außen (an der Vorderfläche)")
+GR_RIM_BACK = par("GR_RIM_BACK", 1.2, "festgelegt", "Mindeststeg Loch ↔ schräge Oberkante hinten (Sitz fällt oben nach hinten ab)")
+GR_LOGO = par("GR_LOGO", (100.0, 70.0, 76.0), "festgelegt", "Logo Breite, Mitte x, Mitte z (Vorlage Jan 05.11., gitter/peppa_box_logo.png)")
+GR_INLAY = par("GR_INLAY", 0.8, "festgelegt", "Logo orange bündig eingelegt, 4 Schichten tief (wie die Deckelhaut); dahinter Beige")
+GR_KEEP = par("GR_KEEP", 1.2, "festgelegt", "geschlossener beiger Rand um das Logo bis zum ersten Loch")
+GR_PLENUM = par("GR_PLENUM", 1.2, "festgelegt",
+                "Luftraum: Gitter hinten über der Lautsprecher-Mulde 1,2 dünner (2,4 statt 3,6), damit der Schall hinter dem Logo zu den Löchern kommt. "
+                "Lautsprecherrahmen ca. 1,3 hinter der Sitzfläche, Schraubenköpfe liegen dahinter (Jan 05.11.) → 2,5 mm Luft")
+GR_EDGE_CH = par("GR_EDGE_CH", 0.4, "festgelegt", "Fase 45° an der Vorderkante außen")
+GR_PIN_D = par("GR_PIN_D", 3.9, "Probedruck", "Stift Ø (Loch im Korpus PIN_HOLE 4,1; mit C13 am Korpus prüfen)")
+GR_PIN_L = par("GR_PIN_L", 2.4, "festgelegt", "Stiftlänge hinter der Sitzfläche (Loch 2,8 tief), Spitze 0,4 gefast")
+
+
+def _seat_top(y):
+    """Oberkante des Gitter-Sitzes im Korpus bei Tiefe y (Hülle wie im Korpus: z = SEAT[3] + 1 bei y = 0, SEAT[3] − SEAT_D bei y = SEAT_D)."""
+    y = min(max(y, 0.0), SEAT_D)
+    return SEAT[3] + 1.0 - (SEAT_D + 1.0) * y / (SEAT_D - 0.01)
+
+
+def gitter_env():
+    """Raum für das Gitter: Sitz im Korpus, ringsum CLR kleiner; an der schrägen Oberkante CLR senkrecht zur Fläche."""
+    sx0, sx1, sz0, sz1 = SEAT
+    c = CLR
+    ct = CLR / math.cos(math.atan((SEAT_D + 1.0) / SEAT_D))          # senkrecht zur Schräge gemessen
+    prof = lambda top: rr(sx0 + c, sz0 + c, sx1 - c, top - ct, SEAT_R - c)
+    return Manifold.batch_hull([ext_xz(prof(sz1 + 1.0), -1, 0), ext_xz(prof(sz1 - SEAT_D), SEAT_D - 0.01, SEAT_D)])
+
+
+def gitter_logo_cs():
+    import os, sys
+    d = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gitter")
+    if d not in sys.path:
+        sys.path.insert(0, d)
+    from logo import logo_cs
+    w, x, z = GR_LOGO
+    return logo_cs(w).translate([x, z])
+
+
+def gitter_bay_cs():
+    """Öffnung der Lautsprecher-Mulde auf Höhe der Sitzfläche (y = SEAT_D), wie im Korpus (Oberkante 45° nach vorn erweitert)."""
+    bh = SPK_FRAME / 2 + 2
+    top = SPK_Z + bh + (BAY_D + 1) * (1 - SEAT_D / BAY_D)
+    return rr(SPK_X - bh, SPK_Z - bh, SPK_X + bh, top, SPK_FRAME_R + 2)
+
+
+def gitter_holes(logo=None):
+    """Lochmitten im Wabenraster, mittig zu (70, 70). Ganze Löcher entfallen, wo sie Rand, Logo-Rand oder Stifte schneiden."""
+    sx0, sx1, sz0, sz1 = SEAT
+    m = CLR
+    x0, x1, z0, z1 = sx0 + m, sx1 - m, sz0 + m, sz1 - m
+    d, p = GR_HOLE
+    inner = rr(x0 + GR_RIM, z0 + GR_RIM, x1 - GR_RIM, z1 - GR_RIM, SEAT_R - m - GR_RIM)
+    ct = CLR / math.cos(math.atan((SEAT_D + 1.0) / SEAT_D))
+    z_max = _seat_top(SEAT_D) - ct - GR_RIM_BACK - d / 2              # schräge Oberkante hinten
+    logo = gitter_logo_cs() if logo is None else logo
+    keep = logo.offset(GR_KEEP, JoinType.Round)
+    for (px, pz) in frame_pins():
+        keep = keep + CrossSection.circle(GR_PIN_D / 2 + 0.9, SEG).translate([px, pz])
+    out = []
+    dz = p * math.sqrt(3) / 2
+    for k in range(-40, 41):
+        z = 70.0 + k * dz
+        if z > z_max or z < z0:
+            continue
+        off = p / 2 if k % 2 else 0.0
+        for j in range(-40, 41):
+            x = 70.0 + off + j * p
+            if not (x0 < x < x1):
+                continue
+            c = _hole_cs(x, z)
+            if (c - inner).area() > 1e-6 or (c ^ keep).area() > 1e-6:
+                continue
+            out.append((x, z))
+    return out
+
+
+def _hole_cs(x, z):
+    """Loch als 32-Eck, um eine halbe Teilung gedreht: keine Ecke liegt auf den Rasterrichtungen 0°/60°/120°
+    (dort läuft der Rand des Luftraums durch die Lochmitte – sonst fielen Ecken zusammen)."""
+    r = GR_HOLE[0] / 2
+    return CrossSection([[(x + r * math.cos((k + 0.5) * math.pi / 16), z + r * math.sin((k + 0.5) * math.pi / 16)) for k in range(32)]])
+
+
+def gitter_lattice():
+    """Wabenraster: Zeilen k mit Punkten (x, z), mittig zu (70, 70)."""
+    _, p = GR_HOLE
+    dz = p * math.sqrt(3) / 2
+    rows = {}
+    for k in range(-16, 17):
+        off = p / 2 if k % 2 else 0.0
+        rows[k] = [(70.0 + off + j * p, 70.0 + k * dz) for j in range(-16, 17)]
+    return rows
+
+
+def gitter_plenum_cs():
+    """Luftraum hinten (Grundriss): alle Dreiecke des Lochrasters, deren Mitte in der Mulden-Öffnung (0,5 kleiner) liegt.
+    Der Rand läuft so immer durch Lochmitten: Er schneidet die Löcher senkrecht, es bleiben keine Sicheln oder Spitzen
+    zwischen Luftraum und Loch (Schichtanalyse 05.11.), und die STL bleibt sauber geschlossen."""
+    rec = gitter_bay_cs().offset(-0.5, JoinType.Round)
+    rows = gitter_lattice()
+    tris = []
+    for k in sorted(rows)[:-1]:
+        A, B = rows[k], rows[k + 1]
+        up = B[0][0] > A[0][0]                      # obere Zeile um eine halbe Teilung nach rechts versetzt
+        for j in range(len(A) - 1):
+            if up:
+                cand = [(A[j], A[j + 1], B[j]), (B[j], B[j + 1], A[j + 1])]
+            else:
+                cand = [(A[j], A[j + 1], B[j + 1]), (B[j], B[j + 1], A[j])]
+            for t in cand:
+                cx, cz = sum(q[0] for q in t) / 3, sum(q[1] for q in t) / 3
+                if (CrossSection.circle(0.05, 8).translate([cx, cz]) - rec).area() < 1e-9:
+                    tris.append(CrossSection([[t[0], t[1], t[2]]], FillRule.Positive) if _ccw(t) else CrossSection([[t[0], t[2], t[1]]], FillRule.Positive))
+    return CrossSection.batch_boolean(tris, m3.OpType.Add).offset(0.001).offset(-0.001)
+
+
+def _ccw(t):
+    (ax, ay), (bx, by), (cx, cy) = t
+    return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax) > 0
+
+
+def gitter():
+    """Gedrucktes Frontgitter mit Logo. Rückgabe (beige, logo_orange); beide deckungsgleich im Einbauzustand.
+    Druck: Vorderfläche auf der texturierten PEI-Platte (`gitter_druck`), Logo in Schicht 1–4 orange, ab Schicht 5 nur Beige."""
+    yf = SEAT_D - GR_T
+    env = gitter_env()
+    sx0, sx1, sz0, sz1 = SEAT
+    c = CLR
+    face = rr(sx0 + c, sz0 + c, sx1 - c, _seat_top(yf) - 0.5, SEAT_R - c)    # Umriss vorne (für die Fase)
+    e = GR_EDGE_CH
+    ch = Manifold.batch_hull([ext_xz(face.offset(-e, JoinType.Round), yf, yf + 0.01),
+                              ext_xz(face.offset(10 - e, JoinType.Round), yf + 10, yf + 10.01)])
+    logo = gitter_logo_cs()
+    d, _ = GR_HOLE
+    holes = CrossSection.batch_boolean([_hole_cs(x, z) for (x, z) in gitter_holes(logo)], m3.OpType.Add)
+    big = CrossSection.square([200, 200]).translate([-30, -30])
+    yb = SEAT_D - GR_PLENUM
+    plate = (ext_xz(big - holes, yf, SEAT_D) ^ env ^ ch) - ext_xz(gitter_plenum_cs(), yb, SEAT_D + 1)
+    inlay = ext_xz(logo, yf, yf + GR_INLAY) ^ plate
+    pins = []
+    r = GR_PIN_D / 2
+    for (x, z) in frame_pins():
+        pins.append(cyl_y(SEAT_D - 0.01, SEAT_D + GR_PIN_L - 0.4, x, z, r))
+        pins.append(Manifold.cylinder(0.4, r, r - 0.4, SEG).rotate([-90, 0, 0]).translate([x, SEAT_D + GR_PIN_L - 0.4, z]))
+    beige = U([plate - inlay] + pins)
+    return beige, inlay
+
+
+def gitter_druck(m, bezug):
+    """Gitter für den Druck: Vorderfläche auf die Platte, Oberkante nach hinten (+Y). Drehung, keine Spiegelung.
+    Nahtposition „Rückseite“ landet so an der Oberseite jedes Lochs (von vorn-oben unsichtbar) und an der Gitter-Oberkante."""
+    rot = lambda k: k.rotate([90, 0, 180])
+    bb = rot(bezug).bounding_box()
+    return rot(m).translate([-bb[0], -bb[1], -bb[2]])
 
 
 def knob_geo():
@@ -1094,6 +1254,7 @@ WALL_PH = ["Lautsprecher", "Drehgeber", "Klinkenbuchse", "USB-C-Platine mit Buch
 
 def build():
     lid_o, lid_b = deckel()
+    gr_b, gr_o = gitter()
     parts = {
         "korpus": korpus(),
         "deckel_orange": lid_o,
@@ -1101,7 +1262,8 @@ def build():
         "deckelrahmen": deckelrahmen(),
         "kartenfach": kartentasche(),
         "boden": boden(),
-        "stoffrahmen": stoffrahmen(),
+        "gitter_beige": gr_b,
+        "gitter_logo": gr_o,
         "drehknopf": drehknopf(),
         "ein_taste": taste(),
         "riemen_gegenplatte": gegenplatte(),

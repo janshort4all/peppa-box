@@ -164,6 +164,20 @@ def c11_korpus_oben():
     return k.translate(t), mod.translate(t)
 
 
+def c13_gitter_ecke(parts=None):
+    """Gitter oben links: P, e, p mit den engsten Lücken zwischen den Buchstaben (0,6–0,9 mm), e-Schlitz, Löcher,
+    Rand mit Fase, schräge Oberkante, Luftraum-Kante und ein Stift (passt in die Ecke des echten Korpus).
+    Zweifarbig wie das Gitter, gleiche Lage zueinander."""
+    if parts is None:
+        b, o = M.gitter()
+    else:
+        b, o = parts["gitter_beige"], parts["gitter_logo"]
+    sel = box(10, -1, 72, 77.5, 10, 131)
+    b, o = b ^ sel, o ^ sel
+    ref = b + o
+    return M.gitter_druck(b, ref), M.gitter_druck(o, ref)
+
+
 def all_coupons():
     out = {}
     out["C1_wand_rechts_drehgeber_klinke"] = c1_wand_rechts()
@@ -197,6 +211,9 @@ def all_coupons():
     out["C12_deckel_oberseite_MODIFIER_haut_1wand"] = c
     out["C12_deckel_oberseite_opfer_PLA"] = d
     out["C12_deckel_oberseite_MODIFIER_bruecke_richtung"] = e
+    a, b = c13_gitter_ecke()
+    out["C13_gitter_ecke_beige"] = a
+    out["C13_gitter_ecke_logo_orange"] = b
     a, b = c9_kopfueber()
     out["C9_deckel_kopfueber_felder"] = a
     out["C9_deckel_kopfueber_taste_schlitz"] = b

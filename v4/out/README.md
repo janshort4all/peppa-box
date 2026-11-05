@@ -20,6 +20,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 
 | Datei | Prüft | Was du mir zurückmeldest |
 | --- | --- | --- |
+| coupon_C13_gitter_ecke_* (2 Dateien) | **Probe vor dem Gitter:** Ecke oben links mit „P“, „e“, „p“ (engste Lücken zwischen den Buchstaben 0,6–0,9 mm, e-Schlitz), Löcher, Rand mit Fase, schräge Oberkante, ein Stift; zweifarbig wie das Gitter, ca. 10 g | Wie das Gitter einrichten (Abschnitt „Gitter“). Grenze Orange/Beige scharf, ohne Spalt und ohne orange Punkte im Beige? Lücken zwischen den Buchstaben durchgehend beige? Härchen in den Löchern? In die obere linke Ecke des Korpus drücken: Stift fest, Fase und Spalt gleichmäßig? |
 | coupon_C12_deckel_oberseite_* (5 Dateien) | **Probe vor dem Deckel:** obere 2,4 mm vorne rechts (Play, Vor, Mond, Kante mit Fase), kopfüber, Symbole vertieft, ca. 15 g | Wie den Deckel einrichten: Variante A mit `_opfer_PLA`, Variante B mit `_MODIFIER_bruecke_richtung`, beide mit `_MODIFIER_haut_1wand`. Beige in den Kreisen so ruhig wie außen? Symbolböden eben bzw. Fäden parallel? |
 | coupon_C7_lochbild_stapel | **Lochbild 58 × 49 mm des Akku-Stapels**, ca. 20 min | Stapel mit den vorhandenen Schrauben daraufsetzen: Fallen alle 4 Köpfe in die Mulden? Liegt die Acrylplatte innerhalb der Ecken-Marken? |
 | coupon_C8_bodenecke_* (2 Teile) | Schattenfuge Boden/Korpus, Zentrierkragen, Senkschraube 3,0 × 14 in den Dom | Rutscht der Kragen leicht hinein, ohne zu wackeln? Sitzt die Schraube bündig? |
@@ -29,7 +30,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | coupon_C1_wand_hinten_usbc | Öffnung für den USB-C-Stecker, 2 Dome für die Soldered-Platine | Platine anschrauben: Buchse mittig hinter der Öffnung? Stecker rastet voll ein? |
 | coupon_C2_deckelecke_* (3 Teile) | Deckelspalt 0,4 mm, Auflage, hintere Deckelschraube | Spalt gleichmäßig? Klappert es? |
 | coupon_C3_taste_* (3 Teile) | Ein-Taste: Kappe, Halter, Kurzhubtaster | Klickt sie sauber, klemmt nichts? |
-| coupon_C4_rahmenstifte_* | Stoffrahmen-Stift in Loch 4,0 / 4,1 / 4,2 (1–3 Kerben) | Welches Loch hält fest, lässt sich aber lösen? |
+| coupon_C4_rahmenstifte_* | Gitter-Stift in Loch 4,0 / 4,1 / 4,2 (1–3 Kerben); der Korpus hat 4,1 | Welches Loch hält fest, lässt sich aber lösen? (C13 prüft den Stift direkt am Korpus) |
 | coupon_C5_touch_platte | Touch durch 3,3 mm (links, mit Tasche) und 5,3 mm (rechts) | Später mit dem MPR121: reagieren beide? |
 | coupon_C6_schraubdome | Kernloch 2,3 / 2,5 / 2,7 mm für 3-mm-Kunststoffschrauben | Welches Loch: Schraube geht fest, Dom reißt nicht? |
 
@@ -43,10 +44,12 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | 03_deckelrahmen.stl | Schwarz/Grau | Deckelseite auf der Platte |
 | 04_kartenfach.stl | Schwarz/Grau | auf der Seite, Kartenschlitz senkrecht; Brim |
 | 05_boden_traeger.stl | Beige | flach, Unterseite auf der Platte; trägt die ganze Elektronik |
-| 06_stoffrahmen.stl | Beige | Vorderseite unten, Stifte oben |
+| 06a_gitter_beige.stl | Beige | Vorderfläche auf der texturierten PEI, Oberkante nach hinten; mit 06b als ein Objekt mit zwei Teilen laden |
+| 06b_gitter_logo_orange.stl | Orange | Logo-Einleger, nur Schicht 1–4 (0,8 mm), deckungsgleich mit 06a |
 | 07_drehknopf_orange.stl | Orange | Stirnfläche unten |
 | 08_ein_taste_orange.stl | Orange | Kopf unten |
 | 09_riemen_gegenplatte.stl | Schwarz/Grau | flach |
+| 06_gitter_einfarbig_HOERPROBE.stl | eine Farbe | Schneller Probedruck (0,28 Entwurf, Reste-Rolle): Sitz und Stifte im Korpus, Hörtest mit und ohne Gitter. Gleiche Form wie 06a + 06b |
 | 02_deckel_einfarbig.stl | eine Farbe | Prototyp, gleiche Form wie 02a + 02b; Symbole 0,8 mm vertieft |
 | 10_karte_orange.stl | Orange | Rückseite unten (NFC-Tasche an der Platte), Einschubtasche oben; Cover auf Papier von oben einschieben |
 
@@ -54,6 +57,9 @@ Die Dateien liegen bereits in Druckausrichtung, auch der Deckel: `02a` und `02b`
 (Oberseite auf der Platte, hinten bleibt hinten). Das Tastenloch ist offen (keine Mulde, keine Opferschicht mehr).
 `02a` und `02b` gemeinsam laden („als ein Objekt mit mehreren Teilen“), 02a Orange und 02b Beige zuweisen – dann macht
 CANVAS genau einen Farbwechsel (Variante A: dazu PLA-Einleger `02p`, Variante B: Modifizierer `02r`), immer mit Modifizierer `02m`. Einstellungen: Abschnitt „Deckel“ unten. Die beiden `ansicht_…`-Dateien nur zum Anschauen.
+
+Das Gitter (`06a` beige + `06b` Logo orange) liegt mit der Vorderfläche auf der Platte, die Oberkante zeigt nach hinten.
+Beide gemeinsam laden („als ein Objekt mit mehreren Teilen“) – das Logo füllt nur die Schichten 1–4. Einstellungen: Abschnitt „Gitter“.
 
 Der Boden darf auch orange sein: Dann läuft unten ein schmaler oranger Sockelstreifen um die Box.
 
@@ -165,6 +171,38 @@ bzw. nur über den Symbolen, alle Linien parallel (B). Zuerst `coupon_C12_deckel
 am besten zusammen mit dem Drehknopf `07` drucken (beide Orange): Auf der Deckel-Platte müsste CANVAS in Schicht 1–4 jedes Mal
 zwischen Beige und Orange wechseln. Bild: `deckel_draufsicht.png`.
 
+### Gitter (Stand 05.11.2026 spät, Vorderfläche auf der Platte, Logo bündig eingelegt, ohne Fuzzy)
+
+`06a_gitter_beige.stl` + `06b_gitter_logo_orange.stl`, 115,4 × 115,7 mm, 3,6 mm dick (über dem Lautsprecher 2,4 mm, dahinter
+2,5 mm Luft), 6 Stifte Ø 3,9 hinten, zusammen ca. 37 g. Logo: Vorlage `v4/gitter/peppa_box_logo.png`, 100 mm breit, Kontur auf
+unter 0,1 mm genau. Die Sichtfläche entsteht auf der texturierten PEI-Platte (matt wie der Deckel). Orange liegt nur in Schicht 1–4,
+**bündig** – keine Vertiefung, also keine Brücke und keine Fäden (die Ursache beim ersten Deckel). Hinter dem Orange liegt dichtes Beige.
+Neu gegenüber dem Deckel: Zwei Farben **in** den sichtbaren Schichten 1–4 → CANVAS wechselt in jeder dieser Schichten. Das ist auf
+diesem Drucker noch nicht erprobt, deshalb zuerst Coupon C13. Bild: `gitter_ansicht.png` (`v4/gitter/render_gitter.py`).
+
+Ausgangspunkt sind die Deckel-Einstellungen (Prozess „Deckel“); als eigenen Prozess speichern. In Klammern: Wert beim Deckel.
+
+| Reiter → Gruppe | Einstellung | Wert |
+| --- | --- | --- |
+| Objektliste | Teile laden („ein Objekt mit mehreren Teilen“) | `06a` + `06b` (Coupon: `coupon_C13_gitter_ecke_beige` + `_logo_orange`) – keine Modifizierer |
+| | Filamente | 06a → Beige, 06b → Orange (dieselben Rollen wie Korpus und Deckel) |
+| Qualität → Schichthöhe | Schichthöhe / erste Schicht | 0,2 / 0,2 (bleibt) – das Logo ist genau Schicht 1–4 |
+| Qualität → Naht | Nahtposition | Rückseite (bleibt) – die Oberkante liegt hinten: Naht in jedem Loch oben (von vorn-oben nicht sichtbar), am Rand oben im Spalt |
+| Qualität → Präzision | Elefantenfußkompensation | 0,15 (bleibt) – scharfe Lochkanten vorne |
+| Qualität → Wandgenerator | Wandgenerator | Arachne (bleibt) – Stege 0,9 mm zwischen den Löchern und die Lücken zwischen den Buchstaben als saubere Linien |
+| Qualität → Wände und Oberflächen | Nur eine Wand in der ersten Schicht / Vermeiden von Wandüberquerungen | an / an (bleibt) – weniger Fahrten über Löcher, weniger Härchen |
+| Struktur → Obere/Untere Schichten | Untere Schalenschichten / Überlappung des oberen/unteren massiven Füllung/Wand | 8 / 25 % (bleibt) – Gitter fast massiv, hinter dem Logo dichtes Beige |
+| Struktur → Füllung | Fülldichte / Füllmuster | 25 % / Gyroid (bleibt) |
+| Sonstiges → Umrandung | Randtyp | Keine Umrandung (bleibt) – ein Innenrand würde die Löcher füllen |
+| Sonstiges → Fuzzy Skin | Fuzzy Skin | Deaktiviert |
+| Multimaterial → Reinigungsturm | Aktivieren | an; Reinigungsvolumen Multiplikator 1,5 (bleibt) – Beige nach Orange braucht mehr Spülung |
+| Filament Beige/Orange | | wie beim Korpus (250 °C, Bett 80/75 °C, Lüfter 20 %, Schichtdauer 70/100) |
+
+Vorher: Rollen trocknen (PETG zieht sonst Fäden durch die 400 Löcher), Platte mit Spülmittel waschen, nicht mehr anfassen.
+Vorschau prüfen: Schicht 1–4 Orange nur im Logo, ab Schicht 5 nur Beige; Schicht 13–18 außen am Lautsprecher dünner (Luftraum).
+Härchen in Löchern nach dem Druck mit einem kurzen Föhnstoß (Heißluft, Abstand) oder einem 3-mm-Bohrer von Hand entfernen.
+Einsetzen: Stifte in die 6 Löcher, gleichmäßig eindrücken. Herausnehmen: Schraubendreher unten in die Kerbe.
+
 ### Drehknopf (Stand 05.11.2026, volle Achse, ohne Fuzzy)
 
 `07_drehknopf_orange.stl`: Ø 34 × 22,8 mm, ca. 24 g. Die Drehgeberachse wird **nicht** gekürzt. Stirnfläche unten auf der
@@ -212,7 +250,6 @@ Unter dem Deckel hängen sie kopfüber; dort am besten Montageband nehmen.
 | Kunststoffschraube 3,0 × 12 | 6 | Lautsprecher (4), Kartenfach (2) |
 | Schraube M2,5, ca. 5 mm länger als die jetzigen unter der Acrylplatte | 4 | Stapel von unten durch den Boden (Länge folgt nach deiner Messung) |
 | Doppelseitiges Montageband | 1 Rolle | Module in den Mulden |
-| Lautsprecherstoff beige, ca. 20 × 20 cm | 1 | Stoffrahmen (entfällt mit gedrucktem Gitter) |
 | Buchschraube Ø 5 mm + Lederriemen | 1 | Riemen links |
 | Polyesterwatte, eine Handvoll | – | Lautsprecherkammer |
 
@@ -225,3 +262,4 @@ deckt alle Längen ab und ist meist günstiger als Einzelpackungen.
 - `check.py` – Kollisionen, Einbau (Deckel von oben, Boden von unten mit Hubweg), Druckbarkeit
 - `PARAMETER.md`, `PRUEFBERICHT.md` – Werte mit Status und Prüfergebnis
 - `boden_plan.png` – Boden von oben und Höhen von der Seite
+- `gitter_ansicht.png` – Frontgitter: Ansichten, Schnitt durch Logo und Luftraum, Lage auf der Druckplatte

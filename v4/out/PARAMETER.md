@@ -20,7 +20,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `AUDIO_PLUG` | 20 | Platz hinter der Klinke des Pi: Klinkenstecker 90° gewinkelt (Goobay 67782) |
 | `MAXB` | 19 / 18 / 8 | Verstärker-Klon L, B, Höhe mit Klemme |
 
-## Mit Probedruck einstellen (12)
+## Mit Probedruck einstellen (13)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -36,6 +36,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `ENC_HOLE` | 7,4 | Loch für M7-Gewinde |
 | `KNOB_BORE` | 6,1 | Bohrung für die Schlitzachse Ø 6 (gedruckt meist 0,1–0,2 kleiner → Klemmsitz), nur im geschlitzten Teil der Achse (federt dort) |
 | `KNOB_GUIDE` | 6,3 | Bohrung im ungeschlitzten Teil der Achse (federt nicht): nur Führung, damit der lange Knopf nicht auf ganzer Länge klemmt |
+| `GR_PIN_D` | 3,9 | Stift Ø (Loch im Korpus PIN_HOLE 4,1; mit C13 am Korpus prüfen) |
 
 ## Von dir gemessen (21)
 
@@ -83,7 +84,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (96)
+## Gestaltung festgelegt (106)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -183,3 +184,13 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `LS_X` | 24 / 116 | Deckelschrauben hinten x |
 | `LS_Z` | 124 | Deckelschrauben hinten z |
 | `LS_BLOCK_Z0` | 119 | Unterkante der Schraubblöcke hinten am Deckelrahmen (vorher 117; 2 mm mehr Platz für die RC522-Stecker, 3,2 mm Wand unter dem Kernloch) |
+| `GR_T` | 3,6 | Gitterdicke (18 Schichten); liegt hinten auf der Sitzfläche (y = SEAT_D), Vorderfläche 0,2 hinter der Korpusfront |
+| `GR_HOLE` | 3,3 / 4,2 | Löcher Ø und Teilung im Wabenraster, mittig zu (70, 70); Steg 0,9 = 2 Linien |
+| `GR_RIM` | 4,5 | geschlossener Rand außen (an der Vorderfläche) |
+| `GR_RIM_BACK` | 1,2 | Mindeststeg Loch ↔ schräge Oberkante hinten (Sitz fällt oben nach hinten ab) |
+| `GR_LOGO` | 100 / 70 / 76 | Logo Breite, Mitte x, Mitte z (Vorlage Jan 05.11., gitter/peppa_box_logo.png) |
+| `GR_INLAY` | 0,8 | Logo orange bündig eingelegt, 4 Schichten tief (wie die Deckelhaut); dahinter Beige |
+| `GR_KEEP` | 1,2 | geschlossener beiger Rand um das Logo bis zum ersten Loch |
+| `GR_PLENUM` | 1,2 | Luftraum: Gitter hinten über der Lautsprecher-Mulde 1,2 dünner (2,4 statt 3,6), damit der Schall hinter dem Logo zu den Löchern kommt. Lautsprecherrahmen ca. 1,3 hinter der Sitzfläche, Schraubenköpfe liegen dahinter (Jan 05.11.) → 2,5 mm Luft |
+| `GR_EDGE_CH` | 0,4 | Fase 45° an der Vorderkante außen |
+| `GR_PIN_L` | 2,4 | Stiftlänge hinter der Sitzfläche (Loch 2,8 tief), Spitze 0,4 gefast |

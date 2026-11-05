@@ -17,7 +17,7 @@ def inter_vol(a, b):
 
 def collisions(parts, ph):
     items = [(k, v, "Druckteil") for k, v in parts.items()] + [(k, v, "Bauteil") for k, v in ph.items()]
-    allowed = {frozenset(p) for p in [("deckel_orange", "deckel_beige"), ("deckel_orange", "ein_taste"), ("deckel_beige", "ein_taste"),
+    allowed = {frozenset(p) for p in [("deckel_orange", "deckel_beige"), ("gitter_beige", "gitter_logo"), ("deckel_orange", "ein_taste"), ("deckel_beige", "ein_taste"),
                                        ("deckelrahmen", "ein_taste"), ("RC522", "RC522-Stecker (Zone)"),
                                        ("Klinkenstecker am Pi (Zone)", "USB-C-Stecker am Akku-Board (Zone)"),
                                        ("Klinkenstecker am Pi (Zone)", "Kabel Klemmreihe hinten (Zone)")]}
@@ -41,7 +41,7 @@ def gaps(ph, parts):
                  ("Pi + Klemmen-Aufsatz", "WAGO GND B"), ("Pi + Klemmen-Aufsatz", "Touch-Modul MPR121"),
                  ("Akku-Board mit Zellen", "korpus"), ("Kabel Klemmreihe links (Zone)", "korpus"), ("Kabel Klemmreihe rechts (Zone)", "Drehgeber"),
                  ("Kabel Klemmreihe hinten (Zone)", "USB-C-Platine mit Buchse und Kabeln"), ("USB-C-Stecker am Akku-Board (Zone)", "korpus"),
-                 ("WAGO GND A", "korpus"), ("Verstärker", "korpus"), ("boden", "korpus"), ("Lautsprecher", "korpus"),
+                 ("WAGO GND A", "korpus"), ("Verstärker", "korpus"), ("boden", "korpus"), ("Lautsprecher", "korpus"), ("Lautsprecher", "gitter_beige"),
                  ("Kurzhubtaster", "kartenfach"), ("RC522", "deckelrahmen"), ("RC522-Stecker (Zone)", "korpus"), ("RC522-Stecker (Zone)", "deckelrahmen"), ("RC522-Stecker (Zone)", "kartenfach"), ("Touch-Modul MPR121", "kartenfach")):
         A = ph.get(a, parts.get(a)); B = ph.get(b, parts.get(b))
         g[f"Abstand {a} ↔ {b}"] = A.min_gap(B, 40.0)
@@ -64,6 +64,35 @@ def symbol_gaps():
 
 
 # --- Druckausrichtung ---
+
+
+def gitter_pruefung(parts=None):
+    """Gitter: Schichtanalyse in Druckausrichtung (Stege unter 1 bzw. 2 Linienbreiten je Farbe), Farbwechsel-Schichten,
+    offene Fläche vor dem Lautsprecher, Luft hinter dem Gitter."""
+    from manifold3d import CrossSection, JoinType, OpType
+    b = parts["gitter_beige"] if parts else M.gitter()[0]
+    o = parts["gitter_logo"] if parts else M.gitter()[1]
+    ref = b + o
+    B, O = M.gitter_druck(b, ref), M.gitter_druck(o, ref)
+    def thin(cs, r):
+        return (cs - cs.offset(-r, JoinType.Round).offset(r, JoinType.Round)).area()
+    rows = []
+    top = (B + O).bounding_box()[5]
+    z = 0.1
+    while z < top:
+        cb, co = B.slice(z), O.slice(z)
+        rows.append(dict(z=z, beige=cb.area(), orange=co.area(), b04=thin(cb, 0.2), b08=thin(cb, 0.42), o04=thin(co, 0.2), o08=thin(co, 0.42)))
+        z += 0.2
+    d, _ = M.GR_HOLE
+    pts = M.gitter_holes()
+    H = CrossSection.batch_boolean([CrossSection.circle(d / 2, 32).translate([x, z]) for x, z in pts], OpType.Add)
+    cone = CrossSection.circle(M.SPK_CUT / 2, 96).translate([M.SPK_X, M.SPK_Z])
+    res = dict(rows=rows, loecher=len(pts),
+               offen_direkt=100 * (H ^ cone).area() / cone.area(),
+               offen_mulde=100 * (H ^ M.gitter_bay_cs()).area() / cone.area(),
+               farbschichten=sum(1 for r in rows if r["orange"] > 0),
+               luft=M.GR_PLENUM + (M.BAY_D - M.SPK_FLANGE - M.SEAT_D))
+    return res
 
 
 def handedness(name):
@@ -93,8 +122,8 @@ def orient(name, m):
         inv = np.eye(4); inv[:3, :3] = R.T; inv[:3, 3] = -R.T @ F[:, 3]
         m = m.transform(inv[:3, :].astype(np.float32))   # zurück in Kartenkoordinaten (u, v, w)
         m = m.rotate([0, -90, 0])                        # auf die Seite: u senkrecht, Kartenschacht wird senkrechter Schlitz
-    elif name == "stoffrahmen":
-        m = m.rotate([90, 0, 0])                         # Front nach unten, Stifte nach oben
+    elif name in ("gitter_beige", "gitter_logo"):
+        m = m.rotate([90, 0, 180])                       # Vorderfläche auf die Platte, Oberkante nach hinten (wie M.gitter_druck)
     elif name == "drehknopf":
         m = m.rotate([0, 90, 0])                         # Stirnfläche nach unten
     elif name == "ein_taste":
@@ -179,11 +208,14 @@ if __name__ == "__main__":
     print("  ok" if not bad else "  GESPIEGELT: " + ", ".join(bad))
     print("== Druck ==")
     for k, m in parts.items():
-        if k == "deckel_beige":
+        if k in ("deckel_beige", "gitter_logo"):
             continue
         if k == "deckel_orange":                     # beide Deckelteile liegen aufeinander: zusammen prüfen
             k, m = "deckel (02a + 02b zusammen, kopfüber)", parts["deckel_orange"] + parts["deckel_beige"]
             o = orient("deckel_orange", m)
+        elif k == "gitter_beige":                    # Gitter + Logo-Einleger zusammen, Vorderfläche unten
+            k, m = "gitter (06a + 06b zusammen)", parts["gitter_beige"] + parts["gitter_logo"]
+            o = orient("gitter_beige", m)
         else:
             o = orient(k, m)
         bb = o.bounding_box()
@@ -192,6 +224,13 @@ if __name__ == "__main__":
         for z, (ar, xy) in sorted(groups.items(), key=lambda t: -t[1][0])[:6]:
             if ar > 3:
                 print(f"      z={z:6.1f}  {ar:7.1f} mm²  Bereich {xy[2]-xy[0]:.1f} × {xy[3]-xy[1]:.1f}")
+    print("== Gitter (Schichtanalyse in Druckausrichtung) ==")
+    g = gitter_pruefung(parts)
+    print(f"  {g['loecher']} Löcher; offen direkt vor der Öffnung Ø {M.SPK_CUT:g}: {g['offen_direkt']:.0f} %, über die ganze Mulde: {g['offen_mulde']:.0f} % der Öffnung")
+    print(f"  Luft hinter dem Gitter über der Mulde: {g['luft']:.1f} mm; Schichten mit Orange: {g['farbschichten']} (soll 4)")
+    for r in g["rows"]:
+        if r["b04"] + r["o04"] > 0.05 or r["orange"] > 0 or abs(r["z"] - 0.1) < 1e-6:
+            print(f"    z {r['z']:.1f}: Beige {r['beige']:.0f} mm², Orange {r['orange']:.0f} mm²; schmaler als 0,4: {r['b04']:.2f} / {r['o04']:.2f} mm², als 0,84: {r['b08']:.2f} / {r['o08']:.2f} mm²")
     print("== Fuzzy Skin (Nachbildung ElegooSlicer je 0,2-mm-Schicht, Modifier 01f Außenhaut) ==")
     import fuzzy_check as FC
     rows = FC.analyse(korpus=parts["korpus"])

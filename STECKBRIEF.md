@@ -52,7 +52,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 - **Deckel:** zweifarbig (oranger Kern, beige Haut 0,7 mm), 4 Touchfelder mit Symbolen, Kartenschlitz, Ein-Taste hinten rechts in Mulde. **Deckelrahmen** mit Verteiler-Brücke (MPR121 + 3 WAGO hängend), Tasterhalter, Zungen vorne, 2 Schrauben hinten durch die Rückwand.
 - **Kartenfach:** Karte 70 × 112 × 4 mm, 42 mm tief, 8° geneigt, Federzunge, RC522 in Schienen dahinter.
 - **Rechts:** Drehknopf (y 84, z 60) und Klinke (y 84, z 24). **Links:** Riemen (z 118). **Hinten:** USB-C-Einbaubuchse x 114, z 60, innen höchstens 20 mm tief (Produkt offen; Stecker am Akku-Board gewinkelt oder ≤ 20 mm), Lüftungsschlitze.
-- **Front:** gedrucktes Gitter statt Stoff, orange, mit „Peppa Box“-Logo (Variante A empfohlen, siehe `gitter_logo_varianten.png`). **Noch nicht im Modell.**
+- **Front:** gedrucktes Gitter statt Stoff, **beige mit orangem Logo** (neues Logo 05.11., bündig eingelegt, Schicht 1–4), im Modell seit 05.11.: `06a`/`06b`, Bild `out/gitter_ansicht.png` (Nachtrag 05.11.2026 (6)).
 - Höhen: Klemmen 77,5 mm, Kartenfach ab 86,8 mm, Deckel-Module ab 117,4 mm.
 
 Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine Stützen. Fuzzy Skin 0,20 / 0,30 Classic **nur über den Modifier `01f_…FUZZY_aussenhaut`** (Prozess „Nur lackiert“, Modifier „Kontur“; alle Korpus-Einstellungen in `v4/out/README.md`); der alte Modifier `01m_…` ist ungültig (siehe Nachtrag 04.11.).
@@ -73,7 +73,7 @@ Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine St�
 4. Nach Lieferung von Reichelt messen: Lautsprecher-Lochabstand, Gewindelängen Drehgeber und Klinke, Tasterhöhe; RC522- und MAX-Maße; NFC-Aufkleber-Dicke.
 5. Coupons drucken und auswerten: C2, C4, C6, C7, C8.
 6. Korpus-Prototyp: Boden einsetzen, Schrauben. Kammerdecke ist seit 04.11. ein Satteldach im Korpus (einteilig, Entscheidung Jan) – nach dem Druck außen auf ca. 95–125 mm Druckhöhe auf Linien ansehen.
-7. Gitter mit Logo ins Modell aufnehmen (+ Coupon).
+7. Gitter mit Logo: im Modell (05.11.). Offen: C13 drucken und bewerten, Hörprobe (einfarbig, Entwurf), dann Gitter drucken (G-Code vorher prüfen lassen).
 8. Optional: Lichtleiter für die Lade-LED, Ideen zur optischen Individualisierung (Seitenteile, Deckeleinlage, Magnete).
 
 ## Links (Artefakte, bleiben dauerhaft erhalten)
@@ -96,7 +96,7 @@ In einem neuen Chat die Zip anhängen und sagen: „Entpacke nach /home/claude/m
 | `v4/boden_plan.py` | Draufsicht und Höhen des Bodens |
 | `v4/usbc_schnitt.py` | Schnitte durch den Halter der USB-C-Platine, Ansicht der Öffnung (`out/usbc_schnitt.png`) |
 | `v4/modifier.py` | Modifier-Körper „ohne Fuzzy Skin“ |
-| `v4/gitter/` | Logo-Vektorisierung und Gitter-Varianten |
+| `v4/gitter/` | Logo-Vorlage (`peppa_box_logo.png`), Vektorisierung (`logo.py`), Bild zum Gitter (`render_gitter.py` → `out/gitter_ansicht.png`) |
 | `plan/gen_plan4.py` | erzeugt `verdrahtungsplan.html` |
 | `plan/einkaufsliste.html` | Einkaufsliste (Daten stehen im Skriptteil) |
 | `v4/out/` | aktuelle STL-Dateien, Bilder, PARAMETER.md, PRUEFBERICHT.md |
@@ -515,4 +515,16 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Ablauf:** ganzer Deckel mit `02a`, `02b`, `02m`, `02r` (Modifizierer auf Filament „Standard“), G-Code und Projekt vor dem Druck an Claude.
 - **Ergänzung 23:25 – G-Code Deckel geprüft (2 h 35 min):** Teile, Filamente, Brücke 30 mm/s, Brückenlüfter 100 % (Profil „… Peppa Deckel Orange“), Arachne, Dichte 110 %, Überlappung 25 % stimmen; Modifizierer auf „Standard“. **Aber:** in beiden Modifizierern fehlen die Einstellungen (02m ohne Wandschleifen, 02r ohne Füllrichtung) → wieder 3 Wände in der Haut, Brücke über 1403 mm² (ganzer Kreis), Richtungen gemischt. Nicht drucken; Einstellungen nachtragen, neu slicen. Prüfskript warnt jetzt bei genau diesen Fällen.
 - **Ergänzung 23:32 – G-Code Deckel freigegeben (2 h 33 min, 76,9 g):** 02m Wandschleifen 1 und 02r Füllrichtung 45° jetzt drin. Haut Schicht 1–4 nur Beige, keine Innenwände; Schicht 5 Brücke nur über den Symbolen (755 mm² statt Kreis), alle 45°, 30 mm/s, Lüfter 100 %; keine Wände über den Vertiefungen; keine Umrandung, Naht hinten, ein Farbwechsel. Prüfskript ohne Warnung.
+
+## Nachtrag 05.11.2026 (6) – Frontgitter mit neuem Logo im Modell (Druckdateien)
+
+- **Neues Logo (Jan, 23:13):** `v4/gitter/peppa_box_logo.png` ersetzt die alte Vorlage; „exakt dieses Logo in Orange“. Vektorisierung `logo.py`: Rot minus Blau, Schwelle 113, 4-fach hochgerechnet; Übereinstimmung mit dem Bild 99,7 % (Abweichung < 0,1 mm), 11 Teile mit allen Innenformen. Bei 100 mm Breite sind die Lücken zwischen den Buchstaben an der engsten Stelle 0,6–0,9 mm („P|e“, „p|p“, „p|a“), die Innenformen zu klein für Löcher.
+- **Entscheidungen Jan:** Gitter **beige**, Logo **orange** (wie das Bild; ein oranges Gitter hätte die Buchstaben verschmelzen lassen). Löcher außerhalb des Lautsprechers bleiben, Hell-dunkel-Unterschied wird **nicht** angemalt („So lassen“). Gitter darf nach vorn überstehen – derzeit nicht nötig, Reserve für den Klang (2 mm vor → 4,5 statt 2,5 mm Luft).
+- **Gemessen (Jan):** Lautsprecherrahmen ca. 1,3 mm hinter der Gitterauflage (= Modell), Schraubenköpfe liegen dahinter. Sicke nicht gemessen.
+- **Klang:** Das Logo deckt ⅔ der Lautsprecheröffnung; direkt davor nur 13 % offen (ohne Logo 57 %; Faustregel: unter ca. 30 % hörbar dumpfer). Lösung ohne sichtbare Änderung: Gitter über der Mulde hinten 1,2 mm dünner (`GR_PLENUM`) → **2,5 mm Luftraum**, der Schall erreicht alle Löcher vor der Mulde = 40 % der Öffnung. Ob das reicht, zeigt nur ein Hörtest.
+- **Modell (`gitter()`, ersetzt `stoffrahmen()` in `build()`):** 3,6 mm dick, Vorderfläche 0,2 hinter der Front, liegt auf der Sitzfläche; Umriss folgt dem Sitz (schräge Oberkante, 0,3 Spiel, oben senkrecht zur Schräge), Fase 0,4 vorn. 400 Löcher Ø 3,3 im Wabenraster 4,2 (Steg 0,9 = 2 Linien), mittig, ganze Löcher entfallen am Rand (4,5), an der schrägen Oberkante hinten (1,2), um das Logo (1,2 beiger Rand) und an den Stiften. Logo 100 mm breit, Mitte (70, 76), **0,8 mm bündig eingelegt** (`06b`, nur Schicht 1–4, keine Vertiefung → keine Brücke, keine Fäden wie beim ersten Deckel), dahinter dichtes Beige. 6 Stifte Ø 3,9 × 2,4 mit Fase (Löcher im Korpus 4,1; Probedruck). Gewicht ca. 34 g beige + 2,6 g orange.
+- **Druckbarkeit geprüft (`check.py`, `gitter_pruefung()`):** keine Kollision mit dem gedruckten Korpus, Überhang 0 mm², keine Stützen, Ausrichtung ohne Spiegelung (Vorderfläche auf der texturierten PEI, Oberkante nach hinten → Naht „Rückseite“ oben in jedem Loch). Schichtanalyse: Orange in genau 4 Schichten; schmaler als 1 Linie nur Spitzen/Ecken (< 1 mm² je Schicht). Der erste Luftraum-Rand ließ hinten Sicheln zwischen Rand und Löchern stehen → Rand läuft jetzt durch die Lochmitten (Dreiecke des Lochrasters), Löcher als um eine halbe Teilung gedrehte 32-Ecke → STL geschlossen, keine doppelten Ecken.
+- **Neu bzw. geändert:** `06a_gitter_beige.stl`, `06b_gitter_logo_orange.stl`, `06_gitter_einfarbig_HOERPROBE.stl`, Coupon **C13** (`coupon_C13_gitter_ecke_beige` + `_logo_orange`, Ecke oben links mit P/e/p, engsten Lücken, Stift, ca. 10 g), Bild `out/gitter_ansicht.png`. `06_stoffrahmen.stl` und Stoff in der Einkaufsliste entfallen. Einstellungen „Gitter“ in `v4/out/README.md` (Basis Deckel: Arachne, eine Wand in Schicht 1, Wandüberquerungen vermeiden, 8 untere Schichten, Überlappung 25 %, keine Umrandung, Fuzzy aus, Reinigungsturm, Spülen ×1,5).
+- **Neu gegenüber dem Deckel und noch nicht erprobt:** zwei Farben **in** den sichtbaren Schichten 1–4 (CANVAS wechselt in jeder davon). Darum zuerst C13.
+- **Ablauf:** (1) C13 mit den Gitter-Einstellungen, Foto an Claude (Grenze Orange/Beige, Lücken, Härchen, Stift in der Korpus-Ecke). (2) Optional Hörprobe: `06_gitter_einfarbig_HOERPROBE` schnell einfarbig, einsetzen, Klang mit/ohne Gitter vergleichen. (3) Gitter `06a` + `06b`, G-Code vorher prüfen lassen.
 

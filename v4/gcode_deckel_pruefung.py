@@ -90,6 +90,9 @@ def main(f, c12=False):
         print("  ACHTUNG: Wände über den Vertiefungen – Modifizierer hat vermutlich ein eigenes Filament (muss „Standard“ sein)")
     werkz = sorted({t for l in L[:haut] for typ, t, *_ in l["segs"] if typ != "Prime tower"})
     print(f"  Werkzeuge in den Haut-Schichten: {werkz} (soll genau eines sein: Beige)")
+    iw = sum(math.hypot(c_ - a, d - b) for l in L[1:haut] for typ, t, a, b, c_, d in l["segs"] if typ == "Inner wall")
+    if iw > 1:
+        print(f"  ACHTUNG: Innenwände in den Haut-Schichten ({iw:.0f} mm) – Modifizierer 02m (Wandschleifen 1) wirkt nicht")
     # 2) Brücken über den Feldern (alter Aufbau: Böden der Vertiefungen)
     for l in L[:haut + 3]:
         br = [LineString([(a, b), (c, d)]) for typ, t, a, b, c, d in l["segs"] if typ == "Bridge"]
@@ -98,6 +101,10 @@ def main(f, c12=False):
             ang = [math.degrees(math.atan2(b_.coords[1][1] - b_.coords[0][1], b_.coords[1][0] - b_.coords[0][0])) % 180 for b_ in br if b_.length > 1]
             print(f"  Schicht {l['n']}: Brücke über den Feldern {fl:.0f} mm² (Vertiefungen {sym.area:.0f}, Felder {felder.area:.0f} mm²); "
                   f"Richtung (Bett) 10/50/90 %: {np.percentile(ang, [10, 50, 90]).round(0).tolist() if ang else '-'}°")
+            if fl > 1.5 * sym.intersection(felder).area * (1 if not c12 else 0.6):
+                print("  ACHTUNG: Brücke reicht weit über die Vertiefungen hinaus – Modifizierer 02r (Externe Brücken Füllrichtung) wirkt nicht")
+            if ang and np.percentile(ang, 90) - np.percentile(ang, 10) > 5:
+                print("  ACHTUNG: Brücken nicht alle in derselben Richtung")
     # 3) Fahrwege über Vertiefungen in den Haut-Schichten (nur wenn die Haut Löcher hat)
     inner = sym.buffer(-0.15)
     for l in L[1:haut]:

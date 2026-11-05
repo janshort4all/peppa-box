@@ -231,14 +231,16 @@ Vorher: Platte mit Spülmittel waschen, nicht mehr anfassen. Variante A: Haube o
 der flache Deckel verzieht sich nicht). Nach dem Druck auf der Platte abkühlen lassen, PLA-Einleger heraushebeln (bleiben sie auf
 der Platte, dort abnehmen). Vorschau: Schicht 1–4 Beige + Einleger (A); Schicht 5 über den Symbolen keine „Überbrückung“ (A)
 bzw. nur über den Symbolen, alle Linien parallel (B). Zuerst `coupon_C12_deckel_oberseite_*` mit derselben Variante.
-`08_ein_taste_orange.stl` (Kopf unten, keine Umrandung) bekommt dieselbe Oberfläche. Bild: `deckel_draufsicht.png`.
+`08_ein_taste_orange.stl` (Kopf unten, keine Umrandung) bekommt dieselbe Oberfläche, wenn der Kopf auf der texturierten PEI liegt –
+am besten zusammen mit dem Drehknopf `07` drucken (beide Orange): Auf der Deckel-Platte müsste CANVAS in Schicht 1–4 jedes Mal
+zwischen Beige und Orange wechseln. Bild: `deckel_draufsicht.png`.
 
 ### Drehknopf (Stand 05.11.2026, volle Achse, ohne Fuzzy)
 
 `07_drehknopf_orange.stl`: Ø 34 × 22,8 mm, ca. 24 g. Die Drehgeberachse wird **nicht** gekürzt. Stirnfläche unten auf der
 texturierten PEI-Platte → dieselbe matte Oberfläche wie die Tasten im Deckel; dieselbe orange Rolle wie beim Deckel.
 Innen: Führung Ø 6,3 im ungeschlitzten Teil der Achse, Klemmsitz Ø 6,1 nur im geschlitzten Teil (federt), Steg 8 mm im Schlitz.
-Bild: `drehknopf_schnitt.png`.
+Bild: `drehknopf_schnitt.png`. Die Ein-Taste `08` passt mit auf die Platte (gleiche Einstellungen).
 
 | Reiter | Einstellung | Wert |
 | --- | --- | --- |

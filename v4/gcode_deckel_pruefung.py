@@ -1,4 +1,4 @@
-"""G-Code-Prüfung Deckel (kopfüber, zweifarbig). Aufruf: python3 gcode_deckel_pruefung.py deckel.gcode
+"""G-Code-Prüfung Deckel (kopfüber, zweifarbig). Aufruf: python3 gcode_deckel_pruefung.py deckel.gcode [c12]
 
 Prüft: Farbe je Schicht und je Fläche (Symbole/Ringe orange, Rest beige in den Haut-Schichten), Brücken über den Feldern,
 Wände in den Haut-Schichten (Modifier 02m: 1 Wand), Fahrwege über Vertiefungen (nur alter Aufbau), Naht, erste Schicht.
@@ -43,12 +43,14 @@ def lesen(f):
     return layers
 
 
-def main(f):
+def main(f, c12=False):
     L = lesen(f)
     print(f"Schichten {len(L)}")
     ow = np.array([s[2:] for s in L[1]["segs"] if s[0] == "Outer wall"])
     cx = (ow[:, [0, 2]].min() + ow[:, [0, 2]].max()) / 2; cy = (ow[:, [1, 3]].min() + ow[:, [1, 3]].max()) / 2
     lb = M.LID_CS.bounds()
+    if c12:   # Probe C12: Ausschnitt x ab 52, y bis 78 (coupons.c12_deckel_oberseite)
+        lb = (52.0, lb[1], lb[2], 78.0)
     OX, OY = cx + (lb[0] + lb[2]) / 2, cy - (lb[1] + lb[3]) / 2
     fx = lambda x, y: (OX - x, y + OY)
 
@@ -78,6 +80,16 @@ def main(f):
             typen[typ] += math.hypot(c - a, d - b)
         print(f"  Schicht {l['n']} (z {l['z']}): Werkzeuge {tl}; in Symbolen/Ringen {dict((k, round(v)) for k, v in im.items())} mm, "
               f"außerhalb {dict((k, round(v)) for k, v in aus.items())} mm; Innenwand {round(typen.get('Inner wall', 0))} mm, Brücke {round(typen.get('Bridge', 0))} mm")
+    # 1b) Schicht über der Haut: was liegt über den Vertiefungen? (Overhang wall = eigener Bereich mit anderem Filament → falsch)
+    l = L[haut]
+    c = collections.Counter()
+    for typ, t, a, b, c_, d in l["segs"]:
+        if sym.contains(LineString([(a, b), (c_, d)]).interpolate(0.5, normalized=True)): c[f"{typ} (Werkzeug {t})"] += math.hypot(c_ - a, d - b)
+    print(f"  Schicht {l['n']} über den Vertiefungen: {dict((k, round(v)) for k, v in c.items())}")
+    if any(k.startswith("Overhang wall") for k in c):
+        print("  ACHTUNG: Wände über den Vertiefungen – Modifizierer hat vermutlich ein eigenes Filament (muss „Standard“ sein)")
+    werkz = sorted({t for l in L[:haut] for typ, t, *_ in l["segs"] if typ != "Prime tower"})
+    print(f"  Werkzeuge in den Haut-Schichten: {werkz} (soll genau eines sein: Beige)")
     # 2) Brücken über den Feldern (alter Aufbau: Böden der Vertiefungen)
     for l in L[:haut + 3]:
         br = [LineString([(a, b), (c, d)]) for typ, t, a, b, c, d in l["segs"] if typ == "Bridge"]
@@ -114,4 +126,4 @@ def main(f):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(sys.argv[1], c12=len(sys.argv) > 2 and sys.argv[2].lower() == "c12")

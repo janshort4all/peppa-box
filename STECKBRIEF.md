@@ -462,3 +462,13 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Belegung:** A = Masse (Hülse), B = L (Spitze), C = Öffner L → Pin 37 (GPIO 26), E = R (Ring), D = Öffner R (frei, nicht abschneiden).
 - Kabel Goobay (gewinkelter Stecker, gemessen): Spitze = weiß → B, Ring = rot → E, Hülse = Geflecht → A. Neuer Draht C → gelber Stift **P26** (GPIO 26; P26 hat keine Federklemme). Bild: `plan/buchse_verdrahtung.jpg`.
 - P26 liegt nur auf den gelben Stiften (Aufdruck untere Stiftleiste, obere Beschriftungsreihe, 2. von links). Anschluss: Steckkabel mit Buchse halbieren, abgeschnittenes Ende an Fahne C löten, Buchse auf den Stift P26.
+
+
+## Nachtrag 05.11.2026 – Ladeanzeige: Vorzeichen am Gerät umgekehrt
+
+- Beobachtung Jan (Eltern-Seite): **Netzteil gesteckt** → 4,16 V, „Akkubetrieb“; **Netzteil gezogen** → 4,04 V, „wird geladen“. Zusammen mit 02.11. (mit Netzteil −6,48 / −4,47 mV) belegt: Beim UPS HAT (D) dieser Box ist das Vorzeichen **umgekehrt** zur Waveshare-Angabe. Mit Netzteil negativ = Ladestrom. Der Akku lädt also; die 0,12 V höhere Spannung mit Netzteil ist die Ladespannung.
+- Die Prozentwerte springen deshalb (83 → 96 %): die Kennlinie gilt nur für die Ruhespannung.
+- `akku.py`: `VORZEICHEN = -1`, Auswertung in `auswerten()` (ohne Hardware testbar, `software/test_akku.py`). Während des Ladens `prozent = None`. Neue Richtung **„voll“**: kaum Strom bei ≥ 4,10 V (ohne Netzteil zieht der Pi immer Strom, kaum Strom geht also nur mit Netzteil). Schwelle 4,10 V festgelegt, nicht gemessen.
+- Eltern-Seite: beim Laden groß „lädt“, Text „Netzteil steckt, Akku wird geladen · Prozent erst ohne Netzteil“; bei „voll“: „Netzteil steckt, Akku voll“.
+- **Am Pi prüfen:** Update über die Seite; Netzteil stecken → „lädt“; ziehen → „Akkubetrieb“ mit %; geladen lassen bis die blaue LED ausgeht → Anzeige „voll“? `shunt_mv` dann notieren.
+- Offen: Prozent während des Ladens (z. B. letzten Wert vor dem Einstecken merken) – erst wenn die Anzeige so passt.

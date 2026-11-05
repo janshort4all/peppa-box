@@ -274,11 +274,12 @@ async function zustand() {
   if (a.fehler) {
     $('aproz').textContent = '–'; $('abalken').style.width = '0'; $('atext').textContent = a.fehler;
   } else {
-    $('aproz').textContent = a.prozent + ' %';
-    $('abalken').style.width = a.prozent + '%';
-    $('abalken').style.background = a.prozent < 15 ? 'var(--rot)' : a.prozent < 30 ? 'var(--warn)' : 'var(--gut)';
-    const r = {laedt: 'wird geladen', akku: 'Akkubetrieb', ruhend: 'kaum Strom'}[a.richtung];
-    $('atext').textContent = `${r} · ${a.spannung.toFixed(2).replace('.', ',')} V · Prozent geschätzt`;
+    const laedt = a.prozent == null;
+    $('aproz').textContent = laedt ? 'lädt' : a.prozent + ' %';
+    $('abalken').style.width = laedt ? '100%' : a.prozent + '%';
+    $('abalken').style.background = laedt ? 'var(--warn)' : a.prozent < 15 ? 'var(--rot)' : a.prozent < 30 ? 'var(--warn)' : 'var(--gut)';
+    const r = {laedt: 'Netzteil steckt, Akku wird geladen', akku: 'Akkubetrieb', voll: 'Netzteil steckt, Akku voll', ruhend: 'kaum Strom'}[a.richtung];
+    $('atext').textContent = `${r} · ${a.spannung.toFixed(2).replace('.', ',')} V · ` + (laedt ? 'Prozent erst ohne Netzteil' : 'Prozent geschätzt');
   }
 
   const p = z.player, sp = z.dienste.raspotify === 'active';

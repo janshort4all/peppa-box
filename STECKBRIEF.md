@@ -459,4 +459,4 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - Bezeichnung nach Foto von oben (Gewinde oben): A oben mittig am Gewinde, B rechts Mitte, C rechts unten, D links innen, E links am Rand.
 - Gemessen (Jan, Durchgang): ohne Stecker B–C und D–E verbunden, A allein. Mit Kabel: Steckerspitze → B, Ring → E.
 - **Belegung:** A = Masse (Hülse), B = L (Spitze), C = Öffner L → Pin 37 (GPIO 26), E = R (Ring), D = Öffner R (frei, nicht abschneiden).
-- Kabel Goobay (gewinkelter Stecker, gemessen): Spitze = weiß → B, Ring = rot → E, Hülse = Geflecht → A. Neuer Draht C → Pin 37.
+- Kabel Goobay (gewinkelter Stecker, gemessen): Spitze = weiß → B, Ring = rot → E, Hülse = Geflecht → A. Neuer Draht C → Pin 37. Bild: `plan/buchse_verdrahtung.jpg`.

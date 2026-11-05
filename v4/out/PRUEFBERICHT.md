@@ -49,7 +49,7 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | Datei | Größe in Druckausrichtung (mm) | Bewusste Brücken |
 | --- | --- | --- |
 | 01_korpus_beige.stl | 140 × 140 × 136 | Lautsprecherausschnitt oben 28 mm, Kernlöcher der Dome, Schlitze 2 mm (Kammerdecke seit 04.11. als 45°-Satteldach, keine Brücke mehr) |
-| 02a_deckel_kern_orange.stl | 133 × 133 × 5 | Taschen unter den Touch-Feldern (Ø 20–28 mm, verdeckt) |
+| 02a_deckel_kern_orange.stl | 133 × 133 × 5 | kopfüber: Böden der Symbole und Ringnuten (bis ca. 6,5 mm, orange, sichtbar) |
 | 02b_deckel_haut_beige.stl | 133 × 133 × 1 | – |
 | 03_deckelrahmen.stl | 128 × 128 × 17 | Boden Tasterhalter 12 mm |
 | 04_kartenfach.stl | 14 × 52 × 88 | Seitenwand über dem Kartenschlitz 5 mm |

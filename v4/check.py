@@ -80,9 +80,11 @@ def handedness(name):
     return int(np.sign(d1 * d0))
 def orient(name, m):
     """Gibt das Teil so zurück, wie es auf der Platte liegt (z=0 unten)."""
-    if name in ("korpus", "boden", "deckel_orange", "deckel_beige", "riemen_gegenplatte_flat"):
+    if name in ("korpus", "boden", "riemen_gegenplatte_flat"):
         pass
-    if name == "deckelrahmen":
+    if name in ("deckel_orange", "deckel_beige"):
+        m = m.rotate([0, 180, 0])                     # kopfüber: Oberseite auf die Platte (wie M.deckel_kopfueber)
+    elif name == "deckelrahmen":
         m = m.rotate([180, 0, 0])                     # Deckelseite nach unten (gedreht, NICHT gespiegelt)
     elif name == "kartenfach":
         # Vorderwand auf die Platte: lokale -w nach unten

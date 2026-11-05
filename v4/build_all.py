@@ -25,8 +25,8 @@ def tm(man):
 
 DRUCK = {   # Teil: (Datei, Farbe, Hinweis)
     "korpus": ("01_korpus_beige.stl", "Beige", "aufrecht, Boden auf der Platte; Naht hinten; Kammerdecke als 45°-Satteldach (keine Brücke)"),
-    "deckel_orange": ("02a_deckel_kern_orange.stl", "Orange", "Oberseite nach oben (kopfüber geplant, siehe C9); zusammen mit 02b als ein Objekt laden"),
-    "deckel_beige": ("02b_deckel_haut_beige.stl", "Beige", "liegt passgenau auf 02a; kopfüber auf texturiertem PEI, sonst Ironing an"),
+    "deckel_orange": ("02a_deckel_kern_orange.stl", "Orange", "kopfüber (Oberseite auf der Platte, hinten bleibt hinten); mit 02b zusammen als ein Objekt mit zwei Teilen laden"),
+    "deckel_beige": ("02b_deckel_haut_beige.stl", "Beige", "kopfüber, liegt deckungsgleich unter 02a auf der texturierten PEI-Platte (die 4 untersten Schichten)"),
     "deckelrahmen": ("03_deckelrahmen.stl", "Schwarz/Grau", "Deckelseite auf der Platte"),
     "kartenfach": ("04_kartenfach.stl", "Schwarz/Grau", "auf der Seite, Kartenschlitz senkrecht; Brim"),
     "boden": ("05_boden_traeger.stl", "Beige", "flach, Unterseite auf der Platte; trägt die ganze Elektronik"),
@@ -41,7 +41,7 @@ def export_parts(parts):
     files = {}
     for k, (fn, col, note) in DRUCK.items():
         if k in ("deckel_orange", "deckel_beige"):
-            o = parts[k].translate([0, 0, -M.LID_BOT])          # beide Deckelteile gleich verschoben → deckungsgleich
+            o = M.deckel_kopfueber(parts[k], parts["deckel_orange"] + parts["deckel_beige"])   # gleich gedreht und verschoben → deckungsgleich
         else:
             o = K.orient(k, parts[k])
         p = os.path.join(OUT, fn)

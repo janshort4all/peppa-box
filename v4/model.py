@@ -652,11 +652,13 @@ def deckel(einfarbig=False):
     return core - cu, skin - cu
 
 
-def deckel_kopfueber(m):
-    """Deckel(-teil) für den Druck umdrehen: Oberseite auf die Platte (Drehung um x, keine Spiegelung)."""
-    m = m.rotate([180, 0, 0])
-    bb = m.bounding_box()
-    return m.translate([-bb[0], -bb[1], -bb[2]])
+def deckel_kopfueber(m, bezug=None):
+    """Deckel(-teil) für den Druck umdrehen: Oberseite auf die Platte. Drehung um y (keine Spiegelung): hinten bleibt hinten,
+    Nahtposition „Rückseite“ landet an der Hinterkante des Deckels (bis 04.11. Drehung um x: Naht wäre vorne gelandet).
+    bezug: gemeinsamer Körper aller Teile (02a + 02b), damit sie nach dem Verschieben deckungsgleich bleiben."""
+    rot = lambda k: k.rotate([0, 180, 0])
+    bb = rot(bezug if bezug is not None else m).bounding_box()
+    return rot(m).translate([-bb[0], -bb[1], -bb[2]])
 
 
 def deckelrahmen():

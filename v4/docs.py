@@ -64,11 +64,11 @@ def pruefbericht_md(parts, ph):
               "## Druckbarkeit (Centauri Carbon 2, Bauraum 256 × 256 × 256 mm)", "",
               "| Datei | Größe in Druckausrichtung (mm) | Bewusste Brücken |", "| --- | --- | --- |"]
     bridges = {"korpus": "Lautsprecherausschnitt oben 28 mm, Kernlöcher der Dome, Schlitze 2 mm (Kammerdecke seit 04.11. als 45°-Satteldach, keine Brücke mehr)",
-               "deckel_orange": "Taschen unter den Touch-Feldern (Ø 20–28 mm, verdeckt)",
+               "deckel_orange": "kopfüber: Böden der Symbole und Ringnuten (bis ca. 6,5 mm, orange, sichtbar)",
                "deckelrahmen": "Boden Tasterhalter 12 mm", "kartenfach": "Seitenwand über dem Kartenschlitz 5 mm",
                "boden": "Decke der Senkbohrungen M2,5 (Ring 1,8 mm)"}
     for k, (fn, col_, note) in DRUCK.items():
-        o = K.orient(k, parts[k]) if k not in ("deckel_orange", "deckel_beige") else parts[k]
+        o = K.orient(k, parts[k])
         bb = o.bounding_box()
         size = f"{bb[3]-bb[0]:.0f} × {bb[4]-bb[1]:.0f} × {bb[5]-bb[2]:.0f}"
         lines.append(f"| {fn} | {size} | {bridges.get(k, '–')} |")
@@ -99,6 +99,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 
 | Datei | Prüft | Was du mir zurückmeldest |
 | --- | --- | --- |
+| coupon_C12_deckel_oberseite_* (2 Teile) | **Probe vor dem Deckel:** obere 2,4 mm vorne rechts (Play, Vor, Mond, Kante mit Fase), kopfüber und zweifarbig wie der echte Deckel, ca. 15 g | Wie den Deckel einrichten (beide Teile als ein Objekt, Farben zuweisen). Gern 2 Kopien: „Dicke externe Brücken“ an / aus. Oberfläche gleichmäßig, keine Ringe um die Symbole? Symbolböden glatt und rein orange, keine Fäden in den Vertiefungen? |
 | coupon_C7_lochbild_stapel | **Lochbild 58 × 49 mm des Akku-Stapels**, ca. 20 min | Stapel mit den vorhandenen Schrauben daraufsetzen: Fallen alle 4 Köpfe in die Mulden? Liegt die Acrylplatte innerhalb der Ecken-Marken? |
 | coupon_C8_bodenecke_* (2 Teile) | Schattenfuge Boden/Korpus, Zentrierkragen, Senkschraube 3,0 × 14 in den Dom | Rutscht der Kragen leicht hinein, ohne zu wackeln? Sitzt die Schraube bündig? |
 | coupon_C10_fuzzy_ecke (+ _MODIFIER) | Ecke hinten rechts mit Anschlussfeld-Kante und USB-C-Öffnung, ca. 30 min je Stück | Beide Dateien zusammen laden, Objekt Fuzzy „Deaktiviert“, Modifier „Kontur“; 3–4 Kopien mit verschiedenen Fuzzy-Werten: Welche wirkt hochwertig? Bleibt die Kante des Feldes sauber? |
@@ -121,10 +122,10 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
     t += """| 02_deckel_einfarbig.stl | eine Farbe | Prototyp, gleiche Form wie 02a + 02b; Symbole 0,8 mm vertieft |
 | 10_karte_orange.stl | Orange | Rückseite unten (NFC-Tasche an der Platte), Einschubtasche oben; Cover auf Papier von oben einschieben |
 
-Die Dateien liegen bereits in Druckausrichtung. Ausnahme Deckel: liegt mit der Oberseite nach oben; geplant ist der Druck
-kopfüber auf texturiertem PEI (erst Coupon C9 prüfen, dann im Slicer umdrehen). Das Tastenloch ist offen
-(keine Mulde, keine Opferschicht mehr). `02a` und `02b` gemeinsam laden („als ein Objekt mit mehreren Teilen“),
-02a Orange und 02b Beige zuweisen – dann macht CANVAS genau einen Farbwechsel. Die beiden `ansicht_…`-Dateien nur zum Anschauen.
+Die Dateien liegen bereits in Druckausrichtung, auch der Deckel: `02a` und `02b` liegen seit 05.11. **kopfüber**
+(Oberseite auf der Platte, hinten bleibt hinten). Das Tastenloch ist offen (keine Mulde, keine Opferschicht mehr).
+`02a` und `02b` gemeinsam laden („als ein Objekt mit mehreren Teilen“), 02a Orange und 02b Beige zuweisen – dann macht
+CANVAS genau einen Farbwechsel. Einstellungen: Abschnitt „Deckel“ unten. Die beiden `ansicht_…`-Dateien nur zum Anschauen.
 
 Der Boden darf auch orange sein: Dann läuft unten ein schmaler oranger Sockelstreifen um die Box.
 
@@ -179,8 +180,40 @@ Naht aufmalen: ganzes Objekt markieren, Werkzeug „Naht aufmalen“, Pinselgrö
 senkrechten Strich auf der Rundung rechts neben den Lüftungsschlitzen (Mitte zwischen Ende des glatten Feldes und Außenkante)
 von ganz unten bis ganz oben ziehen. Bild: `naht_aufmalen.png`.
 
-Boden, Deckel, Rahmen, Kartenfach, Knopf: ohne Fuzzy Skin. Brim für Kartenfach und die C1-Coupons. Deckel: Ironing für die oberste Fläche.
+Boden, Deckel, Rahmen, Kartenfach, Knopf: ohne Fuzzy Skin. Brim für Kartenfach und die C1-Coupons. Deckel: eigener Abschnitt unten.
 Rolle vorher trocknen (Elegoo: 60 °C, 8 h).
+
+### Deckel (Stand 05.11.2026, kopfüber, zweifarbig, ohne Fuzzy)
+
+Die sichtbare Oberseite entsteht auf der texturierten PEI-Platte: gleichmäßig matt, ohne Schichtlinien und ohne Linien der obersten
+Schicht – wie gespritzt. Beige sind die ersten 4 Schichten (0,8 mm), ab Schicht 5 Orange. Symbole und Ringnuten sind Aussparungen
+in der beigen Haut; ihre Böden sind die erste orange Schicht (kurze Brücken bis ca. 6,5 mm). Ausgangspunkt sind die Korpus-Einstellungen
+oben (Profil „… - Peppa“); geändert wird nur, was hier steht. **Als eigenen Prozess speichern** (z. B. „… - Peppa Deckel“), damit der
+Korpus-Prozess bleibt. In Klammern: Wert beim Korpus.
+
+| Reiter → Gruppe | Einstellung | Wert |
+| --- | --- | --- |
+| Objektliste | Teile `02a` / `02b` | 02a → Filament Orange, 02b → Filament Beige (Rechtsklick → Filament wechseln) |
+| Qualität → Schichthöhe | Schichthöhe / erste Schicht | 0,2 / 0,2 (bleibt) – nur so liegt der Farbwechsel genau auf 0,8 mm |
+| Qualität → Naht | Nahtposition | **Rückseite** (Ausgerichtet + aufgemalt) – Naht an der Hinterkante, im Deckelspalt verdeckt; nichts aufmalen |
+| Qualität → Präzision | Elefantenfußkompensation | 0,15 (bleibt) – Tastenloch und Schlitz an der Oberfläche maßhaltig |
+| Qualität → Brücken | Dicke externe Brücken | an (bleibt) – mit Coupon C12 gegen „aus“ vergleichen |
+| Qualität → Wände und Oberflächen | Nur eine Wand in der ersten Schicht | **an** (aus) – weniger Ringe in der Oberfläche um Symbole, Taste, Schlitz |
+| Qualität → Wände und Oberflächen | Vermeiden von Wandüberquerungen | **an** (aus) – keine Fäden quer über die Symbol-Vertiefungen |
+| Struktur → Obere/Untere Schichten | Untere Schalenschichten | **8** (3) – sichtbare Seite 1,6 mm massiv (4 beige + 4 orange) |
+| | Muster der unteren Fläche | Monotonisch (bleibt) – das ist die sichtbare Oberseite |
+| Struktur → Füllung | Fülldichte / Füllmuster | **25 %** / Gyroid (15 %) – kopfüber zeichnet sich die Füllung oben nicht ab; massiv bringt nur Spannung (Verzug) |
+| Geschwindigkeit → erste Schicht | Füllung | **50 mm/s** (105) – gleichmäßige erste Schicht = gleichmäßige Oberseite |
+| Sonstiges → Umrandung | Randtyp | **Keine Umrandung** (Nur Innenrand) – sonst füllt der Innenrand Symbole, Ringe, Schlitz und Tastenloch |
+| Sonstiges → Fuzzy Skin | Fuzzy Skin | Deaktiviert, kein Modifier |
+| Multimaterial → Reinigungsturm | Aktivieren | an (bleibt) – der erste orange Layer ist in den Symbolen sichtbar und muss rein orange sein; Turm hinten links hinstellen |
+| Filament | Beide Farben | gleiche Einstellungen wie beim Korpus (250 °C, Bett 80/75 °C, Lüfter 20 %, Schichtdauer 70/100) |
+
+Vorher: Platte mit Spülmittel waschen und danach **nicht mehr auf die Druckfläche fassen** – jeder Fingerabdruck wird als glänzender Fleck
+auf der Oberseite abgebildet. Haube zu. Nach dem Druck auf der Platte abkühlen lassen, dann abnehmen.
+Vorschau prüfen: Schicht 1–4 beige, ab Schicht 5 orange; in Schicht 1 kein Rand; Schicht 5 über den Symbolen „Überbrückung“.
+`08_ein_taste_orange.stl` (Kopf unten, ebenfalls auf der texturierten Platte, keine Umrandung) bekommt so dieselbe Oberfläche.
+Bild: `deckel_draufsicht.png`.
 
 ### Fuzzy Skin nur außen (Modifier „Außenhaut“, seit 04.11.2026)
 

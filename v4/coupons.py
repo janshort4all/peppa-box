@@ -121,6 +121,15 @@ def c9_kopfueber():
     return M.deckel_kopfueber(a), M.deckel_kopfueber(b)
 
 
+def c12_deckel_oberseite():
+    """Probe Deckel-Oberseite, zweifarbig wie der echte Deckel: obere 2,4 mm vorne rechts (Play, Vor, Mond, Vorder- und
+    Seitenkante mit Fase), kopfüber. Prüft Oberfläche auf der texturierten Platte, Farbwechsel, gebrückte Symbolböden."""
+    kern, haut = M.deckel()
+    sel = box(52, -1, M.LID_TOP - 2.4, M.W + 1, 78, M.LID_TOP + 1)
+    a, b = kern ^ sel, haut ^ sel
+    return M.deckel_kopfueber(a, a + b), M.deckel_kopfueber(b, a + b)
+
+
 def c10_fuzzy():
     """Fuzzy-Skin-Probe: Ecke hinten rechts (Anschlussfeld-Ende, USB-C-Öffnung, Eckradius, rechte Wand), aufrecht wie im Korpus.
     Dazu das passende Stück des Modifiers „Fuzzy Außenhaut“ – beide gleich verschoben, im Slicer zusammen laden.
@@ -178,6 +187,9 @@ def all_coupons():
     a, b = c11_korpus_oben()
     out["C11_korpus_oben"] = a
     out["C11_korpus_oben_MODIFIER_fuzzy_aussenhaut"] = b
+    a, b = c12_deckel_oberseite()
+    out["C12_deckel_oberseite_kern_orange"] = a
+    out["C12_deckel_oberseite_haut_beige"] = b
     a, b = c9_kopfueber()
     out["C9_deckel_kopfueber_felder"] = a
     out["C9_deckel_kopfueber_taste_schlitz"] = b

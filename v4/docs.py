@@ -207,7 +207,7 @@ Ausgangspunkt sind die Korpus-Einstellungen (Profil „… - Peppa“); als eige
 | Objektliste | Teile laden („ein Objekt mit mehreren Teilen“) | A: `02a`, `02b`, `02p`, `02m` · B: `02a`, `02b`, `02r`, `02m` |
 | | Filamente | 02a → Orange, 02b → Beige, 02p → PLA (Rechtsklick → Filament wechseln); 02m und 02r → Typ ändern → **Modifizierer** |
 | Modifizierer `02m` | Wandschleifen | **1** – in den Haut-Schichten nur eine Wand um jedes Loch (keine Ringe hinter der Sichtfläche) |
-| Modifizierer `02r` (nur B) | Struktur → Erweitert → Externe Brücken Füllrichtung | **45°** (0 = automatisch) – Fäden in allen Symbolen parallel zu den Linien der Oberfläche, längste Brücke 10,8 mm |
+| Modifizierer `02r` (nur B) | Struktur → Erweiterte Einstellungen → Externe Brücken Füllrichtung | **45°** (0 = automatisch) – Fäden in allen Symbolen parallel zu den Linien der Oberfläche, längste Brücke 10,8 mm |
 | Qualität → Brücken (nur B) | Dicke externe Brücken / Externe Brücken Dichte | **aus** (an) / **110 %** (100) – flache, dicht liegende Fäden |
 | Qualität → Schichthöhe | Schichthöhe / erste Schicht | 0,2 / 0,2 (bleibt) |
 | Qualität → Naht | Nahtposition | **Rückseite** (Ausgerichtet + aufgemalt) |

@@ -137,6 +137,8 @@ Ausgangspunkt sind die Korpus-Einstellungen (Profil „… - Peppa“); als eige
 | Modifizierer `02m` | Wandschleifen | **1** – in den Haut-Schichten nur eine Wand um jedes Loch (keine Ringe hinter der Sichtfläche) |
 | Modifizierer `02r` (nur B) | Struktur → Erweiterte Einstellungen → Externe Brücken Füllrichtung | **45°** (0 = automatisch) – Fäden in allen Symbolen parallel zu den Linien der Oberfläche, längste Brücke 10,8 mm |
 | Qualität → Brücken (nur B) | Dicke externe Brücken / Externe Brücken Dichte | **aus** (an) / **110 %** (100) – flache, dicht liegende Fäden |
+| Geschwindigkeit → Überhanggeschwindigkeit → Überbrückung (nur B) | Extern | **30 mm/s** (50) – C12 05.11.: ein Faden im Play-Dreieck aus der Reihe |
+| Filament Orange → Kühlung (nur B) | Überhänge und externe Brücken Lüftergeschwindigkeit | **100 %** (50) – Fäden erstarren sofort gerade; als eigenes Filamentprofil speichern und nur dem orangen Platz zuweisen |
 | Qualität → Schichthöhe | Schichthöhe / erste Schicht | 0,2 / 0,2 (bleibt) |
 | Qualität → Naht | Nahtposition | **Rückseite** (Ausgerichtet + aufgemalt) |
 | Qualität → Präzision | Elefantenfußkompensation | 0,15 (bleibt) |

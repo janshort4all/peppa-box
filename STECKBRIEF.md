@@ -26,7 +26,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 | Bestellungen | BerryBase, Amazon (RC522, MAX98357A) geliefert. Reichelt: mehrere Artikel nicht lieferbar, wird gerade geklärt |
 | Pi | Raspberry Pi OS Lite 64-bit (Debian 13 Trixie, 06.10.2026) auf SanDisk Ultra 128 GB A1; Ton über die Pi-Klinke getestet, gut |
 | Stapel | Akku-Board + Pi + Klemmen-Aufsatz verschraubt, auf dem gedruckten Boden (Version mit DAC-Stiften) montiert, passt |
-| Druck | **Korpus 04./05.11. gedruckt – perfekt, abgenommen.** Deckel 05.11. (Symbole vertieft) nicht abgenommen; Symbole bleiben vertieft (ertastbar), neu PLA-Opfer-Einleger (A) oder gerichtete Brücken (B); als Nächstes Probe C12 (Nachtrag 05.11. (4)) |
+| Druck | **Korpus 04./05.11. gedruckt – perfekt, abgenommen.** Deckel 05.11. (Symbole vertieft) nicht abgenommen; Symbole bleiben vertieft (ertastbar), Variante B (gerichtete Brücken) mit C12 bestätigt; als Nächstes ganzer Deckel, G-Code vorher prüfen (Nachtrag 05.11. (5)) |
 | Verstärker | Stiftleiste und Lautsprecherklemme werden gerade gelötet |
 
 ## Hardware (endgültig)
@@ -506,3 +506,11 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Fuzzy beim Knopf (Empfehlung): nein.** Griff kommt von den Rillen; Fuzzy (0,2) würde ihre Kanten verwischen. Alle orangen Bedienteile (Tasten, Ein-Taste) bleiben glatt, der beige Korpus ist körnig – bewusster Kontrast. Glatt lässt sich der oft angefasste Knopf besser sauber halten. Druck: Stirnfläche auf der texturierten PEI-Platte (gleiche Oberfläche wie die Tasten), Schichthöhe 0,12, Naht in eine Rille gegenüber der Markierung aufmalen, 3 Wände, 25 % Gyroid, keine Umrandung, Filament wie Deckel. Details: `v4/out/README.md`, Abschnitt Drehknopf.
 - **Als Nächstes:** Knopf drucken (G-Code vorher prüfen lassen), Sitz auf der Achse bewerten (zu fest → `KNOB_BORE` 6,2; zu lose → 6,0).
 - **Ein-Taste geprüft (Frage Jan):** passt zum aktuellen Deckel. Bohrung, Deckelstärke und Tasten-Maße seit 02.11. (3) unverändert; Kappe ∩ Deckel 0 mm³, Kappe oben bündig (z 138,8), Ringspalt 0,25, Stößel 0,05 über dem Taster. `08` ist seit 02.11. abends unverändert (ältere Drucke mit Mulde sind 1,5 mm kürzer). Empfehlung: `08` zusammen mit dem Knopf `07` drucken statt auf der Deckel-Platte (spart die Farbwechsel in Schicht 1–4).
+
+## Nachtrag 05.11.2026 (5) – Probe C12 (Variante B) ausgewertet: freigegeben
+
+- **Befund Jan (2 Fotos):** „deutlich besser, eigentlich wirklich perfekt“. Beige in den Kreisen wie die übrige Fläche, Fäden in allen Symbolen parallel (45°), Ringe sauber. Einziger Punkt: im Play-Dreieck tanzt ein oranger Faden aus der Reihe (wirkt gebrochen). Jan will diese Version für den großen Druck.
+- **Einordnung:** Spannweite im Dreieck nicht auffällig (G-Code der ersten C12-Fassung: Bahnen über Luft bis 7,2 mm; „vor“ mit bis 10,8 mm sauber). Typisch für PETG: ein dünner Brückenfaden, der von der Düse mitgezogen wird oder durchhängt, solange er noch weich ist. Den zuletzt gedruckten G-Code (nach „Standard“) hat Claude nicht gesehen.
+- **Maßnahme für den Deckel:** Brücke extern 30 mm/s (50), Lüfter für Überhänge und externe Brücken im orangen Filament 100 % (50; eigenes Filamentprofil nur für den orangen Platz, damit das Korpus-Profil bleibt). Dichte 110 % und 45° bleiben. README ergänzt.
+- **Ablauf:** ganzer Deckel mit `02a`, `02b`, `02m`, `02r` (Modifizierer auf Filament „Standard“), G-Code und Projekt vor dem Druck an Claude.
+

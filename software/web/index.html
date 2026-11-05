@@ -352,10 +352,14 @@ function frage(was) {
 function vollbild(titel, text) {
   $('vtitel').textContent = titel; $('vtext2').textContent = text; zeige($('voll'), true);
 }
-async function warteBisZurueck() {
+async function warteBisZurueck(neuLaden = false) {
   await new Promise(r => setTimeout(r, 3000));
   for (let i = 0; i < 90; i++) {
-    try { await holen('/api/karte'); zeige($('voll'), false); zustand(); return; } catch (e) {}
+    try {
+      await holen('/api/karte');
+      if (neuLaden) { location.reload(); return; }   // neue Fassung der Seite holen
+      zeige($('voll'), false); zustand(); return;
+    } catch (e) {}
     await new Promise(r => setTimeout(r, 2000));
   }
   $('vtext2').textContent = 'Die Box meldet sich nicht. Ist sie an und im WLAN?';
@@ -375,7 +379,7 @@ async function ausfuehren(was, pfad, ziel) {
     zeige($('bupdate'), false);
     if (!(await holen('/api/zustand').then(z => z.probelauf).catch(() => false))) {
       vollbild('Update eingespielt', e.meldung);
-      warteBisZurueck();
+      warteBisZurueck(true);
     } else zustand();
   } else setTimeout(zustand, 4000);
 }

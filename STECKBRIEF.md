@@ -472,3 +472,4 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - Eltern-Seite: beim Laden groß „lädt“, Text „Netzteil steckt, Akku wird geladen · Prozent erst ohne Netzteil“; bei „voll“: „Netzteil steckt, Akku voll“.
 - **Am Pi prüfen:** Update über die Seite; Netzteil stecken → „lädt“; ziehen → „Akkubetrieb“ mit %; geladen lassen bis die blaue LED ausgeht → Anzeige „voll“? `shunt_mv` dann notieren.
 - Offen: Prozent während des Ladens (z. B. letzten Wert vor dem Einstecken merken) – erst wenn die Anzeige so passt.
+- 21:21: Nach dem Update zeigte die Seite „null %“, weil im Handy noch die alte Seite lief (neuer Server, alter Code). Behoben: Nach einem Update lädt die Seite sich selbst neu (`warteBisZurueck(true)` → `location.reload()`). Dieses eine Mal noch von Hand neu laden.

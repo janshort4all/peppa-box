@@ -287,18 +287,52 @@ ihrer Form) und passt nur in seine Sacklöcher im Gitter. Bild: `gitter_ansicht.
 hinten von PETG-Resten befreien (sonst nimmt die Düse sie wieder auf und sie verbrennen). Platte mit Spülmittel waschen, nicht anfassen.
 Für das Gitter ein eigenes Filamentprofil anlegen (Beige kopieren, „… Peppa Gitter“) und dort die Werte unten eintragen; der Rest wie Deckel.
 
+**Gitter `06a` – alle Abweichungen von den Elegoo-Standardprofilen** (Drucker „Elegoo Centauri Carbon 2 0.4 nozzle“, Prozess
+„0.20mm Standard @Elegoo CC2 0.4 nozzle“, Filament „Elegoo PETG @ECC2“, Druckbetttyp „Texturierte PEI-Platte“; erweiterte
+Einstellungen einschalten). In Klammern der Profilwert, wo er bekannt ist. Prozess und Filament unter eigenem Namen speichern.
+
+| Reiter | Einstellung | Wert |
+| --- | --- | --- |
+| Prozess → Qualität | Nahtposition | **Rückseite** (Ausgerichtet) |
+| | Schrägnaht (Beta) | **Keine** |
+| | Wischbewegung nach innen | **an** (aus) |
+| | Elefantenfußkompensation | **0,15** (0,1) |
+| | Wandgenerator | **Arachne** (Klassisch) |
+| | Nur eine Wand in der ersten Schicht | **an** |
+| | Vermeiden von Wandüberquerungen | **an** |
+| | Vermeide das Überqueren der Wand – Maximale Umleitungslänge | **0** (keine Grenze) |
+| Prozess → Struktur | Wandschleifen | **3** (2) |
+| | Untere Schalenschichten | **8** (3) |
+| | Überlappung des oberen/unteren massiven Füllung/Wand | **25 %** (5 %) |
+| | Muster der Oberfläche | **Konzentrisch** (Monotonische Linie) |
+| | Fülldichte / Füllmuster | **25 % / Gyroid** (15 % / Geradlinig) |
+| Prozess → Geschwindigkeit | Erste Schicht / Füllung der ersten Schicht | **30 / 50 mm/s** (50 / 105) |
+| | Außenwand / Innere Wand | **40 / 120 mm/s** (160 / 200) |
+| | Beschleunigung Außenwand | **2000 mm/s²** (5000) |
+| | Verlangsamen bei Überhängen | **aus** (an) |
+| Prozess → Sonstiges | Randtyp | **Keine Umrandung** |
+| | Fuzzy Skin | **Deaktiviert** |
+| Filament | Düsentemperatur erste Schicht / andere Schichten | **245 / 240 °C** (250 / 250) |
+| | Druckbett Texturierte PEI erste / andere Schichten | **80 / 75 °C** (70 / 70) |
+| Filament → Kühlung | Lüftergeschwindigkeit (beide Zeilen) | **35 % / 35 %** (10 / 40) |
+| | Zeile „Minimale Lüftergeschwindigkeit“ → Schichtdauer | **100 s** (30) |
+| | Zeile „Schwellenwert für die maximale Lüftergeschwindigkeit“ → Schichtdauer | **70 s** (12) |
+| | Äußere Wände nicht verlangsamen | **an** (aus) |
+| | Keine Kühlung für die erste | **3** Schichten |
+| | Überhänge und externe Brücken Lüftergeschwindigkeit | **50 %** (90) |
+| | Überhänge Kühlung Aktivierungsschwelle | **95 %** (10 %) |
+| Filament → Überschreiben der Einstellungen (Häkchen je Zeile setzen) | Länge (Rückzug) | **1,0 mm** |
+| | Rückzugsgeschwindigkeit / Wiedereinzugsgeschwindigkeit | **40 / 30 mm/s** |
+| | Zurückziehen beim Schichtwechsel | **an** |
+| | Während des Rückzugs wischen / Wischabstand | **an / 2 mm** |
+| | Rückzugsmenge vor der Reinigung | **70 %** |
+| | Schwellenwert für die Fahrstrecke | **0,5 mm** |
+| | Z-Hub-Höhe / Z-Hub Typ | **0,2 mm / Normal** (0,4) |
+
+Platte: `06a` allein, mittig, nicht drehen (Vorderfläche unten, Oberkante hinten), nur Filament Beige, keine Modifizierer.
+
 | Teil | Einstellung | Wert |
 | --- | --- | --- |
-| Gitter `06a` | Prozess | wie Deckel (Arachne, eine Wand in Schicht 1, Wandüberquerungen vermeiden, 8 untere Schichten, Überlappung 25 %, keine Umrandung, Fuzzy aus); nur Beige → kein Reinigungsturm |
-| | Qualität → Vermeiden von Wandüberquerungen / Maximale Umleitungslänge | an / **0** (keine Grenze) – Fahrten bleiben auf den Stegen statt über Löcher |
-| | Qualität → Wischbewegung nach innen | an |
-| | Geschwindigkeit → Außenwand | **40 mm/s** (60) – saubere Lochwände; Feine Strukturen bleibt |
-| Filament „… Peppa Gitter“ | Düsentemperatur erste Schicht / andere Schichten | **245 / 240 °C** (250) – weniger Nachlaufen |
-| | Kühlung → Lüftergeschwindigkeit (beide Zeilen) / Keine Kühlung für die erste | **35 % / 35 %** (20) / 3 Schichten – Fäden erstarren schneller |
-| | Überschreiben der Einstellungen → Rückzug: Länge / Rückzugsgeschwindigkeit / Wiedereinzugsgeschwindigkeit | **1,0 mm / 40 mm/s / 30 mm/s** |
-| | … Zurückziehen beim Schichtwechsel / Während des Rückzugs wischen / Wischabstand / Rückzugsmenge vor der Reinigung | **an / an / 2 mm / 70 %** |
-| | … Schwellenwert für die Fahrstrecke / Z-Hub-Höhe / Z-Hub Typ | **0,5 mm / 0,2 mm / Normal** (0,4) – niedriger Hub zieht weniger Fäden |
-| | Nahtposition | Rückseite – die Oberkante liegt hinten: Naht in jedem Loch oben (von vorn-oben nicht sichtbar) |
 | Buchstaben `06b` | Prozess | wie Drehknopf: Schichthöhe **0,12** (erste 0,2), 3 Wände, keine Umrandung, Fuzzy aus, Elefantenfuß 0,15 |
 | | Nahtposition | Rückseite – die im Einbau untere Kante jedes Buchstabens liegt hinten |
 | | Filament | Orange wie Deckel und Knopf |

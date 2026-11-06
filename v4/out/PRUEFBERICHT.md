@@ -56,7 +56,7 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | 04_kartenfach.stl | 14 × 52 × 88 | Seitenwand über dem Kartenschlitz 5 mm |
 | 05_boden_traeger.stl | 140 × 140 × 8 | Decke der Senkbohrungen M2,5 (Ring 1,8 mm) |
 | 06a_gitter_beige.stl | 115 × 116 × 6 | Böden der Sacklöcher für die Buchstaben-Stifte (Ø 2,4, unsichtbar) |
-| 06b_logo_buchstaben_orange.stl | 100 × 57 × 2 | keine |
+| 06b_logo_buchstaben_orange.stl | 71 × 109 × 2 | keine |
 | 07_drehknopf_orange.stl | 34 × 34 × 23 | – |
 | 08_ein_taste_orange.stl | 17 × 17 × 13 | – |
 | 09_riemen_gegenplatte.stl | 18 × 24 × 4 | – |
@@ -65,10 +65,10 @@ Alle anderen Flächen sind steiler als 45° oder liegen auf der Platte. Kein Tei
 
 ## Gitter und Logo-Buchstaben (Schichtanalyse in Druckausrichtung)
 
-- Gitter einfarbig: 377 Löcher Ø 3,3 im Wabenraster 4,2 (Steg 0,9 mm = 2 Linien).
-- Offen direkt vor der Lautsprecheröffnung: 11 %; über den Luftraum (2,5 mm) erreichbar: 37 % der Öffnung.
-- Gitter Schicht 1 (Sichtfläche): 9863 mm², schmaler als 1 Linie (0,4 mm): 0,00 mm².
-- Gitter hinten (Luftraum): Rand läuft durch die Lochmitten, schmaler als 0,4 mm höchstens 0,99 mm² je Schicht (Ecken am Lochrand).
-- Buchstaben: 11 Teile auf einer Platte (119 × 66 mm), mindestens 4,2 mm Abstand; Schicht 1 (Sichtseite) 2529 mm², schmaler als 0,4 mm: 0,63 mm² (Spitze im e-Schlitz, Ecken).
-- 19 Stifte in Sacklöchern (Spiel 0,2 je Seite, Loch 0,3 tiefer), Überschneidung mit dem Gitter -0,000 mm³.
-- STL geschlossen, keine doppelten Ecken (Löcher als gedrehte 32-Ecke, Versätze vereinfacht).
+- Lochfeld rund (R 37,5) in Ringen: 222 Löcher Ø 3,3, Mindestabstand 4,2 (Steg ≥ 0,9 mm = 2 Linien).
+- Offen direkt vor der Lautsprecheröffnung Ø 73: 45 %. Luft bis zum Lautsprecherrahmen 1,3 mm.
+- Dämpfung durch das Gitter (Abschätzung, Lochplatte als Luftmasse): 2 kHz 0,3 dB, 5 kHz 1,5 dB, 10 kHz 4,3 dB (Stand vorher mit Logo vor dem Lautsprecher: 2 kHz 2,4 dB, 5 kHz 7,6 dB, 10 kHz 13,0 dB).
+- Gitter Schicht 1 (Sichtfläche): 11191 mm², schmaler als 1 Linie (0,4 mm): 0,01 mm².
+- Logo-Maßstab 0,644 der Vorlage; „peppa“ über, „BOX“ unter dem Lochfeld. Buchstaben: 11 Teile auf einer Platte (94 × 46 mm), mindestens 4,1 mm Abstand; Schicht 1 1049 mm², schmaler als 0,4 mm: 0,41 mm².
+- 16 Stifte in Sacklöchern (Spiel 0,2 je Seite, Loch 0,3 tiefer); die 3 Strahlen in flachen Taschen (1 Schicht). Überschneidung mit dem Gitter -0,000 mm³.
+- STL geschlossen, keine doppelten Ecken.

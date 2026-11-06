@@ -52,7 +52,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 - **Deckel:** zweifarbig (oranger Kern, beige Haut 0,7 mm), 4 Touchfelder mit Symbolen, Kartenschlitz, Ein-Taste hinten rechts in Mulde. **Deckelrahmen** mit Verteiler-Brücke (MPR121 + 3 WAGO hängend), Tasterhalter, Zungen vorne, 2 Schrauben hinten durch die Rückwand.
 - **Kartenfach:** Karte 70 × 112 × 4 mm, 42 mm tief, 8° geneigt, Federzunge, RC522 in Schienen dahinter.
 - **Rechts:** Drehknopf (y 84, z 60) und Klinke (y 84, z 24). **Links:** Riemen (z 118). **Hinten:** USB-C-Einbaubuchse x 114, z 60, innen höchstens 20 mm tief (Produkt offen; Stecker am Akku-Board gewinkelt oder ≤ 20 mm), Lüftungsschlitze.
-- **Front:** gedrucktes Gitter statt Stoff, **einfarbig beige**; Logo (neue Vorlage 05.11.) als **eigene orange Buchstaben, 1,2 mm erhaben, aufgeklebt** (Stifte in Sacklöchern): `06a` Gitter, `06b` alle Buchstaben, Bild `out/gitter_ansicht.png` (Nachträge 05.11. (6), 06.11.).
+- **Front:** gedrucktes Gitter statt Stoff, **einfarbig beige, klangoptimiert**: rundes Lochfeld (222 Löcher in Ringen) nur vor dem Lautsprecher, Logo als **eigene orange Buchstaben, 1,2 mm erhaben, aufgeklebt** – „peppa“ über, „BOX“ unter dem Lochfeld: `06a` Gitter, `06b` alle Buchstaben, Bild `out/gitter_ansicht.png` (Nachträge 05.11. (6), 06.11. (1–3)).
 - Höhen: Klemmen 77,5 mm, Kartenfach ab 86,8 mm, Deckel-Module ab 117,4 mm.
 
 Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine Stützen. Fuzzy Skin 0,20 / 0,30 Classic **nur über den Modifier `01f_…FUZZY_aussenhaut`** (Prozess „Nur lackiert“, Modifier „Kontur“; alle Korpus-Einstellungen in `v4/out/README.md`); der alte Modifier `01m_…` ist ungültig (siehe Nachtrag 04.11.).
@@ -73,7 +73,7 @@ Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine St�
 4. Nach Lieferung von Reichelt messen: Lautsprecher-Lochabstand, Gewindelängen Drehgeber und Klinke, Tasterhöhe; RC522- und MAX-Maße; NFC-Aufkleber-Dicke.
 5. Coupons drucken und auswerten: C2, C4, C6, C7, C8.
 6. Korpus-Prototyp: Boden einsetzen, Schrauben. Kammerdecke ist seit 04.11. ein Satteldach im Korpus (einteilig, Entscheidung Jan) – nach dem Druck außen auf ca. 95–125 mm Druckhöhe auf Linien ansehen.
-7. Gitter mit Logo: im Modell (Stand 06.11.: einfarbig + aufgeklebte Buchstaben). Offen: G-Code C13 auswerten (Fäden), Einstellungen festlegen, C14 drucken, dann Gitter und Buchstaben (G-Code vorher prüfen lassen).
+7. Gitter mit Logo: im Modell (Stand 06.11. abends: klangoptimiert, Logo über/unter dem Lochfeld, aufgeklebte Buchstaben). Offen: G-Code C13 auswerten (Fäden), Einstellungen festlegen, C15 drucken, dann Gitter und Buchstaben (G-Code vorher prüfen lassen).
 8. Optional: Lichtleiter für die Lade-LED, Ideen zur optischen Individualisierung (Seitenteile, Deckeleinlage, Magnete).
 
 ## Links (Artefakte, bleiben dauerhaft erhalten)
@@ -568,4 +568,15 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Wunsch Jan:** die losen Einzellöcher im beigen Feld weg (über dem P, zwischen e|p und p|a oben, zwischen a und X, im Dreieck des O, unter B|O).
 - **Geändert (`GR_HALO` 16):** Das beige Feld ist die Logo-Kontur, mit R 16 geglättet (füllt Kerben, Lücken und Innenformen), plus 1,2 mm Rand; danach entfallen am Feldrand alle Löcher mit höchstens 2 Nachbarn (wiederholt). 400 → 377 Löcher; offen direkt 11 % (vorher 13 %), über den Luftraum 37 % (vorher 40 %). Bild `out/gitter_vorne_nah.png`.
 - Neu gebaut: `06a_gitter_beige.stl`, `coupon_C14_gitter_ecke_beige.stl`; Buchstaben unverändert. Prüfungen ohne Kollision, STL geschlossen.
+
+## Nachtrag 06.11.2026 (3) – Klangoptimiertes Gitter, Logo über und unter dem Lochfeld
+
+- **Auftrag Jan (18:44):** zum Schluss ein Gitter, das optimal für den Klang ist, optisch ansprechend und mit seinem Drucker perfekt druckbar; Größe und Anordnung des Logos bewusst frei.
+- **Grundsatz:** Schall kommt nur dort heraus, wo hinter dem Gitter der Lautsprecher sitzt; außerhalb liegt die Sitzfläche (Löcher dort sind wirkungslos und wirkten heller als die vor dem Lautsprecher). Darum: **Lochfeld nur und ganz vor dem Lautsprecher, Logo außerhalb.**
+- **Lochfeld (`gitter_holes()`, `GR_FIELD_R` 37,5, `GR_RINGS` 4,2):** rund, deckt den Ausschnitt Ø 73 ab (Membran-Ø nicht gemessen → nicht kleiner). Verglichen: Waben 253 Löcher/52 % offen (eckiger Umriss), Sonnenblumen-Spirale 40 %, Waben mit Außenring (unruhiger Übergang), **konzentrische Ringe 222 Löcher/46 %** mit Mittelloch, jeder Ring zum inneren versetzt – runder, ruhiger Umriss, Unterschied zu Waben < 1 dB. Gewählt: Ringe. Steg überall ≥ 0,9 mm. Lochgröße 3,3 bleibt (Kinderfinger/Stifte).
+- **Logo (`gitter_layout()`, `GR_LAYOUT`):** „peppa“ über, „BOX“ unter dem Lochfeld, gleicher Maßstab, so groß wie möglich (Abstand 2,5 zum Feld, 3,5 zum Gitterrand): **Maßstab 0,644** (peppa ca. 57 × 17 mm, BOX ca. 41 × 16 mm). Strahlen in Größe und Richtung wie im Logo, nur so wenig wie nötig verschoben (7,0 mm rechts, 6,4 mm tiefer), damit sie neben dem „a“ im Feld bleiben. Buchstaben je 2 Stifte Ø 2,0; die Strahlen (Breite ca. 2 mm) ohne Stift in einer flachen Tasche (1 Schicht, `GR_POCKET`), 0,2 dicker, gleiche Sichthöhe.
+- **Klang (Abschätzung, Lochplatte als Luftmasse, `daempfung()` in check.py):** offen direkt vor dem Lautsprecher 45 % (vorher 11 %); Dämpfung 2 kHz 0,3 dB, 5 kHz 1,5 dB, 10 kHz 4,3 dB (vorher 2,4 / 7,6 / 13,0 dB). Kein Luftraum mehr nötig: Gitter überall 3,6 mm, dadurch steif; 1,3 mm Luft bis zum Lautsprecherrahmen (gemessen).
+- **Druck:** weniger Löcher (222 statt 377) = weniger Fahrten über Löcher (Fäden), keine Farbwechsel. Gitter ca. 51 g, Buchstaben ca. 2 g (Platte 94 × 46 mm, „BOX“ dicht unter „peppa“). Prüfungen: keine Kollision, Überhang Gitter 72 mm² (nur Böden der Sacklöcher), Sichtfläche ohne Stege unter 0,4 mm, alle STL geschlossen. Kleinste Details der Buchstaben: e-Schlitz an der engsten Stelle unter 0,9 mm (in C15 enthalten).
+- **Coupon C15** (`coupon_C15_gitter_oben_beige` + `coupon_C15_buchstaben_peppa_orange`, ca. 26 g): obere Gitterhälfte mit halbem Lochfeld, „peppa“ und Strahlen, 2 Stifte. Ersetzt C14. Bilder `out/gitter_ansicht.png`, `out/gitter_vorne_nah.png`.
+- **Als Nächstes:** G-Code C13 auswerten → Einstellungen gegen Fäden; Rollen trocknen; C15; dann Gitter und Buchstaben (G-Code vorher prüfen lassen); vor dem Kleben Probe hören.
 

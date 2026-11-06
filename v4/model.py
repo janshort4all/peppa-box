@@ -991,23 +991,21 @@ def stoffrahmen():
 
 # --- Gitter vorne mit Logo (ersetzt Stoff + Stoffrahmen, Nachtrag 05.11.2026 (6)) ---
 GR_T = par("GR_T", 3.6, "festgelegt", "Gitterdicke (18 Schichten); liegt hinten auf der Sitzfläche (y = SEAT_D), Vorderfläche 0,2 hinter der Korpusfront")
-GR_HOLE = par("GR_HOLE", (3.3, 4.2), "festgelegt", "Löcher Ø und Teilung im Wabenraster, mittig zu (70, 70); Steg 0,9 = 2 Linien")
-GR_RIM = par("GR_RIM", 4.5, "festgelegt", "geschlossener Rand außen (an der Vorderfläche)")
-GR_RIM_BACK = par("GR_RIM_BACK", 1.2, "festgelegt", "Mindeststeg Loch ↔ schräge Oberkante hinten (Sitz fällt oben nach hinten ab)")
-GR_LOGO = par("GR_LOGO", (100.0, 70.0, 76.0), "festgelegt", "Logo Breite, Mitte x, Mitte z (Vorlage Jan 05.11., gitter/peppa_box_logo.png)")
+GR_HOLE = par("GR_HOLE", (3.3, 4.2), "festgelegt", "Löcher Ø und Mindestabstand der Lochmitten (Steg ≥ 0,9 = 2 Linien); Ø 3,3 hält Finger und Stifte vom Lautsprecher fern")
+GR_FIELD_R = par("GR_FIELD_R", 37.5, "festgelegt",
+                 "Lochfeld rund, nur und ganz vor dem Lautsprecher: deckt den Ausschnitt Ø 73 (SPK_CUT) ab. Membran-Ø nicht gemessen → nicht kleiner. "
+                 "Außerhalb liegt hinter dem Gitter nur die Sitzfläche (Löcher dort bringen keinen Schall)")
+GR_RINGS = par("GR_RINGS", 4.2, "festgelegt", "Lochfeld in konzentrischen Ringen (Ringabstand), Mitte ein Loch, jeder Ring gleichmäßig geteilt und zum inneren versetzt")
+GR_LOGO = par("GR_LOGO", (100.0, 70.0, 76.0), "festgelegt", "Ausgangsgröße/-lage der Logo-Vorlage (gitter/peppa_box_logo.png); Größe und Lage auf dem Gitter berechnet `gitter_layout()`")
+GR_LAYOUT = par("GR_LAYOUT", (2.5, 3.5, 1.5), "festgelegt",
+                "Logo-Anordnung: „peppa“ über, „BOX“ unter dem Lochfeld, gleicher Maßstab, so groß wie möglich. Abstand zum Lochfeld, zum Gitterrand, Strahlen zu den Buchstaben")
 GR_LETTER_T = par("GR_LETTER_T", 1.2, "festgelegt",
                   "Logo-Buchstaben als eigene orange Teile, 1,2 dick, aufgeklebt auf die glatte Gitterfläche (stehen 1,0 vor der Korpusfront; 3D-Effekt, Entscheidung Jan 06.11.)")
 GR_PEG = par("GR_PEG", (2.0, 1.0, 0.2), "Probedruck",
-             "Stifte hinten an den Buchstaben: Ø (bei schmalen Teilen kleiner), Länge, Spiel je Seite im Sackloch des Gitters (Loch 0,3 tiefer). Mit C14 prüfen")
-GR_KEEP = par("GR_KEEP", 1.2, "festgelegt", "geschlossener beiger Rand um das Logo bis zum ersten Loch")
-GR_HALO = par("GR_HALO", 16.0, "festgelegt",
-              "Beiges Feld um das Logo: Logo-Kontur mit R 16 geglättet (füllt Kerben zwischen den Buchstaben, Lücke a|X, B|O, Innenformen wie das Dreieck im O), "
-              "dann GR_KEEP Rand; Löcher am Feldrand mit höchstens 2 Nachbarn entfallen. Keine losen Einzellöcher im Feld (Wunsch Jan 06.11.)")
-GR_PLENUM = par("GR_PLENUM", 1.2, "festgelegt",
-                "Luftraum: Gitter hinten über der Lautsprecher-Mulde 1,2 dünner (2,4 statt 3,6), damit der Schall hinter dem Logo zu den Löchern kommt. "
-                "Lautsprecherrahmen ca. 1,3 hinter der Sitzfläche, Schraubenköpfe liegen dahinter (Jan 05.11.) → 2,5 mm Luft")
+             "Stifte hinten an den Buchstaben: Ø (bei schmalen Teilen kleiner), Länge, Spiel je Seite im Sackloch des Gitters (Loch 0,3 tiefer). Mit C15 prüfen")
+GR_POCKET = par("GR_POCKET", (0.2, 0.1), "festgelegt", "Teile ohne Platz für einen Stift (Strahlen): flache Tasche zum Ausrichten, Tiefe = 1 Schicht, Spiel je Seite")
 GR_EDGE_CH = par("GR_EDGE_CH", 0.4, "festgelegt", "Fase 45° an der Vorderkante außen")
-GR_PIN_D = par("GR_PIN_D", 3.9, "Probedruck", "Stift Ø (Loch im Korpus PIN_HOLE 4,1; mit C14 am Korpus prüfen)")
+GR_PIN_D = par("GR_PIN_D", 3.9, "Probedruck", "Stift Ø (Loch im Korpus PIN_HOLE 4,1; mit C15 am Korpus prüfen)")
 GR_PIN_L = par("GR_PIN_L", 2.4, "festgelegt", "Stiftlänge hinter der Sitzfläche (Loch 2,8 tief), Spitze 0,4 gefast")
 
 
@@ -1043,101 +1041,111 @@ def gitter_bay_cs():
     return rr(SPK_X - bh, SPK_Z - bh, SPK_X + bh, top, SPK_FRAME_R + 2)
 
 
-def gitter_holes(logo=None):
-    """Lochmitten im Wabenraster, mittig zu (70, 70). Ganze Löcher entfallen, wo sie Rand, Logo-Rand oder Stifte schneiden."""
-    sx0, sx1, sz0, sz1 = SEAT
-    m = CLR
-    x0, x1, z0, z1 = sx0 + m, sx1 - m, sz0 + m, sz1 - m
-    d, p = GR_HOLE
-    inner = rr(x0 + GR_RIM, z0 + GR_RIM, x1 - GR_RIM, z1 - GR_RIM, SEAT_R - m - GR_RIM)
-    ct = CLR / math.cos(math.atan((SEAT_D + 1.0) / SEAT_D))
-    z_max = _seat_top(SEAT_D) - ct - GR_RIM_BACK - d / 2              # schräge Oberkante hinten
-    logo = gitter_logo_cs() if logo is None else logo
-    halo = logo.offset(GR_HALO, JoinType.Round).offset(-(GR_HALO - GR_KEEP), JoinType.Round)
-    keep = halo
-    for (px, pz) in frame_pins():
-        keep = keep + CrossSection.circle(GR_PIN_D / 2 + 0.9, SEG).translate([px, pz])
-    out = []
-    dz = p * math.sqrt(3) / 2
-    for k in range(-40, 41):
-        z = 70.0 + k * dz
-        if z > z_max or z < z0:
-            continue
-        off = p / 2 if k % 2 else 0.0
-        for j in range(-40, 41):
-            x = 70.0 + off + j * p
-            if not (x0 < x < x1):
-                continue
-            c = _hole_cs(x, z)
-            if (c - inner).area() > 1e-6 or (c ^ keep).area() > 1e-6:
-                continue
-            out.append((x, z))
-    # lose Löcher am Rand des Logo-Feldes (höchstens 2 Nachbarn im Raster) entfernen, bis keine mehr übrig sind
-    zone = halo.offset(4.5, JoinType.Round)
-    near = lambda q: (CrossSection.circle(d / 2, 16).translate([q[0], q[1]]) ^ zone).area() > 0
-    nb = lambda q: sum(1 for r in out if 0 < math.hypot(r[0] - q[0], r[1] - q[1]) < p + 0.1)
-    while True:
-        drop = [q for q in out if near(q) and nb(q) <= 2]
-        if not drop:
-            break
-        out = [q for q in out if q not in drop]
-    return out
-
-
 def _hole_cs(x, z):
-    """Loch als 32-Eck, um eine halbe Teilung gedreht: keine Ecke liegt auf den Rasterrichtungen 0°/60°/120°
-    (dort läuft der Rand des Luftraums durch die Lochmitte – sonst fielen Ecken zusammen)."""
+    """Loch als 32-Eck, um eine halbe Teilung gedreht (keine Ecke auf den Achsen)."""
     r = GR_HOLE[0] / 2
     return CrossSection([[(x + r * math.cos((k + 0.5) * math.pi / 16), z + r * math.sin((k + 0.5) * math.pi / 16)) for k in range(32)]])
 
 
-def gitter_lattice():
-    """Wabenraster: Zeilen k mit Punkten (x, z), mittig zu (70, 70)."""
-    _, p = GR_HOLE
-    dz = p * math.sqrt(3) / 2
-    rows = {}
-    for k in range(-16, 17):
-        off = p / 2 if k % 2 else 0.0
-        rows[k] = [(70.0 + off + j * p, 70.0 + k * dz) for j in range(-16, 17)]
-    return rows
+_GH = {}
 
 
-def gitter_plenum_cs():
-    """Luftraum hinten (Grundriss): alle Dreiecke des Lochrasters, deren Mitte in der Mulden-Öffnung (0,5 kleiner) liegt.
-    Der Rand läuft so immer durch Lochmitten: Er schneidet die Löcher senkrecht, es bleiben keine Sicheln oder Spitzen
-    zwischen Luftraum und Loch (Schichtanalyse 05.11.), und die STL bleibt sauber geschlossen."""
-    rec = gitter_bay_cs().offset(-0.5, JoinType.Round)
-    rows = gitter_lattice()
-    tris = []
-    for k in sorted(rows)[:-1]:
-        A, B = rows[k], rows[k + 1]
-        up = B[0][0] > A[0][0]                      # obere Zeile um eine halbe Teilung nach rechts versetzt
-        for j in range(len(A) - 1):
-            if up:
-                cand = [(A[j], A[j + 1], B[j]), (B[j], B[j + 1], A[j + 1])]
-            else:
-                cand = [(A[j], A[j + 1], B[j + 1]), (B[j], B[j + 1], A[j])]
-            for t in cand:
-                cx, cz = sum(q[0] for q in t) / 3, sum(q[1] for q in t) / 3
-                if (CrossSection.circle(0.05, 8).translate([cx, cz]) - rec).area() < 1e-9:
-                    tris.append(CrossSection([[t[0], t[1], t[2]]], FillRule.Positive) if _ccw(t) else CrossSection([[t[0], t[2], t[1]]], FillRule.Positive))
-    return CrossSection.batch_boolean(tris, m3.OpType.Add).offset(0.001).offset(-0.001)
+def gitter_holes():
+    """Lochmitten: ein Loch in der Mitte, darum Ringe im Abstand GR_RINGS; jeder Ring so dicht wie der Mindestabstand erlaubt
+    (Sehne ≥ GR_HOLE[1]) und so gedreht, dass er möglichst weit vom inneren Ring wegsteht. Löcher ganz im Feld GR_FIELD_R."""
+    if "pts" in _GH:
+        return _GH["pts"]
+    d, p = GR_HOLE
+    pts = [(0.0, 0.0)]
+    k = 1
+    while k * GR_RINGS + d / 2 <= GR_FIELD_R + 1e-9:
+        r = k * GR_RINGS
+        n = int(math.floor(math.pi / math.asin(min(1.0, p / (2 * r)))))
+        best, bestd = None, -1.0
+        for i in range(60):
+            phi = 2 * math.pi / n * i / 60
+            ring = [(r * math.cos(phi + 2 * math.pi * j / n), r * math.sin(phi + 2 * math.pi * j / n)) for j in range(n)]
+            dmin = min(math.hypot(a[0] - b[0], a[1] - b[1]) for a in ring for b in pts)
+            if dmin > bestd:
+                best, bestd = ring, dmin
+        pts += best
+        k += 1
+    _GH["pts"] = [(SPK_X + x, SPK_Z + z) for x, z in pts]
+    return _GH["pts"]
 
 
-def _ccw(t):
-    (ax, ay), (bx, by), (cx, cy) = t
-    return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax) > 0
+def gitter_face_cs():
+    """Umriss der Gitter-Vorderfläche (y = Vorderfläche)."""
+    sx0, sx1, sz0, sz1 = SEAT
+    c = CLR
+    ct = CLR / math.cos(math.atan((SEAT_D + 1.0) / SEAT_D))
+    yf = SEAT_D - GR_T
+    return rr(sx0 + c, sz0 + c, sx1 - c, _seat_top(yf) - ct, SEAT_R - c)
+
+
+_GL = {}
+
+
+def gitter_layout():
+    """Logo-Teile auf dem Gitter (x, z): „peppa“ über, „BOX“ unter dem runden Lochfeld, beide im gleichen Maßstab, so groß, wie
+    es mit GR_LAYOUT (Abstand zum Feld, zum Rand) geht; jedes Wort waagerecht mittig, senkrecht mittig im freien Bereich.
+    Die drei Strahlen behalten Größe und Lage zum „a“ und werden nur so wenig wie nötig verschoben, bis sie hineinpassen.
+    Rückgabe: Liste der Teile (5 Buchstaben oben, 3 Strahlen, B, O, X)."""
+    if "parts" in _GL:
+        return _GL["parts"]
+    gap, marg, sgap = GR_LAYOUT
+    allowed = gitter_face_cs().offset(-marg, JoinType.Round) - CrossSection.circle(GR_FIELD_R + gap, 128).translate([SPK_X, SPK_Z])
+    fits = lambda cs: (cs - allowed).area() < 1e-6
+    U2 = lambda L: CrossSection.batch_boolean(L, m3.OpType.Add)
+    src = gitter_logo_cs().decompose()
+    cz = lambda c: (c.bounds()[1] + c.bounds()[3]) / 2
+    cx = lambda c: (c.bounds()[0] + c.bounds()[2]) / 2
+    row1 = sorted([c for c in src if cz(c) > GR_LOGO[2] - 3], key=cx)
+    top = [c for c in row1 if c.area() > 100]
+    sparks = [c for c in row1 if c.area() <= 100]
+    bot = sorted([c for c in src if cz(c) <= GR_LOGO[2] - 3], key=cx)
+    fb = gitter_face_cs().bounds()
+
+    def place(word, s, upper):
+        w = U2(word)
+        b = w.bounds()
+        mx, mz = (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
+        T = lambda cs, z: cs.translate([-mx, -mz]).scale([s, s]).translate([SPK_X, z])
+        zr = (SPK_Z + GR_FIELD_R, fb[3]) if upper else (fb[1], SPK_Z - GR_FIELD_R)
+        ok = [z / 20 for z in range(int(zr[0] * 20), int(zr[1] * 20) + 1) if fits(T(w, z / 20))]
+        if not ok:
+            return None
+        z = (min(ok) + max(ok)) / 2
+        return [T(c, z) for c in word]
+
+    lo, hi = 0.3, 1.2
+    for _ in range(24):
+        s = (lo + hi) / 2
+        lo, hi = (s, hi) if (place(top, s, True) and place(bot, s, False)) else (lo, s)
+    s = lo
+    tw, bw = place(top, s, True), place(bot, s, False)
+    ob, nb = top[-1].bounds(), tw[-1].bounds()                         # „a“ vorher / nachher
+    sp = [c.translate([-ob[2], -ob[3]]).scale([s, s]).translate([nb[2], nb[3]]) for c in sparks]
+    near = U2(tw + bw).offset(sgap, JoinType.Round)
+    best = None
+    for dx10 in range(-30, 101, 2):
+        for dz10 in range(-200, 21, 2):
+            dx, dz = dx10 / 10, dz10 / 10
+            if best is not None and dx * dx + dz * dz >= best[0]:
+                continue
+            mv = [c.translate([dx, dz]) for c in sp]
+            if all(fits(m) for m in mv) and (U2(mv) ^ near).area() < 1e-6:
+                best = (dx * dx + dz * dz, mv)
+    if best is None:
+        raise ValueError("Strahlen passen nicht neben das „a“")
+    _GL["parts"] = tw + best[1] + bw
+    _GL["scale"] = s
+    return _GL["parts"]
 
 
 def gitter_buchstaben_cs():
-    """Die 11 Teile des Logos (5 Buchstaben oben, 3 Strahlen, B, O, X) als einzelne Querschnitte, sortiert oben links → unten rechts."""
-    parts = gitter_logo_cs().decompose()
-    cz = lambda c: (c.bounds()[1] + c.bounds()[3]) / 2
-    cx = lambda c: (c.bounds()[0] + c.bounds()[2]) / 2
-    zmid = GR_LOGO[2]
-    top = sorted([c for c in parts if cz(c) > zmid - 3], key=cx)
-    bot = sorted([c for c in parts if cz(c) <= zmid - 3], key=cx)
-    return top + bot
+    """Die 11 Logo-Teile in ihrer Lage auf dem Gitter (siehe gitter_layout)."""
+    return gitter_layout()
 
 
 def gitter_stifte(cs):
@@ -1168,7 +1176,10 @@ def gitter_stifte(cs):
         far = ok[np.argmax(((ok - p1) ** 2).sum(axis=1))] if len(ok) else p1
         if np.hypot(*(far - p1)) / R >= 2.0 * d:
             return [CrossSection.circle(d / 2, SEG).translate(list(to_mm(q))) for q in (p1, far)]
-    return [cs.offset(-(clr + 0.5), JoinType.Round).simplify(0.005)]
+    shaped = cs.offset(-(clr + 0.5), JoinType.Round).simplify(0.005)
+    if shaped.area() < 2.0 or shaped.offset(-0.4, JoinType.Round).area() < 1e-3:
+        return []                                                   # zu schmal (Strahlen): flache Tasche statt Stift
+    return [shaped]
 
 
 def _konvex(cs):
@@ -1176,41 +1187,42 @@ def _konvex(cs):
 
 
 def gitter():
-    """Gedrucktes Frontgitter mit Logo (Stand 06.11.2026). Rückgabe (beige, buchstaben_orange) im Einbauzustand.
-    Das Gitter ist einfarbig beige (Vorderfläche auf der texturierten PEI-Platte, kein Farbwechsel). Die Buchstaben sind eigene
-    orange Teile, 1,2 mm dick, Sichtseite ebenfalls auf der PEI-Platte gedruckt, mit Stiften in Sacklöchern des Gitters, aufgeklebt."""
+    """Gedrucktes Frontgitter (Stand 06.11.2026 abends: klangoptimiert). Rückgabe (beige, buchstaben_orange) im Einbauzustand.
+    Rundes Lochfeld in Ringen nur vor dem Lautsprecher, Logo außerhalb („peppa“ oben, „BOX“ unten), Buchstaben als eigene
+    orange Teile mit Stiften in Sacklöchern (Strahlen: flache Tasche), aufgeklebt. Gitter einfarbig, Vorderfläche auf der PEI."""
     yf = SEAT_D - GR_T
     env = gitter_env()
-    sx0, sx1, sz0, sz1 = SEAT
-    c = CLR
-    face = rr(sx0 + c, sz0 + c, sx1 - c, _seat_top(yf) - 0.5, SEAT_R - c)    # Umriss vorne (für die Fase)
     e = GR_EDGE_CH
+    face = gitter_face_cs()
     ch = Manifold.batch_hull([ext_xz(face.offset(-e, JoinType.Round), yf, yf + 0.01),
                               ext_xz(face.offset(10 - e, JoinType.Round), yf + 10, yf + 10.01)])
-    logo = gitter_logo_cs()
-    holes = CrossSection.batch_boolean([_hole_cs(x, z) for (x, z) in gitter_holes(logo)], m3.OpType.Add)
+    holes = CrossSection.batch_boolean([_hole_cs(x, z) for (x, z) in gitter_holes()], m3.OpType.Add)
     big = CrossSection.square([200, 200]).translate([-30, -30])
-    yb = SEAT_D - GR_PLENUM
-    plate = (ext_xz(big - holes, yf, SEAT_D) ^ env ^ ch) - ext_xz(gitter_plenum_cs(), yb, SEAT_D + 1)
+    plate = ext_xz(big - holes, yf, SEAT_D) ^ env ^ ch
     _, L, clr = GR_PEG
-    letters, sacks = [], []
+    pd, pc_clr = GR_POCKET
+    letters, cuts = [], []
     for cs in gitter_buchstaben_cs():
         body = [ext_xz(cs, yf - GR_LETTER_T, yf)]
-        for pc in gitter_stifte(cs):
+        pegs = gitter_stifte(cs)
+        for pc in pegs:
             # (Offsets mit simplify: sonst entstehen beim Runden winzige Kanten → doppelte Ecken in der STL)
             tip = pc.offset(-0.2, JoinType.Round).simplify(0.005)       # Spitze 0,2 kleiner: findet ins Loch
             if _konvex(pc):                                             # runder Stift: ein Körper mit gefaster Spitze
                 body.append(Manifold.batch_hull([ext_xz(pc, yf - 0.01, yf + L - 0.3), ext_xz(tip, yf + L - 0.01, yf + L)]))
-            else:                                                       # geformter Stift (Strahlen): gerade, ohne Fase
+            else:                                                       # geformter Stift: gerade, ohne Fase
                 body.append(ext_xz(pc, yf - 0.01, yf + L))
-            sacks.append(ext_xz(pc.offset(clr, JoinType.Round).simplify(0.005), yf - 1, yf + L + 0.3))
+            cuts.append(ext_xz(pc.offset(clr, JoinType.Round).simplify(0.005), yf - 1, yf + L + 0.3))
+        if not pegs:                                                    # Strahlen: Tasche 1 Schicht tief, Teil sitzt darin
+            cuts.append(ext_xz(cs.offset(pc_clr, JoinType.Round).simplify(0.005), yf - 1, yf + pd))
+            body = [ext_xz(cs, yf - GR_LETTER_T, yf + pd)]              # 0,2 dicker: gleiche Sichthöhe wie die Buchstaben
         letters.append(U(body))
     pins = []
     r = GR_PIN_D / 2
     for (x, z) in frame_pins():
         pins.append(cyl_y(SEAT_D - 0.01, SEAT_D + GR_PIN_L - 0.4, x, z, r))
         pins.append(Manifold.cylinder(0.4, r, r - 0.4, SEG).rotate([-90, 0, 0]).translate([x, SEAT_D + GR_PIN_L - 0.4, z]))
-    beige = U([plate - U(sacks)] + pins)
+    beige = U([plate - U(cuts)] + pins)
     return beige, U(letters)
 
 
@@ -1228,7 +1240,14 @@ def buchstaben_druck(letters=None, abstand=4.0):
     bis zwischen allen Teilen mindestens `abstand` mm frei sind (sonst verschmelzen die 0,6-mm-Lücken)."""
     if letters is None:
         letters = gitter()[1]
-    parts = letters.decompose() if isinstance(letters, Manifold) else letters
+    parts = letters.decompose() if isinstance(letters, Manifold) else list(letters)
+    # kompakt: Teile unter dem Lochfeld („BOX“) dicht unter die oberen („peppa“) rücken (weniger Fahrwege auf der Platte)
+    zc = lambda m: (m.bounding_box()[2] + m.bounding_box()[5]) / 2
+    up = [m for m in parts if zc(m) >= SPK_Z]
+    dn = [m for m in parts if zc(m) < SPK_Z]
+    if up and dn:
+        dz = min(m.bounding_box()[2] for m in up) - max(m.bounding_box()[5] for m in dn) - abstand
+        parts = up + [m.translate([0, 0, dz]) for m in dn]
     rot = [p.rotate([90, 0, 180]).rotate([0, 0, 180]) for p in parts]        # = rotate([90, 0, 0]): Unterkante → +Y
     cen = [((b[0] + b[3]) / 2, (b[1] + b[4]) / 2) for b in (m.bounding_box() for m in rot)]
     gx = sum(c[0] for c in cen) / len(cen); gy = sum(c[1] for c in cen) / len(cen)

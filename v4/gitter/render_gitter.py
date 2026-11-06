@@ -33,14 +33,14 @@ bed = render([(B, BE, None)], 90, 0, size=400, scale=2.9, center=(57.7, 57.9, 3)
 bedl = render([(O, OR, None)], 90, 0, size=400, scale=2.9, center=((ob[0] + ob[3]) / 2, (ob[1] + ob[4]) / 2, 1), light=(-0.3, 0.4, 0.9))
 
 # Schnitt bei x = 50 (durch P/e-Bereich nicht nötig: x = 47 trifft „e“ und den Luftraum), von links gesehen
-X = 43.3
+X = 70.0
 def section(m):
     cs = m.rotate([0, -90, 0]).slice(X)          # (x,y,z) → Höhe = x
     return [list(p) for p in cs.to_polygons()]
 fig, axs = plt.subplots(1, 2, figsize=(7.0, 6.6), dpi=110)
 secs = [(m, col, lab, section(m)) for m, col, lab in ((parts["korpus"], "#e4d8c2", "Korpus"), (gb, "#efe3cc", "Gitter beige"),
                                                       (go, "#e8772e", "Logo orange"), (spk, "#3a3836", "Lautsprecher"))]
-for ax, (z0, z1), title in zip(axs, ((98, 131), (60, 93)), ("oben: schräge Oberkante, Rand", "Mitte: Logo vor dem Lautsprecher")):
+for ax, (z0, z1), title in zip(axs, ((96, 131), (12, 47)), ("oben: „p“ über dem Lochfeld, schräge Oberkante", "unten: „O“ unter dem Lochfeld")):
     for m, col, lab, polys in secs:
         for i, poly in enumerate(polys):
             pts = [(q[1], -q[0]) for q in poly]      # rotate([0,-90,0]): (x,y,z) → (−z, y, x); Punkt (−z, y) → (y, z)
@@ -49,8 +49,7 @@ for ax, (z0, z1), title in zip(axs, ((98, 131), (60, 93)), ("oben: schräge Ober
     ax.set_xlabel("Tiefe ab Front (mm)", fontsize=8); ax.tick_params(labelsize=7)
 axs[0].set_ylabel("Höhe (mm)", fontsize=8)
 axs[1].legend(loc="lower right", fontsize=7)
-axs[1].annotate("Luftraum\n2,5 mm", xy=(3.9, 66), xytext=(9.9, 70), fontsize=7, arrowprops=dict(arrowstyle="->", lw=0.6))
-axs[1].annotate("Buchstabe 1,2 mm\nmit Stift im Sackloch", xy=(-0.4, 84.3), xytext=(3.0, 88.5), fontsize=7, arrowprops=dict(arrowstyle="->", lw=0.6))
+axs[0].annotate("Buchstabe 1,2 mm\nmit Stift im Sackloch", xy=(-0.5, 114), xytext=(4.3, 113.5), fontsize=7, arrowprops=dict(arrowstyle="->", lw=0.6))
 fig.suptitle(f"Schnitt bei x = {X:g} mm, von links (vorne ist links)", fontsize=10)
 buf = io.BytesIO(); fig.tight_layout(); fig.savefig(buf, format="png"); plt.close(fig)
 sec = Image.open(buf).convert("RGB")
@@ -62,11 +61,11 @@ cv.paste(sec, (20, 790)); cv.paste(bed, (800, 930)); cv.paste(bedl, (1160, 930))
 d = ImageDraw.Draw(cv)
 FB = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 28)
 F = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
-d.text((30, 18), "Frontgitter mit Logo – Gitter beige einfarbig, Buchstaben orange 1,2 mm erhaben, aufgeklebt", fill=(50, 44, 38), font=FB)
+d.text((30, 18), "Frontgitter klangoptimiert – rundes Lochfeld vor dem Lautsprecher, Logo darüber und darunter", fill=(50, 44, 38), font=FB)
 d.text((820, 90), "von vorne", fill=(70, 62, 54), font=F)
 d.text((800, 860), "Druckplatten von oben: Gitter (Vorderfläche unten, Oberkante hinten)", fill=(70, 62, 54), font=F)
 d.text((800, 886), "und alle 11 Logo-Teile (Sichtseite unten, Stifte oben)", fill=(70, 62, 54), font=F)
-d.text((30, 1500), f"{g['loecher']} Löcher Ø {M.GR_HOLE[0]:g} im Wabenraster {M.GR_HOLE[1]:g} (Steg 0,9) · Gitter {M.GR_T:g} mm, über der Mulde {M.GR_T - M.GR_PLENUM:g} mm · 6 Stifte Ø {M.GR_PIN_D:g}".replace(".", ","), fill=(90, 82, 74), font=F)
-d.text((30, 1528), f"offen direkt vor dem Lautsprecher {g['offen_direkt']:.0f} %, mit Luftraum dahinter {g['offen_mulde']:.0f} % der Öffnung · {g['stifte']} Stifte unter den Buchstaben", fill=(90, 82, 74), font=F)
+d.text((30, 1500), f"{g['loecher']} Löcher Ø {M.GR_HOLE[0]:g} in Ringen (Steg ≥ 0,9) · offen vor dem Lautsprecher {g['offen_direkt']:.0f} % · Gitter {M.GR_T:g} mm · 6 Stifte Ø {M.GR_PIN_D:g}".replace(".", ","), fill=(90, 82, 74), font=F)
+d.text((30, 1528), "Dämpfung (Abschätzung): " + ", ".join(f"{f // 1000} kHz {v:.1f} dB" for f, v in g["daempfung"].items()).replace(".", ",") + "  ·  vorher: " + ", ".join(f"{f // 1000} kHz {v:.1f} dB" for f, v in g["vorher"].items()).replace(".", ","), fill=(90, 82, 74), font=F)
 p = _os.path.join(ROOT2, "v4/out/gitter_ansicht.png")
 cv.save(p); print(p)

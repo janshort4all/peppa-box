@@ -67,32 +67,34 @@ def symbol_gaps():
 
 
 def gitter_pruefung(parts=None):
-    """Gitter: Schichtanalyse in Druckausrichtung (Stege unter 1 bzw. 2 Linienbreiten je Farbe), Farbwechsel-Schichten,
-    offene Fläche vor dem Lautsprecher, Luft hinter dem Gitter."""
+    """Gitter (einfarbig) und Logo-Buchstaben (eigene Teile): Schichtanalyse in Druckausrichtung (Stege schmaler als 1 bzw.
+    2 Linienbreiten), offene Fläche vor dem Lautsprecher, Luft hinter dem Gitter, Sitz der Buchstaben-Stifte."""
     from manifold3d import CrossSection, JoinType, OpType
     b = parts["gitter_beige"] if parts else M.gitter()[0]
     o = parts["gitter_logo"] if parts else M.gitter()[1]
-    ref = b + o
-    B, O = M.gitter_druck(b, ref), M.gitter_druck(o, ref)
+    B, O = M.gitter_druck(b, b), M.buchstaben_druck(o)
     def thin(cs, r):
         return (cs - cs.offset(-r, JoinType.Round).offset(r, JoinType.Round)).area()
-    rows = []
-    top = (B + O).bounding_box()[5]
-    z = 0.1
-    while z < top:
-        cb, co = B.slice(z), O.slice(z)
-        rows.append(dict(z=z, beige=cb.area(), orange=co.area(), b04=thin(cb, 0.2), b08=thin(cb, 0.42), o04=thin(co, 0.2), o08=thin(co, 0.42)))
-        z += 0.2
+    def rows_of(m):
+        out, z, top = [], 0.1, m.bounding_box()[5]
+        while z < top:
+            cs = m.slice(z)
+            out.append(dict(z=z, flaeche=cs.area(), d04=thin(cs, 0.2), d08=thin(cs, 0.42)))
+            z += 0.2
+        return out
     d, _ = M.GR_HOLE
     pts = M.gitter_holes()
     H = CrossSection.batch_boolean([CrossSection.circle(d / 2, 32).translate([x, z]) for x, z in pts], OpType.Add)
     cone = CrossSection.circle(M.SPK_CUT / 2, 96).translate([M.SPK_X, M.SPK_Z])
-    res = dict(rows=rows, loecher=len(pts),
-               offen_direkt=100 * (H ^ cone).area() / cone.area(),
-               offen_mulde=100 * (H ^ M.gitter_bay_cs()).area() / cone.area(),
-               farbschichten=sum(1 for r in rows if r["orange"] > 0),
-               luft=M.GR_PLENUM + (M.BAY_D - M.SPK_FLANGE - M.SEAT_D))
-    return res
+    lp = O.decompose()
+    gaps = [a_.min_gap(b_, 20) for i, a_ in enumerate(lp) for b_ in lp[i + 1:]]
+    return dict(rows=rows_of(B), rows_b=rows_of(O), loecher=len(pts),
+                offen_direkt=100 * (H ^ cone).area() / cone.area(),
+                offen_mulde=100 * (H ^ M.gitter_bay_cs()).area() / cone.area(),
+                luft=M.GR_PLENUM + (M.BAY_D - M.SPK_FLANGE - M.SEAT_D),
+                teile=len(lp), abstand_platte=min(gaps), platte=O.bounding_box(),
+                stifte=sum(len(M.gitter_stifte(c)) for c in M.gitter_buchstaben_cs()),
+                sitz=(b ^ o).volume())
 
 
 def handedness(name):
@@ -122,8 +124,10 @@ def orient(name, m):
         inv = np.eye(4); inv[:3, :3] = R.T; inv[:3, 3] = -R.T @ F[:, 3]
         m = m.transform(inv[:3, :].astype(np.float32))   # zurück in Kartenkoordinaten (u, v, w)
         m = m.rotate([0, -90, 0])                        # auf die Seite: u senkrecht, Kartenschacht wird senkrechter Schlitz
-    elif name in ("gitter_beige", "gitter_logo"):
+    elif name == "gitter_beige":
         m = m.rotate([90, 0, 180])                       # Vorderfläche auf die Platte, Oberkante nach hinten (wie M.gitter_druck)
+    elif name == "gitter_logo":
+        m = m.rotate([90, 0, 0])                         # Sichtseite auf die Platte, Stifte oben, Unterkante hinten (wie M.buchstaben_druck)
     elif name == "drehknopf":
         m = m.rotate([0, 90, 0])                         # Stirnfläche nach unten
     elif name == "ein_taste":
@@ -208,14 +212,11 @@ if __name__ == "__main__":
     print("  ok" if not bad else "  GESPIEGELT: " + ", ".join(bad))
     print("== Druck ==")
     for k, m in parts.items():
-        if k in ("deckel_beige", "gitter_logo"):
+        if k == "deckel_beige":
             continue
         if k == "deckel_orange":                     # beide Deckelteile liegen aufeinander: zusammen prüfen
             k, m = "deckel (02a + 02b zusammen, kopfüber)", parts["deckel_orange"] + parts["deckel_beige"]
             o = orient("deckel_orange", m)
-        elif k == "gitter_beige":                    # Gitter + Logo-Einleger zusammen, Vorderfläche unten
-            k, m = "gitter (06a + 06b zusammen)", parts["gitter_beige"] + parts["gitter_logo"]
-            o = orient("gitter_beige", m)
         else:
             o = orient(k, m)
         bb = o.bounding_box()
@@ -224,13 +225,18 @@ if __name__ == "__main__":
         for z, (ar, xy) in sorted(groups.items(), key=lambda t: -t[1][0])[:6]:
             if ar > 3:
                 print(f"      z={z:6.1f}  {ar:7.1f} mm²  Bereich {xy[2]-xy[0]:.1f} × {xy[3]-xy[1]:.1f}")
-    print("== Gitter (Schichtanalyse in Druckausrichtung) ==")
+    print("== Gitter und Logo-Buchstaben (Schichtanalyse in Druckausrichtung) ==")
     g = gitter_pruefung(parts)
     print(f"  {g['loecher']} Löcher; offen direkt vor der Öffnung Ø {M.SPK_CUT:g}: {g['offen_direkt']:.0f} %, über die ganze Mulde: {g['offen_mulde']:.0f} % der Öffnung")
-    print(f"  Luft hinter dem Gitter über der Mulde: {g['luft']:.1f} mm; Schichten mit Orange: {g['farbschichten']} (soll 4)")
-    for r in g["rows"]:
-        if r["b04"] + r["o04"] > 0.05 or r["orange"] > 0 or abs(r["z"] - 0.1) < 1e-6:
-            print(f"    z {r['z']:.1f}: Beige {r['beige']:.0f} mm², Orange {r['orange']:.0f} mm²; schmaler als 0,4: {r['b04']:.2f} / {r['o04']:.2f} mm², als 0,84: {r['b08']:.2f} / {r['o08']:.2f} mm²")
+    print(f"  Luft hinter dem Gitter über der Mulde: {g['luft']:.1f} mm")
+    r1 = g["rows"][0]
+    print(f"  Gitter Schicht 1: {r1['flaeche']:.0f} mm², schmaler als 0,4: {r1['d04']:.2f} mm², als 0,84: {r1['d08']:.2f} mm²")
+    back = [r for r in g["rows"] if M.GR_T - M.GR_PLENUM < r["z"] < M.GR_T]
+    print(f"  Gitter hinten (Luftraum-Schichten): schmaler als 0,4 höchstens {max(r['d04'] for r in back):.2f} mm² je Schicht")
+    b1 = g["rows_b"][0]
+    print(f"  Buchstaben: {g['teile']} Teile, {g['stifte']} Stifte, Abstand auf der Platte mindestens {g['abstand_platte']:.1f} mm, "
+          f"Platte {g['platte'][3]:.0f} × {g['platte'][4]:.0f} mm; Schicht 1: {b1['flaeche']:.0f} mm², schmaler als 0,4: {b1['d04']:.2f} mm²")
+    print(f"  Stifte im Gitter: Überschneidung {g['sitz']:.3f} mm³ (soll 0)")
     print("== Fuzzy Skin (Nachbildung ElegooSlicer je 0,2-mm-Schicht, Modifier 01f Außenhaut) ==")
     import fuzzy_check as FC
     rows = FC.analyse(korpus=parts["korpus"])

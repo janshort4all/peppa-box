@@ -20,7 +20,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 
 | Datei | Prüft | Was du mir zurückmeldest |
 | --- | --- | --- |
-| coupon_C13_gitter_ecke_* (2 Dateien) | **Probe vor dem Gitter:** Ecke oben links mit „P“, „e“, „p“ (engste Lücken zwischen den Buchstaben 0,6–0,9 mm, e-Schlitz), Löcher, Rand mit Fase, schräge Oberkante, ein Stift; zweifarbig wie das Gitter, ca. 10 g | Wie das Gitter einrichten (Abschnitt „Gitter“). Grenze Orange/Beige scharf, ohne Spalt und ohne orange Punkte im Beige? Lücken zwischen den Buchstaben durchgehend beige? Härchen in den Löchern? In die obere linke Ecke des Korpus drücken: Stift fest, Fase und Spalt gleichmäßig? |
+| coupon_C14_gitter_ecke_beige + coupon_C14_buchstaben_P_e_p_orange | **Probe vor dem Gitter:** Ecke oben links einfarbig (Löcher, Rand, schräge Oberkante, ein Stift) mit den Sacklöchern für „P“, „e“, „p“, dazu diese drei Buchstaben, ca. 12 g | Mit den Gitter- bzw. Buchstaben-Einstellungen (Abschnitt „Gitter“). Fäden in den Löchern weg? Buchstaben-Stifte: leicht hinein, ohne zu wackeln? Buchstaben liegen plan auf? In die obere linke Ecke des Korpus drücken: Stift fest? |
 | coupon_C12_deckel_oberseite_* (5 Dateien) | **Probe vor dem Deckel:** obere 2,4 mm vorne rechts (Play, Vor, Mond, Kante mit Fase), kopfüber, Symbole vertieft, ca. 15 g | Wie den Deckel einrichten: Variante A mit `_opfer_PLA`, Variante B mit `_MODIFIER_bruecke_richtung`, beide mit `_MODIFIER_haut_1wand`. Beige in den Kreisen so ruhig wie außen? Symbolböden eben bzw. Fäden parallel? |
 | coupon_C7_lochbild_stapel | **Lochbild 58 × 49 mm des Akku-Stapels**, ca. 20 min | Stapel mit den vorhandenen Schrauben daraufsetzen: Fallen alle 4 Köpfe in die Mulden? Liegt die Acrylplatte innerhalb der Ecken-Marken? |
 | coupon_C8_bodenecke_* (2 Teile) | Schattenfuge Boden/Korpus, Zentrierkragen, Senkschraube 3,0 × 12 in den Dom | Rutscht der Kragen leicht hinein, ohne zu wackeln? Sitzt die Schraube bündig? |
@@ -30,7 +30,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | coupon_C1_wand_hinten_usbc | Öffnung für den USB-C-Stecker, 2 Dome für die Soldered-Platine | Platine anschrauben: Buchse mittig hinter der Öffnung? Stecker rastet voll ein? |
 | coupon_C2_deckelecke_* (3 Teile) | Deckelspalt 0,4 mm, Auflage, hintere Deckelschraube | Spalt gleichmäßig? Klappert es? |
 | coupon_C3_taste_* (3 Teile) | Ein-Taste: Kappe, Halter, Kurzhubtaster | Klickt sie sauber, klemmt nichts? |
-| coupon_C4_rahmenstifte_* | Gitter-Stift in Loch 4,0 / 4,1 / 4,2 (1–3 Kerben); der Korpus hat 4,1 | Welches Loch hält fest, lässt sich aber lösen? (C13 prüft den Stift direkt am Korpus) |
+| coupon_C4_rahmenstifte_* | Gitter-Stift in Loch 4,0 / 4,1 / 4,2 (1–3 Kerben); der Korpus hat 4,1 | Welches Loch hält fest, lässt sich aber lösen? (C14 prüft den Stift direkt am Korpus) |
 | coupon_C5_touch_platte | Touch durch 3,3 mm (links, mit Tasche) und 5,3 mm (rechts) | Später mit dem MPR121: reagieren beide? |
 | coupon_C6_schraubdome | Kernloch 2,3 / 2,5 / 2,7 mm für 3-mm-Kunststoffschrauben | Welches Loch: Schraube geht fest, Dom reißt nicht? |
 
@@ -44,12 +44,11 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | 03_deckelrahmen.stl | Schwarz/Grau | Deckelseite auf der Platte |
 | 04_kartenfach.stl | Schwarz/Grau | auf der Seite, Kartenschlitz senkrecht; Brim |
 | 05_boden_traeger.stl | Beige | flach, Unterseite auf der Platte; trägt die ganze Elektronik; mit 05f (Fuzzy-Rand) als ein Objekt mit zwei Teilen laden |
-| 06a_gitter_beige.stl | Beige | Vorderfläche auf der texturierten PEI, Oberkante nach hinten; mit 06b als ein Objekt mit zwei Teilen laden |
-| 06b_gitter_logo_orange.stl | Orange | Logo-Einleger, nur Schicht 1–4 (0,8 mm), deckungsgleich mit 06a |
+| 06a_gitter_beige.stl | Beige | einfarbig; Vorderfläche auf der texturierten PEI, Oberkante nach hinten; Sacklöcher für die Buchstaben-Stifte |
+| 06b_logo_buchstaben_orange.stl | Orange | alle 11 Logo-Teile auf einer Platte, Sichtseite auf der PEI, Stifte oben; nach dem Druck ins Gitter kleben |
 | 07_drehknopf_orange.stl | Orange | Stirnfläche unten |
 | 08_ein_taste_orange.stl | Orange | Kopf unten |
 | 09_riemen_gegenplatte.stl | Schwarz/Grau | flach |
-| 06_gitter_einfarbig_HOERPROBE.stl | eine Farbe | Schneller Probedruck (0,28 Entwurf, Reste-Rolle): Sitz und Stifte im Korpus, Hörtest mit und ohne Gitter. Gleiche Form wie 06a + 06b |
 | 02_deckel_einfarbig.stl | eine Farbe | Prototyp, gleiche Form wie 02a + 02b; Symbole 0,8 mm vertieft |
 | 10_karte_orange.stl | Orange | Rückseite unten (NFC-Tasche an der Platte), Einschubtasche oben; Cover auf Papier von oben einschieben |
 
@@ -58,8 +57,8 @@ Die Dateien liegen bereits in Druckausrichtung, auch der Deckel: `02a` und `02b`
 `02a` und `02b` gemeinsam laden („als ein Objekt mit mehreren Teilen“), 02a Orange und 02b Beige zuweisen – dann macht
 CANVAS genau einen Farbwechsel (Variante A: dazu PLA-Einleger `02p`, Variante B: Modifizierer `02r`), immer mit Modifizierer `02m`. Einstellungen: Abschnitt „Deckel“ unten. Die beiden `ansicht_…`-Dateien nur zum Anschauen.
 
-Das Gitter (`06a` beige + `06b` Logo orange) liegt mit der Vorderfläche auf der Platte, die Oberkante zeigt nach hinten.
-Beide gemeinsam laden („als ein Objekt mit mehreren Teilen“) – das Logo füllt nur die Schichten 1–4. Einstellungen: Abschnitt „Gitter“.
+Das Gitter `06a` ist einfarbig beige und liegt mit der Vorderfläche auf der Platte, die Oberkante zeigt nach hinten. Die orangen
+Logo-Buchstaben `06b` sind ein eigener Druck (alle 11 Teile auf einer Platte) und werden danach aufgeklebt. Einstellungen: Abschnitt „Gitter“.
 
 Der Boden darf auch orange sein: Dann läuft unten ein schmaler oranger Sockelstreifen um die Box.
 
@@ -188,37 +187,34 @@ bzw. nur über den Symbolen, alle Linien parallel (B). Zuerst `coupon_C12_deckel
 am besten zusammen mit dem Drehknopf `07` drucken (beide Orange): Auf der Deckel-Platte müsste CANVAS in Schicht 1–4 jedes Mal
 zwischen Beige und Orange wechseln. Bild: `deckel_draufsicht.png`.
 
-### Gitter (Stand 05.11.2026 spät, Vorderfläche auf der Platte, Logo bündig eingelegt, ohne Fuzzy)
+### Gitter (Stand 06.11.2026: einfarbig, Buchstaben erhaben und aufgeklebt, ohne Fuzzy)
 
-`06a_gitter_beige.stl` + `06b_gitter_logo_orange.stl`, 115,4 × 115,7 mm, 3,6 mm dick (über dem Lautsprecher 2,4 mm, dahinter
-2,5 mm Luft), 6 Stifte Ø 3,9 hinten, zusammen ca. 37 g. Logo: Vorlage `v4/gitter/peppa_box_logo.png`, 100 mm breit, Kontur auf
-unter 0,1 mm genau. Die Sichtfläche entsteht auf der texturierten PEI-Platte (matt wie der Deckel). Orange liegt nur in Schicht 1–4,
-**bündig** – keine Vertiefung, also keine Brücke und keine Fäden (die Ursache beim ersten Deckel). Hinter dem Orange liegt dichtes Beige.
-Neu gegenüber dem Deckel: Zwei Farben **in** den sichtbaren Schichten 1–4 → CANVAS wechselt in jeder dieser Schichten. Das ist auf
-diesem Drucker noch nicht erprobt, deshalb zuerst Coupon C13. Bild: `gitter_ansicht.png` (`v4/gitter/render_gitter.py`).
+Befund C13 (06.11., eingelegtes Logo, zweifarbig): sehr viele Fäden in den Löchern, Fehler im Orange nach den Farbwechseln,
+ein verbrannter dunkler Fleck hinten. Deshalb ohne Farbwechsel: **Gitter einfarbig beige**, die **Buchstaben als eigene orange
+Teile**, 1,2 mm dick, aufgeklebt – sie stehen 1,0 mm vor der Korpusfront (3D-Effekt). Beide Sichtflächen entstehen auf der
+texturierten PEI-Platte (matt wie der Deckel). Jeder Buchstabe hat hinten 2 Stifte Ø 2,0 (die drei Strahlen je einen Stift in
+ihrer Form) und passt nur in seine Sacklöcher im Gitter. Bild: `gitter_ansicht.png` (`v4/gitter/render_gitter.py`).
 
-Ausgangspunkt sind die Deckel-Einstellungen (Prozess „Deckel“); als eigenen Prozess speichern. In Klammern: Wert beim Deckel.
+`06a_gitter_beige.stl`: 115,4 × 115,7 mm, 3,6 mm dick (über dem Lautsprecher 2,4 mm, dahinter 2,5 mm Luft), 6 Stifte Ø 3,9, ca. 36 g.
+`06b_logo_buchstaben_orange.stl`: 11 Teile in Logo-Reihenfolge auseinandergezogen (mindestens 4 mm Abstand), Sichtseite unten, ca. 4 g.
 
-| Reiter → Gruppe | Einstellung | Wert |
+**Fäden:** Die Einstellungen gegen die Fäden folgen nach der Auswertung des C13-G-Codes (Nachtrag im Steckbrief). Bis dahin:
+Rollen trocknen (Elegoo: 60 °C, 8 h), Platte mit Spülmittel waschen und nicht mehr anfassen.
+
+| Teil | Einstellung | Wert |
 | --- | --- | --- |
-| Objektliste | Teile laden („ein Objekt mit mehreren Teilen“) | `06a` + `06b` (Coupon: `coupon_C13_gitter_ecke_beige` + `_logo_orange`) – keine Modifizierer |
-| | Filamente | 06a → Beige, 06b → Orange (dieselben Rollen wie Korpus und Deckel) |
-| Qualität → Schichthöhe | Schichthöhe / erste Schicht | 0,2 / 0,2 (bleibt) – das Logo ist genau Schicht 1–4 |
-| Qualität → Naht | Nahtposition | Rückseite (bleibt) – die Oberkante liegt hinten: Naht in jedem Loch oben (von vorn-oben nicht sichtbar), am Rand oben im Spalt |
-| Qualität → Präzision | Elefantenfußkompensation | 0,15 (bleibt) – scharfe Lochkanten vorne |
-| Qualität → Wandgenerator | Wandgenerator | Arachne (bleibt) – Stege 0,9 mm zwischen den Löchern und die Lücken zwischen den Buchstaben als saubere Linien |
-| Qualität → Wände und Oberflächen | Nur eine Wand in der ersten Schicht / Vermeiden von Wandüberquerungen | an / an (bleibt) – weniger Fahrten über Löcher, weniger Härchen |
-| Struktur → Obere/Untere Schichten | Untere Schalenschichten / Überlappung des oberen/unteren massiven Füllung/Wand | 8 / 25 % (bleibt) – Gitter fast massiv, hinter dem Logo dichtes Beige |
-| Struktur → Füllung | Fülldichte / Füllmuster | 25 % / Gyroid (bleibt) |
-| Sonstiges → Umrandung | Randtyp | Keine Umrandung (bleibt) – ein Innenrand würde die Löcher füllen |
-| Sonstiges → Fuzzy Skin | Fuzzy Skin | Deaktiviert |
-| Multimaterial → Reinigungsturm | Aktivieren | an; Reinigungsvolumen Multiplikator 1,5 (bleibt) – Beige nach Orange braucht mehr Spülung |
-| Filament Beige/Orange | | wie beim Korpus (250 °C, Bett 80/75 °C, Lüfter 20 %, Schichtdauer 70/100) |
+| Gitter `06a` | Prozess | wie Deckel (Arachne, eine Wand in Schicht 1, Wandüberquerungen vermeiden, 8 untere Schichten, Überlappung 25 %, keine Umrandung, Fuzzy aus); nur Beige → kein Reinigungsturm |
+| | Nahtposition | Rückseite – die Oberkante liegt hinten: Naht in jedem Loch oben (von vorn-oben nicht sichtbar) |
+| Buchstaben `06b` | Prozess | wie Drehknopf: Schichthöhe **0,12** (erste 0,2), 3 Wände, keine Umrandung, Fuzzy aus, Elefantenfuß 0,15 |
+| | Nahtposition | Rückseite – die im Einbau untere Kante jedes Buchstabens liegt hinten |
+| | Filament | Orange wie Deckel und Knopf |
 
-Vorher: Rollen trocknen (PETG zieht sonst Fäden durch die 400 Löcher), Platte mit Spülmittel waschen, nicht mehr anfassen.
-Vorschau prüfen: Schicht 1–4 Orange nur im Logo, ab Schicht 5 nur Beige; Schicht 13–18 außen am Lautsprecher dünner (Luftraum).
-Härchen in Löchern nach dem Druck mit einem kurzen Föhnstoß (Heißluft, Abstand) oder einem 3-mm-Bohrer von Hand entfernen.
-Einsetzen: Stifte in die 6 Löcher, gleichmäßig eindrücken. Herausnehmen: Schraubendreher unten in die Kerbe.
+**Einkleben:** Zuerst trocken probieren: Jeder Buchstabe muss mit leichtem Druck plan aufliegen. Geht ein Stift zu stramm, das
+Loch mit einem 2,5-mm-Bohrer von Hand nachdrehen; ist er locker, füllt der Kleber das Spiel. Dann je einen kleinen Tropfen
+**nur in die Sacklöcher** (nicht auf die Fläche), Buchstaben eindrücken, Gitter mit der Vorderseite nach oben aushärten lassen.
+Am besten 5-Minuten-Epoxid (Zeit zum Ausrichten, kein Schleier); Sekundenkleber hält auch, kann aber um die Fuge einen weißen
+Schleier bilden. Reihenfolge: wie auf der Druckplatte, oben „peppa“ und die Strahlen, unten „BOX“.
+Einsetzen ins Gehäuse: 6 Stifte in die Löcher, gleichmäßig eindrücken. Herausnehmen: Schraubendreher unten in die Kerbe.
 
 ### Drehknopf (Stand 05.11.2026, volle Achse, ohne Fuzzy)
 
@@ -282,4 +278,4 @@ Alle Dome, Kernlöcher und Senkungen sind auf die vorhandenen Kunststoffschraube
 - `check.py` – Kollisionen, Einbau (Deckel von oben, Boden von unten mit Hubweg), Druckbarkeit
 - `PARAMETER.md`, `PRUEFBERICHT.md` – Werte mit Status und Prüfergebnis
 - `boden_plan.png` – Boden von oben und Höhen von der Seite
-- `gitter_ansicht.png` – Frontgitter: Ansichten, Schnitt durch Logo und Luftraum, Lage auf der Druckplatte
+- `gitter_ansicht.png` – Frontgitter: Ansichten, Schnitt durch Buchstabe, Stift und Luftraum, Lage auf den Druckplatten

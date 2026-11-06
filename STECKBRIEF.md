@@ -52,7 +52,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 - **Deckel:** zweifarbig (oranger Kern, beige Haut 0,7 mm), 4 Touchfelder mit Symbolen, Kartenschlitz, Ein-Taste hinten rechts in Mulde. **Deckelrahmen** mit Verteiler-Brücke (MPR121 + 3 WAGO hängend), Tasterhalter, Zungen vorne, 2 Schrauben hinten durch die Rückwand.
 - **Kartenfach:** Karte 70 × 112 × 4 mm, 42 mm tief, 8° geneigt, Federzunge, RC522 in Schienen dahinter.
 - **Rechts:** Drehknopf (y 84, z 60) und Klinke (y 84, z 24). **Links:** Riemen (z 118). **Hinten:** USB-C-Einbaubuchse x 114, z 60, innen höchstens 20 mm tief (Produkt offen; Stecker am Akku-Board gewinkelt oder ≤ 20 mm), Lüftungsschlitze.
-- **Front:** gedrucktes Gitter statt Stoff, **beige mit orangem Logo** (neues Logo 05.11., bündig eingelegt, Schicht 1–4), im Modell seit 05.11.: `06a`/`06b`, Bild `out/gitter_ansicht.png` (Nachtrag 05.11.2026 (6)).
+- **Front:** gedrucktes Gitter statt Stoff, **einfarbig beige**; Logo (neue Vorlage 05.11.) als **eigene orange Buchstaben, 1,2 mm erhaben, aufgeklebt** (Stifte in Sacklöchern): `06a` Gitter, `06b` alle Buchstaben, Bild `out/gitter_ansicht.png` (Nachträge 05.11. (6), 06.11.).
 - Höhen: Klemmen 77,5 mm, Kartenfach ab 86,8 mm, Deckel-Module ab 117,4 mm.
 
 Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine Stützen. Fuzzy Skin 0,20 / 0,30 Classic **nur über den Modifier `01f_…FUZZY_aussenhaut`** (Prozess „Nur lackiert“, Modifier „Kontur“; alle Korpus-Einstellungen in `v4/out/README.md`); der alte Modifier `01m_…` ist ungültig (siehe Nachtrag 04.11.).
@@ -73,7 +73,7 @@ Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine St�
 4. Nach Lieferung von Reichelt messen: Lautsprecher-Lochabstand, Gewindelängen Drehgeber und Klinke, Tasterhöhe; RC522- und MAX-Maße; NFC-Aufkleber-Dicke.
 5. Coupons drucken und auswerten: C2, C4, C6, C7, C8.
 6. Korpus-Prototyp: Boden einsetzen, Schrauben. Kammerdecke ist seit 04.11. ein Satteldach im Korpus (einteilig, Entscheidung Jan) – nach dem Druck außen auf ca. 95–125 mm Druckhöhe auf Linien ansehen.
-7. Gitter mit Logo: im Modell (05.11.). Offen: C13 drucken und bewerten, Hörprobe (einfarbig, Entwurf), dann Gitter drucken (G-Code vorher prüfen lassen).
+7. Gitter mit Logo: im Modell (Stand 06.11.: einfarbig + aufgeklebte Buchstaben). Offen: G-Code C13 auswerten (Fäden), Einstellungen festlegen, C14 drucken, dann Gitter und Buchstaben (G-Code vorher prüfen lassen).
 8. Optional: Lichtleiter für die Lade-LED, Ideen zur optischen Individualisierung (Seitenteile, Deckeleinlage, Magnete).
 
 ## Links (Artefakte, bleiben dauerhaft erhalten)
@@ -549,3 +549,16 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Naht:** aufgemalt, liegt an der Rundung **hinten links** (von vorn gesehen; Modell x ≈ 8, y ≈ 137,5), alle Schichten gleich. Laut Nachtrag 04.11. (4) hatte Jan beim Korpus **hinten rechts** bemalt; welche Ecke der finale Korpus hat, ist hier nicht belegt → Jan fragen.
 - **Düse 250 °C** (Profil). Beim Korpus 04.11. waren 235/240 °C eingestellt (Nachtrag 04.11. (4), Rückfrage offen) → gleiche Temperatur wie der finale Korpus nehmen (Glanz/Farbton an der Fuge).
 - Hinweis: Schicht 16 (erste massive Schicht über der Füllung, interne Brücke) dauert ca. 9,5 min; die Außenwand danach ist schon die glatte obere Fase (Kante der V-Fuge) → unkritisch.
+
+## Nachtrag 06.11.2026 – C13 ausgewertet: Logo als eigene, erhabene Buchstaben, Gitter einfarbig
+
+- **Befund Jan (3 Fotos, 17:55):** sehr viele Fäden in den Löchern (wie Spinnweben, von vorn sichtbar), Fehler im Orange (unten am „p“), hinten ein dunkler Fleck (kein schwarzes Filament vorhanden) → nicht hochwertig, nicht abgenommen. Gut: Stege zwischen den Löchern, scharfe Buchstabenkanten, schmale beige Lücken zwischen den Buchstaben.
+- **Einordnung:** (1) Fäden = Fahrten über die 400 Löcher in 18 Schichten, unabhängig von der Druckrichtung (Ursache offen: Feuchte, 250 °C, Rückzug/Z-Hub; G-Code folgt). PETG nicht getrocknet, seit 3 Tagen offen. (2) Orange-Fehler = Start nach dem Farbwechsel mitten in der Sichtfläche (das Risiko, für das C13 da war). (3) Fleck = sehr wahrscheinlich verbranntes PETG von der Düse, gesammelt bei den Wechseln.
+- **Vorschlag Jan:** andersherum drucken, Fuzzy auf der Fläche, Schriftzug erhaben (3D-Effekt). Bewertet: Fuzzy wirkt nur auf Wände, nicht auf eine Deckfläche; mit der Rückseite auf der Platte stehen die 6 Stifte nach unten und der Luftraum (80 mm breit) wäre nur mit Stützen druckbar; Fäden blieben. Der 3D-Effekt selbst ist gut.
+- **Entscheidung Jan (18:09):** Buchstaben kleben. Gitter als ein Modell (einfarbig beige), alle Buchstaben als ein Modell (gleichzeitig drucken).
+- **Modell (`gitter()`, `gitter_buchstaben_cs()`, `gitter_stifte()`, `buchstaben_druck()`):** Einleger `GR_INLAY` entfällt. Buchstaben 1,2 mm dick (`GR_LETTER_T`), liegen plan auf der glatten Gitterfläche, stehen 1,0 mm vor der Korpusfront. Je Buchstabe 2 runde Stifte Ø 2,0 × 1,0 mit Fase, möglichst weit auseinander (verdrehsicher), dort, wo der Buchstabe am breitesten ist; die 3 Strahlen je 1 Stift in ihrer eigenen Form (0,7 kleiner). Sacklöcher im Gitter: Spiel 0,2 je Seite, 0,3 tiefer, mindestens 0,4 unter dem Buchstabenrand verdeckt (`GR_PEG`, Probedruck). Jedes Teil passt nur in seine Löcher (auch die beiden „p“ unterscheiden sich). Buchstaben-Druck: alle 11 Teile in Logo-Reihenfolge auseinandergezogen (mindestens 4 mm Abstand), Sichtseite auf der PEI, Unterkante hinten (Naht „Rückseite“ unten am Buchstaben).
+- **Geprüft:** keine Kollision, Stifte ∩ Gitter 0, Ausrichtung ohne Spiegelung, alle STL geschlossen (Versätze mit `simplify`, sonst doppelte Ecken). Gitter Schicht 1 ohne Stege unter 0,4 mm; Buchstaben Schicht 1 nur Spitzen/Ecken (0,63 mm²). Überhang Gitter 114 mm² = Böden der Sacklöcher (Ø 2,4, unsichtbar). Klang unverändert (13 % direkt, 40 % über den Luftraum).
+- **Dateien:** `06a_gitter_beige.stl` (ca. 36 g), `06b_logo_buchstaben_orange.stl` (ca. 4 g), Coupon **C14** (`coupon_C14_gitter_ecke_beige` + `coupon_C14_buchstaben_P_e_p_orange`, ca. 12 g) ersetzt C13; `06_gitter_einfarbig_HOERPROBE` entfällt (das Gitter ist jetzt selbst einfarbig; Hörtest mit dem Gitter vor dem Kleben). README Abschnitt „Gitter“ neu (Einkleben: trocken probieren, Kleber nur in die Sacklöcher, am besten 5-Minuten-Epoxid).
+- **Sparen:** kein Reinigungsturm, kein Spülmaterial, keine Farbwechsel-Zeit mehr.
+- **Als Nächstes:** G-Code und Projekt von C13 auswerten (Rückzug, Fahrwege über Löchern, Z-Hub, Temperatur) → Einstellungen gegen Fäden; Rollen trocknen; dann C14.
+

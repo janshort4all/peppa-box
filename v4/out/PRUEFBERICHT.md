@@ -55,20 +55,20 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | 03_deckelrahmen.stl | 128 × 128 × 17 | Boden Tasterhalter 12 mm |
 | 04_kartenfach.stl | 14 × 52 × 88 | Seitenwand über dem Kartenschlitz 5 mm |
 | 05_boden_traeger.stl | 140 × 140 × 8 | Decke der Senkbohrungen M2,5 (Ring 1,8 mm) |
-| 06a_gitter_beige.stl | 115 × 116 × 6 | keine (Vorderfläche auf der Platte, Fase 45°) |
-| 06b_gitter_logo_orange.stl | 100 × 57 × 1 | keine (nur Schicht 1–4) |
+| 06a_gitter_beige.stl | 115 × 116 × 6 | Böden der Sacklöcher für die Buchstaben-Stifte (Ø 2,4, unsichtbar) |
+| 06b_logo_buchstaben_orange.stl | 100 × 57 × 2 | keine |
 | 07_drehknopf_orange.stl | 34 × 34 × 23 | – |
 | 08_ein_taste_orange.stl | 17 × 17 × 13 | – |
 | 09_riemen_gegenplatte.stl | 18 × 24 × 4 | – |
 
 Alle anderen Flächen sind steiler als 45° oder liegen auf der Platte. Kein Teil braucht Stützmaterial.
 
-## Gitter (Schichtanalyse in Druckausrichtung)
+## Gitter und Logo-Buchstaben (Schichtanalyse in Druckausrichtung)
 
-- 400 Löcher Ø 3,3 im Wabenraster 4,2 (Steg 0,9 mm = 2 Linien).
+- Gitter einfarbig: 400 Löcher Ø 3,3 im Wabenraster 4,2 (Steg 0,9 mm = 2 Linien).
 - Offen direkt vor der Lautsprecheröffnung: 13 %; über den Luftraum (2,5 mm) erreichbar: 40 % der Öffnung.
-- Orange in 4 Schichten (Logo bündig, keine Brücke). Schicht 1: Beige 7252 mm², Orange 2529 mm².
-- Schmaler als 1 Linie (0,4 mm) in Schicht 1–4: Beige 0,71 mm², Orange 0,63 mm² – Spitzen der Buchstaben-Lücken und Ecken, im Bild nicht zu sehen.
-- Schmaler als 2 Linien (0,84 mm) in Schicht 1–4: Beige 8,0 mm² – die engsten Lücken zwischen „P|e“, „p|p“, „p|a“ (0,6–0,9 mm, so im Logo).
-- Hinten (Luftraum): Rand läuft durch die Lochmitten, keine Sicheln; nur Ecken am Lochrand, zusammen 1,02 mm² je Schicht (unsichtbar).
-- STL geschlossen, keine doppelten Ecken (Löcher als um eine halbe Teilung gedrehte 32-Ecke).
+- Gitter Schicht 1 (Sichtfläche): 9667 mm², schmaler als 1 Linie (0,4 mm): 0,00 mm².
+- Gitter hinten (Luftraum): Rand läuft durch die Lochmitten, schmaler als 0,4 mm höchstens 1,02 mm² je Schicht (Ecken am Lochrand).
+- Buchstaben: 11 Teile auf einer Platte (119 × 66 mm), mindestens 4,2 mm Abstand; Schicht 1 (Sichtseite) 2529 mm², schmaler als 0,4 mm: 0,63 mm² (Spitze im e-Schlitz, Ecken).
+- 19 Stifte in Sacklöchern (Spiel 0,2 je Seite, Loch 0,3 tiefer), Überschneidung mit dem Gitter 0,000 mm³.
+- STL geschlossen, keine doppelten Ecken (Löcher als gedrehte 32-Ecke, Versätze vereinfacht).

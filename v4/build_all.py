@@ -30,8 +30,8 @@ DRUCK = {   # Teil: (Datei, Farbe, Hinweis)
     "deckelrahmen": ("03_deckelrahmen.stl", "Schwarz/Grau", "Deckelseite auf der Platte"),
     "kartenfach": ("04_kartenfach.stl", "Schwarz/Grau", "auf der Seite, Kartenschlitz senkrecht; Brim"),
     "boden": ("05_boden_traeger.stl", "Beige", "flach, Unterseite auf der Platte; trägt die ganze Elektronik; mit 05f (Fuzzy-Rand) als ein Objekt mit zwei Teilen laden"),
-    "gitter_beige": ("06a_gitter_beige.stl", "Beige", "Vorderfläche auf der texturierten PEI, Oberkante nach hinten; mit 06b als ein Objekt mit zwei Teilen laden"),
-    "gitter_logo": ("06b_gitter_logo_orange.stl", "Orange", "Logo-Einleger, nur Schicht 1–4 (0,8 mm), deckungsgleich mit 06a"),
+    "gitter_beige": ("06a_gitter_beige.stl", "Beige", "einfarbig; Vorderfläche auf der texturierten PEI, Oberkante nach hinten; Sacklöcher für die Buchstaben-Stifte"),
+    "gitter_logo": ("06b_logo_buchstaben_orange.stl", "Orange", "alle 11 Logo-Teile auf einer Platte, Sichtseite auf der PEI, Stifte oben; nach dem Druck ins Gitter kleben"),
     "drehknopf": ("07_drehknopf_orange.stl", "Orange", "Stirnfläche unten"),
     "ein_taste": ("08_ein_taste_orange.stl", "Orange", "Kopf unten"),
     "riemen_gegenplatte": ("09_riemen_gegenplatte.stl", "Schwarz/Grau", "flach"),
@@ -43,8 +43,10 @@ def export_parts(parts):
     for k, (fn, col, note) in DRUCK.items():
         if k in ("deckel_orange", "deckel_beige"):
             o = M.deckel_kopfueber(parts[k], parts["deckel_orange"] + parts["deckel_beige"])   # gleich gedreht und verschoben → deckungsgleich
-        elif k in ("gitter_beige", "gitter_logo"):
-            o = M.gitter_druck(parts[k], parts["gitter_beige"] + parts["gitter_logo"])
+        elif k == "gitter_beige":
+            o = M.gitter_druck(parts[k], parts[k])
+        elif k == "gitter_logo":
+            o = M.buchstaben_druck(parts[k])
         else:
             o = K.orient(k, parts[k])
         p = os.path.join(OUT, fn)
@@ -60,11 +62,6 @@ def export_parts(parts):
         o = M.deckel_kopfueber(man, lid_ref)
         tm(o).export(os.path.join(OUT, fn))
         files[fn] = ("deckel", "PLA" if "PLA" in fn else "Modifizierer", note, o.bounding_box())
-    # Gitter einfarbig als ein Körper: schneller Probedruck für Sitz, Stifte und Hörtest (gleiche Lage wie 06a/06b)
-    gr = parts["gitter_beige"] + parts["gitter_logo"]
-    one = M.gitter_druck(gr, gr)
-    tm(one).export(os.path.join(OUT, "06_gitter_einfarbig_HOERPROBE.stl"))
-    files["06_gitter_einfarbig_HOERPROBE.stl"] = ("gitter", "eine Farbe", "Probedruck (Entwurf): Sitz, Stifte, Klang", one.bounding_box())
     # einfarbiger Deckel für Prototypen: gleiche Form wie 02a + 02b, als ein Körper (Symbole SKIN tief vertieft)
     one = M.deckel(einfarbig=True).translate([0, 0, -M.LID_BOT])
     tm(one).export(os.path.join(OUT, "02_deckel_einfarbig.stl"))

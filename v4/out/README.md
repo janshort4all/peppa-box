@@ -23,7 +23,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | coupon_C13_gitter_ecke_* (2 Dateien) | **Probe vor dem Gitter:** Ecke oben links mit „P“, „e“, „p“ (engste Lücken zwischen den Buchstaben 0,6–0,9 mm, e-Schlitz), Löcher, Rand mit Fase, schräge Oberkante, ein Stift; zweifarbig wie das Gitter, ca. 10 g | Wie das Gitter einrichten (Abschnitt „Gitter“). Grenze Orange/Beige scharf, ohne Spalt und ohne orange Punkte im Beige? Lücken zwischen den Buchstaben durchgehend beige? Härchen in den Löchern? In die obere linke Ecke des Korpus drücken: Stift fest, Fase und Spalt gleichmäßig? |
 | coupon_C12_deckel_oberseite_* (5 Dateien) | **Probe vor dem Deckel:** obere 2,4 mm vorne rechts (Play, Vor, Mond, Kante mit Fase), kopfüber, Symbole vertieft, ca. 15 g | Wie den Deckel einrichten: Variante A mit `_opfer_PLA`, Variante B mit `_MODIFIER_bruecke_richtung`, beide mit `_MODIFIER_haut_1wand`. Beige in den Kreisen so ruhig wie außen? Symbolböden eben bzw. Fäden parallel? |
 | coupon_C7_lochbild_stapel | **Lochbild 58 × 49 mm des Akku-Stapels**, ca. 20 min | Stapel mit den vorhandenen Schrauben daraufsetzen: Fallen alle 4 Köpfe in die Mulden? Liegt die Acrylplatte innerhalb der Ecken-Marken? |
-| coupon_C8_bodenecke_* (2 Teile) | Schattenfuge Boden/Korpus, Zentrierkragen, Senkschraube 3,0 × 14 in den Dom | Rutscht der Kragen leicht hinein, ohne zu wackeln? Sitzt die Schraube bündig? |
+| coupon_C8_bodenecke_* (2 Teile) | Schattenfuge Boden/Korpus, Zentrierkragen, Senkschraube 3,0 × 12 in den Dom | Rutscht der Kragen leicht hinein, ohne zu wackeln? Sitzt die Schraube bündig? |
 | coupon_C10_fuzzy_ecke (+ _MODIFIER) | Ecke hinten rechts mit Anschlussfeld-Kante und USB-C-Öffnung, ca. 30 min je Stück | Beide Dateien zusammen laden, Objekt Fuzzy „Deaktiviert“, Modifier „Kontur“; 3–4 Kopien mit verschiedenen Fuzzy-Werten: Welche wirkt hochwertig? Bleibt die Kante des Feldes sauber? |
 | coupon_C11_korpus_oben (+ _MODIFIER) | **Probeabschnitt vor dem nächsten Korpus:** obere 36 mm mit voller Grundfläche (Riemenloch, Deckelschrauben, Kammerdecke), etwa ein Viertel der Korpus-Druckzeit | Genau wie den Korpus einrichten (Modifier, Naht aufmalen). Innen glatt? Außen keine Querlinie am Riemenloch? Naht eine gerade Linie an der aufgemalten Stelle? |
 | coupon_C1_wand_rechts_drehgeber_klinke | Loch und Wandstärke für Drehgeber (M7) und Klinke | Passt das Gewinde, greift die Mutter? |
@@ -241,20 +241,23 @@ ist eine 1 mm dünne Haut nur an den Außenflächen – Fuzzy entsteht ausschlie
 Alle Module und Klemmen liegen in Mulden mit 2,5 mm Rand. Ein Streifen doppelseitiges Montageband oder ein Tropfen Heißkleber reicht.
 Unter dem Deckel hängen sie kopfüber; dort am besten Montageband nehmen.
 
+## Schrauben (Stand 06.11.2026)
+
+Alle Dome, Kernlöcher und Senkungen sind auf die vorhandenen Kunststoffschrauben **3,0 × 12** ausgelegt (`SCREW_L`).
+
+| Teil | Menge | Wofür |
+| --- | --- | --- |
+| Kunststoffschraube 3,0 × 12, Senkkopf | 14 | Boden in den Korpus (6), Deckel hinten durch die Rückwand (2), Deckelrahmen an den Deckel (6, Kopf versenkt im Dom) |
+| Kunststoffschraube 3,0 × 12, Flachkopf | 8 | Lautsprecher (4, mit M3-Scheiben), Kartenfach (2), USB-C-Buchse (2) |
+| Schraube M2,5, ca. 5 mm länger als die jetzigen unter der Acrylplatte | 4 | Stapel von unten durch den Boden (Länge folgt nach deiner Messung) |
+
 ## Was für die Montage noch fehlt (nicht bestellt)
 
 | Teil | Menge | Wofür |
 | --- | --- | --- |
-| Kunststoffschraube 3,0 × 14, Senkkopf | 8 | Boden in den Korpus (6), Deckel hinten durch die Rückwand (2) |
-| Kunststoffschraube 3,0 × 8 | 6 | Deckelrahmen an den Deckel |
-| Kunststoffschraube 3,0 × 12 | 6 | Lautsprecher (4), Kartenfach (2) |
-| Schraube M2,5, ca. 5 mm länger als die jetzigen unter der Acrylplatte | 4 | Stapel von unten durch den Boden (Länge folgt nach deiner Messung) |
 | Doppelseitiges Montageband | 1 Rolle | Module in den Mulden |
-| Buchschraube Ø 5 mm + Lederriemen | 1 | Riemen links |
+| Buchschraube (Schaft Ø 7,5) + Lederriemen | 1 | Riemen links |
 | Polyesterwatte, eine Handvoll | – | Lautsprecherkammer |
-
-Tipp zum Sparen: Boden und Deckel nutzen jetzt dieselbe Schraube 3,0 × 14 mit Senkkopf. Ein Sortiment „Kunststoffschrauben 3,0 mm“
-deckt alle Längen ab und ist meist günstiger als Einzelpackungen.
 
 ## Dateien
 

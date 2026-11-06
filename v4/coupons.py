@@ -106,7 +106,7 @@ def c7_lochbild():
 
 
 def c8_bodenecke():
-    """Hintere linke Ecke: Korpus unten mit Dom + Bodenplatte mit Kragen und Senkung. Prüft Schattenfuge, Kragen und Schraube 3,0 × 14."""
+    """Hintere linke Ecke: Korpus unten mit Dom + Bodenplatte mit Kragen und Senkung. Prüft Schattenfuge, Kragen und Schraube 3,0 × 12."""
     k = M.korpus() ^ box(0, 98, 0, 42, M.W, M.BASE_T + 18)
     b = M.boden() ^ box(0, 98, -1, 42, M.W, 20)
     return base_at_zero(k), base_at_zero(b)

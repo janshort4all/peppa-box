@@ -528,3 +528,8 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Neu gegenüber dem Deckel und noch nicht erprobt:** zwei Farben **in** den sichtbaren Schichten 1–4 (CANVAS wechselt in jeder davon). Darum zuerst C13.
 - **Ablauf:** (1) C13 mit den Gitter-Einstellungen, Foto an Claude (Grenze Orange/Beige, Lücken, Härchen, Stift in der Korpus-Ecke). (2) Optional Hörprobe: `06_gitter_einfarbig_HOERPROBE` schnell einfarbig, einsetzen, Klang mit/ohne Gitter vergleichen. (3) Gitter `06a` + `06b`, G-Code vorher prüfen lassen.
 
+
+## Nachtrag 06.11.2026 – Deckelrahmen geprüft, Schraubentabelle korrigiert
+
+- **Frage Jan:** Ist der Deckelrahmen auf die Schrauben 3,0 × 12 angepasst? Ja, seit 03.11. (5) (Ring-Dome mit versenktem Senkkopf, Blöcke hinten). `03_deckelrahmen.stl` neu gebaut = identisch mit dem Repository; `check.py` ohne Kollision mit aktuellem Deckel und Satteldach-Korpus. Druck als Entwurf (0.28mm Extra Draft, 3 Wände, 15 % Gyroid, ohne Stützen/Fuzzy/Rand, Reste-PETG).
+- **README:** Schraubentabelle war veraltet (3,0 × 14 / 3,0 × 8). Jetzt: 14 × 3,0 × 12 Senkkopf (Boden 6, Deckel hinten 2, Deckelrahmen 6), 8 × 3,0 × 12 Flachkopf (Lautsprecher 4 mit M3-Scheiben, Kartenfach 2, USB-C 2); Buchschraube Schaft Ø 7,5. Text C8 auf 3,0 × 12.

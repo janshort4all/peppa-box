@@ -45,6 +45,14 @@ def aussenhaut():
     return slab(ring, z0, z1) - ohne_fuzzy()
 
 
+def boden_aussenhaut():
+    """Fuzzy am Boden-Rand (06.11.2026), passend zum Korpus: nur der senkrechte Streifen zwischen der Fase unten
+    (Standkante, BASE_CHAMF) und der Fase oben (V-Fuge, EDGE_V). Beide Fasen bleiben glatt wie am Korpus."""
+    ring = M.OUT.offset(1.5, JoinType.Round) - M.OUT.offset(-M.FUZZ_SHELL, JoinType.Round)
+    ring = ring.simplify(0.001)
+    return slab(ring, M.BASE_CHAMF, M.BASE_T - M.EDGE_V)
+
+
 def _export(m, name, shift):
     mm = m.translate(shift).to_mesh()
     t = trimesh.Trimesh(np.asarray(mm.vert_properties)[:, :3], np.asarray(mm.tri_verts))
@@ -60,6 +68,11 @@ if __name__ == "__main__":
     shift = [bb[0] - kb[0], bb[1] - kb[1], bb[2] - kb[2]]
     t = _export(aussenhaut(), "01f_modifier_korpus_FUZZY_aussenhaut.stl", shift)
     print("01f Außenhaut", t.bounds.round(2).tolist(), "wasserdicht", t.is_watertight)
+    bb = K.orient("boden", M.boden()).bounding_box()
+    kb = M.boden().bounding_box()
+    shift = [bb[0] - kb[0], bb[1] - kb[1], bb[2] - kb[2]]
+    t = _export(boden_aussenhaut(), "05f_modifier_boden_FUZZY_rand.stl", shift)
+    print("05f Boden-Rand", t.bounds.round(2).tolist(), "wasserdicht", t.is_watertight)
     alt = _os.path.join(ROOT, "v4/out/01m_modifier_korpus_OHNE_fuzzy.stl")
     if _os.path.exists(alt):
         _os.remove(alt)

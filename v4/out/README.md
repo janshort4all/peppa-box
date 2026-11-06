@@ -43,7 +43,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | 02b_deckel_haut_beige.stl | Beige | kopfüber, die 4 untersten Schichten ohne Symbole; Symbole und Ringe 0,8 mm vertieft (ertastbar) |
 | 03_deckelrahmen.stl | Schwarz/Grau | Deckelseite auf der Platte |
 | 04_kartenfach.stl | Schwarz/Grau | auf der Seite, Kartenschlitz senkrecht; Brim |
-| 05_boden_traeger.stl | Beige | flach, Unterseite auf der Platte; trägt die ganze Elektronik |
+| 05_boden_traeger.stl | Beige | flach, Unterseite auf der Platte; trägt die ganze Elektronik; mit 05f (Fuzzy-Rand) als ein Objekt mit zwei Teilen laden |
 | 06a_gitter_beige.stl | Beige | Vorderfläche auf der texturierten PEI, Oberkante nach hinten; mit 06b als ein Objekt mit zwei Teilen laden |
 | 06b_gitter_logo_orange.stl | Orange | Logo-Einleger, nur Schicht 1–4 (0,8 mm), deckungsgleich mit 06a |
 | 07_drehknopf_orange.stl | Orange | Stirnfläche unten |
@@ -114,8 +114,25 @@ Naht aufmalen: ganzes Objekt markieren, Werkzeug „Naht aufmalen“, Pinselgrö
 senkrechten Strich auf der Rundung rechts neben den Lüftungsschlitzen (Mitte zwischen Ende des glatten Feldes und Außenkante)
 von ganz unten bis ganz oben ziehen. Bild: `naht_aufmalen.png`.
 
-Boden, Deckel, Rahmen, Kartenfach, Knopf: ohne Fuzzy Skin. Brim für Kartenfach und die C1-Coupons. Deckel: eigener Abschnitt unten.
+Deckel, Rahmen, Kartenfach, Knopf: ohne Fuzzy Skin. Boden: Fuzzy nur am Rand, eigener Abschnitt unten. Brim für Kartenfach und die C1-Coupons. Deckel: eigener Abschnitt unten.
 Rolle vorher trocknen (Elegoo: 60 °C, 8 h).
+
+### Boden (Stand 06.11.2026, sichtbarer Rand wie der Korpus)
+
+Der Boden steht bündig unter dem Korpus, sein Rand ist von außen sichtbar. Deshalb **alle Einstellungen wie beim Korpus** und dieselbe beige Rolle.
+Am einfachsten: das Korpus-Projekt (.3mf) öffnen, „Speichern unter“ als Boden-Projekt, Korpus und `01f` löschen, dann
+`05_boden_traeger.stl` und `05f_modifier_boden_FUZZY_rand.stl` zusammen hineinziehen (ein Objekt mit zwei Teilen, `05f` → Typ Modifizierer, Fuzzy Skin **Kontur**).
+
+| Abweichung vom Korpus | Wert | Grund |
+| --- | --- | --- |
+| Lage | Unterseite auf der Platte, nicht drehen | Standkante (0,8-Fase) unten, V-Fuge oben |
+| Sonstiges → Umrandung | **keine** | „Nur Innenrand“ würde nur die Schraublöcher zufüllen; die volle Fläche haftet ohne Rand |
+| Naht | aufmalen an derselben Rundung wie am Korpus (von vorn gesehen hinten links) | Nähte von Korpus und Boden liegen übereinander |
+| Stützen | aus | Überhang nur an den Decken der M2,5-Senkungen (102 mm², kurze Brücken) |
+
+Fuzzy liegt nur auf dem senkrechten Streifen 0,8–3,2 mm; Fase unten und Fase oben (V-Fuge) bleiben glatt, genau wie die Fase unten am Korpus.
+Vorschau prüfen: Schichten 5–16 außen körnig, Schicht 1–4 und ab 17 glatt.
+Nach dem Druck: Senkungen der 6 Bodenschrauben auf Grat prüfen, Kopf muss bündig liegen.
 
 ### Deckel (Stand 05.11.2026 spät, kopfüber, Symbole 0,8 mm vertieft und ertastbar, ohne Fuzzy)
 

@@ -533,3 +533,11 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 
 - **Frage Jan:** Ist der Deckelrahmen auf die Schrauben 3,0 × 12 angepasst? Ja, seit 03.11. (5) (Ring-Dome mit versenktem Senkkopf, Blöcke hinten). `03_deckelrahmen.stl` neu gebaut = identisch mit dem Repository; `check.py` ohne Kollision mit aktuellem Deckel und Satteldach-Korpus. Druck als Entwurf (0.28mm Extra Draft, 3 Wände, 15 % Gyroid, ohne Stützen/Fuzzy/Rand, Reste-PETG).
 - **README:** Schraubentabelle war veraltet (3,0 × 14 / 3,0 × 8). Jetzt: 14 × 3,0 × 12 Senkkopf (Boden 6, Deckel hinten 2, Deckelrahmen 6), 8 × 3,0 × 12 Flachkopf (Lautsprecher 4 mit M3-Scheiben, Kartenfach 2, USB-C 2); Buchschraube Schaft Ø 7,5. Text C8 auf 3,0 × 12.
+
+## Nachtrag 06.11.2026 (2) – Boden: Fuzzy-Rand wie am Korpus, Druck vorbereitet
+
+- **Wunsch Jan:** Boden als Nächstes drucken, perfekt wie der Korpus und bündig zum Korpus (sichtbarer Rand).
+- **Entscheidungen Jan:** Rand **mit Fuzzy** wie der Korpus; **keine Gummifüße**; **keine Ring-Probe** vorab, direkt den Boden drucken (Risiko bewusst: Kragen-Spiel `LIP_CLR` 0,2 ist ungeprüft, C8 nie ausgewertet).
+- **Neu:** `05f_modifier_boden_FUZZY_rand.stl` (`modifier.py/boden_aussenhaut()`): 1 mm Haut nur auf dem senkrechten Streifen z 0,8–3,2 (zwischen Standkante-Fase und V-Fuge), beide Fasen glatt. Boden-STL unverändert (Volumen 80,2 cm³, ca. 100 g).
+- **Geprüft:** Boden ↔ Korpus ohne Überschneidung, Einbau von unten mit Hubweg frei, Druckausrichtung ohne Spiegelung, Überhang 102 mm² (Decken der M2,5-Senkungen).
+- **Einstellungen:** wie Korpus (README), dieselbe beige Rolle; Abweichungen: keine Umrandung, Naht an derselben Rundung wie der Korpus, keine Stützen. README-Abschnitt „Boden“.

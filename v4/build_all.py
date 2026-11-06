@@ -29,7 +29,7 @@ DRUCK = {   # Teil: (Datei, Farbe, Hinweis)
     "deckel_beige": ("02b_deckel_haut_beige.stl", "Beige", "kopfüber, die 4 untersten Schichten ohne Symbole; Symbole und Ringe 0,8 mm vertieft (ertastbar)"),
     "deckelrahmen": ("03_deckelrahmen.stl", "Schwarz/Grau", "Deckelseite auf der Platte"),
     "kartenfach": ("04_kartenfach.stl", "Schwarz/Grau", "auf der Seite, Kartenschlitz senkrecht; Brim"),
-    "boden": ("05_boden_traeger.stl", "Beige", "flach, Unterseite auf der Platte; trägt die ganze Elektronik"),
+    "boden": ("05_boden_traeger.stl", "Beige", "flach, Unterseite auf der Platte; trägt die ganze Elektronik; mit 05f (Fuzzy-Rand) als ein Objekt mit zwei Teilen laden"),
     "gitter_beige": ("06a_gitter_beige.stl", "Beige", "Vorderfläche auf der texturierten PEI, Oberkante nach hinten; mit 06b als ein Objekt mit zwei Teilen laden"),
     "gitter_logo": ("06b_gitter_logo_orange.stl", "Orange", "Logo-Einleger, nur Schicht 1–4 (0,8 mm), deckungsgleich mit 06a"),
     "drehknopf": ("07_drehknopf_orange.stl", "Orange", "Stirnfläche unten"),

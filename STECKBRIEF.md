@@ -541,3 +541,11 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Neu:** `05f_modifier_boden_FUZZY_rand.stl` (`modifier.py/boden_aussenhaut()`): 1 mm Haut nur auf dem senkrechten Streifen z 0,8–3,2 (zwischen Standkante-Fase und V-Fuge), beide Fasen glatt. Boden-STL unverändert (Volumen 80,2 cm³, ca. 100 g).
 - **Geprüft:** Boden ↔ Korpus ohne Überschneidung, Einbau von unten mit Hubweg frei, Druckausrichtung ohne Spiegelung, Überhang 102 mm² (Decken der M2,5-Senkungen).
 - **Einstellungen:** wie Korpus (README), dieselbe beige Rolle; Abweichungen: keine Umrandung, Naht an derselben Rundung wie der Korpus, keine Stützen. README-Abschnitt „Boden“.
+
+## Nachtrag 06.11.2026 (3) – G-Code Boden geprüft
+
+- Jan hat Projekt und G-Code geschickt: 37 Schichten, 1 h 46 min, 54,3 g, Profil „Elegoo Rapid PETG @ECC2 - Peppa“, Prozess „… - Peppa“. Prüfwerkzeug neu: `v4/gcode_boden_pruefung.py`.
+- **In Ordnung:** Modifier 05f deckungsgleich (z 0,8–3,2), Fuzzy „Kontur“ nur in Schicht 5–16 (±0,2 um die Linienmitte, 0,2/0,3 klassisch wie Korpus), Fasen unten (Schicht 1–4) und oben (17–20) glatt und maßhaltig; Elefantenfuß 0,15; 3 Wände, Gyroid 15 %, oben konzentrisch; Lüfter an der Außenkontur durchgehend 20 %, erste 3 Schichten aus; Bett 80/75 °C; keine Umrandung, keine Stützen, kein Reinigungsturm; Schichtdauer im Fuzzy-Streifen gleichmäßig ca. 69 s.
+- **Naht:** aufgemalt, liegt an der Rundung **hinten links** (von vorn gesehen; Modell x ≈ 8, y ≈ 137,5), alle Schichten gleich. Laut Nachtrag 04.11. (4) hatte Jan beim Korpus **hinten rechts** bemalt; welche Ecke der finale Korpus hat, ist hier nicht belegt → Jan fragen.
+- **Düse 250 °C** (Profil). Beim Korpus 04.11. waren 235/240 °C eingestellt (Nachtrag 04.11. (4), Rückfrage offen) → gleiche Temperatur wie der finale Korpus nehmen (Glanz/Farbton an der Fuge).
+- Hinweis: Schicht 16 (erste massive Schicht über der Füllung, interne Brücke) dauert ca. 9,5 min; die Außenwand danach ist schon die glatte obere Fase (Kante der V-Fuge) → unkritisch.

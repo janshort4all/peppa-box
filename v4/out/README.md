@@ -127,7 +127,7 @@ Am einfachsten: das Korpus-Projekt (.3mf) öffnen, „Speichern unter“ als Bod
 | --- | --- | --- |
 | Lage | Unterseite auf der Platte, nicht drehen | Standkante (0,8-Fase) unten, V-Fuge oben |
 | Sonstiges → Umrandung | **keine** | „Nur Innenrand“ würde nur die Schraublöcher zufüllen; die volle Fläche haftet ohne Rand |
-| Naht | aufmalen an derselben Rundung wie am Korpus (von vorn gesehen hinten links) | Nähte von Korpus und Boden liegen übereinander |
+| Naht | aufmalen an derselben Rundung wie am Korpus (Pinselgröße 0,5, Vertikal) | Nähte von Korpus und Boden liegen übereinander |
 | Stützen | aus | Überhang nur an den Decken der M2,5-Senkungen (102 mm², kurze Brücken) |
 
 Fuzzy liegt nur auf dem senkrechten Streifen 0,8–3,2 mm; Fase unten und Fase oben (V-Fuge) bleiben glatt, genau wie die Fase unten am Korpus.

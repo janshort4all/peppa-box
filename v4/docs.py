@@ -283,12 +283,21 @@ ihrer Form) und passt nur in seine Sacklöcher im Gitter. Bild: `gitter_ansicht.
 `06a_gitter_beige.stl`: 115,4 × 115,7 mm, 3,6 mm dick (über dem Lautsprecher 2,4 mm, dahinter 2,5 mm Luft), 6 Stifte Ø 3,9, ca. 36 g.
 `06b_logo_buchstaben_orange.stl`: 11 Teile in Logo-Reihenfolge auseinandergezogen (mindestens 4 mm Abstand), Sichtseite unten, ca. 4 g.
 
-**Fäden:** Die Einstellungen gegen die Fäden folgen nach der Auswertung des C13-G-Codes (Nachtrag im Steckbrief). Bis dahin:
-Rollen trocknen (Elegoo: 60 °C, 8 h), Platte mit Spülmittel waschen und nicht mehr anfassen.
+**Gegen die Fäden (Befund C13):** Rolle trocknen (Elegoo: 60 °C, 8 h) – wichtigste Maßnahme. Düse heiß reinigen, Silikonwischer
+hinten von PETG-Resten befreien (sonst nimmt die Düse sie wieder auf und sie verbrennen). Platte mit Spülmittel waschen, nicht anfassen.
+Für das Gitter ein eigenes Filamentprofil anlegen (Beige kopieren, „… Peppa Gitter“) und dort die Werte unten eintragen; der Rest wie Deckel.
 
 | Teil | Einstellung | Wert |
 | --- | --- | --- |
 | Gitter `06a` | Prozess | wie Deckel (Arachne, eine Wand in Schicht 1, Wandüberquerungen vermeiden, 8 untere Schichten, Überlappung 25 %, keine Umrandung, Fuzzy aus); nur Beige → kein Reinigungsturm |
+| | Qualität → Vermeiden von Wandüberquerungen / Maximale Umleitungslänge | an / **0** (keine Grenze) – Fahrten bleiben auf den Stegen statt über Löcher |
+| | Qualität → Wischbewegung nach innen | an |
+| | Geschwindigkeit → Außenwand | **40 mm/s** (60) – saubere Lochwände; Feine Strukturen bleibt |
+| Filament „… Peppa Gitter“ | Düsentemperatur erste Schicht / andere Schichten | **245 / 240 °C** (250) – weniger Nachlaufen |
+| | Kühlung → Lüftergeschwindigkeit (beide Zeilen) / Keine Kühlung für die erste | **35 % / 35 %** (20) / 3 Schichten – Fäden erstarren schneller |
+| | Überschreiben der Einstellungen → Rückzug: Länge / Rückzugsgeschwindigkeit / Wiedereinzugsgeschwindigkeit | **1,0 mm / 40 mm/s / 30 mm/s** |
+| | … Zurückziehen beim Schichtwechsel / Während des Rückzugs wischen / Wischabstand / Rückzugsmenge vor der Reinigung | **an / an / 2 mm / 70 %** |
+| | … Schwellenwert für die Fahrstrecke / Z-Hub-Höhe / Z-Hub Typ | **0,5 mm / 0,2 mm / Normal** (0,4) – niedriger Hub zieht weniger Fäden |
 | | Nahtposition | Rückseite – die Oberkante liegt hinten: Naht in jedem Loch oben (von vorn-oben nicht sichtbar) |
 | Buchstaben `06b` | Prozess | wie Drehknopf: Schichthöhe **0,12** (erste 0,2), 3 Wände, keine Umrandung, Fuzzy aus, Elefantenfuß 0,15 |
 | | Nahtposition | Rückseite – die im Einbau untere Kante jedes Buchstabens liegt hinten |

@@ -586,3 +586,9 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Entscheidung Jan (19:11): keiner davon – es bleibt Variante A mit geglättetem Logo-Feld** (Stand Nachtrag (2), Commit 8a9efd7): Logo groß in der Mitte, beiges Feld (`GR_HALO` 16), 377 Löcher, Luftraum 2,5 mm, Buchstaben 1,2 mm erhaben mit Stiften aufgeklebt.
 - Modell, Prüfungen, STL-Dateien und Bilder per `git revert` auf diesen Stand zurückgesetzt (C15 entfällt, C14 gilt wieder). Klang nach Abschätzung: direkt 11 % offen, über den Luftraum ca. 37 %; Hörtest mit dem Gitter vor dem Kleben bleibt wichtig. Reserve, falls es dumpf klingt: Gitter 2 mm vorstehen lassen (Luftraum 4,5 statt 2,5 mm).
 
+## Nachtrag 06.11.2026 (5) – Druckeinstellungen Gitter gegen Fäden (ohne G-Code C13)
+
+- **Jan (19:34/19:40):** an der Düse hängen Fäden; Frage nach Reinigungsfunktion; will jetzt die optimalen Einstellungen für `06a`, ohne auf die G-Code-Auswertung zu warten. PETG nicht getrocknet (3 Tage offen).
+- **Reinigung:** CC2 hat hinten einen Silikon-Düsenwischer (Startablauf), Ersatzwischer und Reinigungsnadeln im Werkzeugset; eigene Menüfunktion nicht belegt. Vorgehen: auf 250 °C heizen, Fäden mit Pinzette/Messingbürste ab, PETG-Reste am Wischer und an der Silikonhülle entfernen (vermutete Quelle des verbrannten Flecks auf C13), Wischer bei platten Borsten tauschen.
+- **Einstellungen (README Abschnitt „Gitter“, Namen aus ElegooSlicer de.po):** Basis Deckel-Prozess; Vermeiden von Wandüberquerungen an, Maximale Umleitungslänge 0; Außenwand 40 mm/s; eigenes Filamentprofil „… Peppa Gitter“: Düse 245/240 °C, Lüfter 35 % fest, erste 3 Schichten ohne; Überschreiben: Rückzug 1,0 mm, 40/30 mm/s, beim Schichtwechsel an, Wischen an 2 mm / 70 %, Schwellenwert Fahrstrecke 0,5 mm, Z-Hub 0,2 Normal. Rolle trocknen ist die wichtigste Maßnahme. Werte sind begründete Startwerte, nicht am C13-G-Code geprüft → G-Code vor dem Druck an Claude, ideal zuerst C14.
+

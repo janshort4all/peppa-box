@@ -66,16 +66,6 @@ def symbol_gaps():
 # --- Druckausrichtung ---
 
 
-def daempfung(f, t_mm, offen, d_mm=None):
-    """Abschätzung (vereinfachtes Modell): Lochplatte vor dem Lautsprecher als mitschwingende Luftmasse.
-    m = ρ (t + 1,7 r) / σ  (Lochtiefe mit Mündungskorrektur, offener Anteil σ); Dämpfung = 10 lg(1 + (π f m / ρc)²) in dB."""
-    import math as _m
-    rho, c = 1.2, 343.0
-    r = (d_mm if d_mm else M.GR_HOLE[0]) / 2 / 1000
-    m = rho * (t_mm / 1000 + 1.7 * r) / offen
-    return 10 * _m.log10(1 + (_m.pi * f * m / (rho * c)) ** 2)
-
-
 def gitter_pruefung(parts=None):
     """Gitter (einfarbig) und Logo-Buchstaben (eigene Teile): Schichtanalyse in Druckausrichtung (Stege schmaler als 1 bzw.
     2 Linienbreiten), offene Fläche vor dem Lautsprecher, Luft hinter dem Gitter, Sitz der Buchstaben-Stifte."""
@@ -98,14 +88,10 @@ def gitter_pruefung(parts=None):
     cone = CrossSection.circle(M.SPK_CUT / 2, 96).translate([M.SPK_X, M.SPK_Z])
     lp = O.decompose()
     gaps = [a_.min_gap(b_, 20) for i, a_ in enumerate(lp) for b_ in lp[i + 1:]]
-    offen = (H ^ cone).area() / cone.area()
     return dict(rows=rows_of(B), rows_b=rows_of(O), loecher=len(pts),
-                offen_direkt=100 * offen,
+                offen_direkt=100 * (H ^ cone).area() / cone.area(),
                 offen_mulde=100 * (H ^ M.gitter_bay_cs()).area() / cone.area(),
-                luft=M.BAY_D - M.SPK_FLANGE - M.SEAT_D,
-                daempfung={f: daempfung(f, M.GR_T, offen) for f in (2000, 5000, 10000)},
-                vorher={f: daempfung(f, 2.4, 0.11) for f in (2000, 5000, 10000)},
-                massstab=M._GL.get("scale"),
+                luft=M.GR_PLENUM + (M.BAY_D - M.SPK_FLANGE - M.SEAT_D),
                 teile=len(lp), abstand_platte=min(gaps), platte=O.bounding_box(),
                 stifte=sum(len(M.gitter_stifte(c)) for c in M.gitter_buchstaben_cs()),
                 sitz=(b ^ o).volume())
@@ -242,11 +228,11 @@ if __name__ == "__main__":
     print("== Gitter und Logo-Buchstaben (Schichtanalyse in Druckausrichtung) ==")
     g = gitter_pruefung(parts)
     print(f"  {g['loecher']} Löcher; offen direkt vor der Öffnung Ø {M.SPK_CUT:g}: {g['offen_direkt']:.0f} %, über die ganze Mulde: {g['offen_mulde']:.0f} % der Öffnung")
-    print(f"  Luft zwischen Gitter und Lautsprecherrahmen: {g['luft']:.1f} mm; Logo-Maßstab {g['massstab']:.3f}")
-    print("  Dämpfung durch das Gitter (Abschätzung): " + ", ".join(f"{f // 1000} kHz {v:.1f} dB" for f, v in g["daempfung"].items())
-          + "  | Stand vorher (11 % offen): " + ", ".join(f"{f // 1000} kHz {v:.1f} dB" for f, v in g["vorher"].items()))
+    print(f"  Luft hinter dem Gitter über der Mulde: {g['luft']:.1f} mm")
     r1 = g["rows"][0]
     print(f"  Gitter Schicht 1: {r1['flaeche']:.0f} mm², schmaler als 0,4: {r1['d04']:.2f} mm², als 0,84: {r1['d08']:.2f} mm²")
+    back = [r for r in g["rows"] if M.GR_T - M.GR_PLENUM < r["z"] < M.GR_T]
+    print(f"  Gitter hinten (Luftraum-Schichten): schmaler als 0,4 höchstens {max(r['d04'] for r in back):.2f} mm² je Schicht")
     b1 = g["rows_b"][0]
     print(f"  Buchstaben: {g['teile']} Teile, {g['stifte']} Stifte, Abstand auf der Platte mindestens {g['abstand_platte']:.1f} mm, "
           f"Platte {g['platte'][3]:.0f} × {g['platte'][4]:.0f} mm; Schicht 1: {b1['flaeche']:.0f} mm², schmaler als 0,4: {b1['d04']:.2f} mm²")

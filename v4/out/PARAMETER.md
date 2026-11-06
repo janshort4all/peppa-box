@@ -36,8 +36,8 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `ENC_HOLE` | 7,4 | Loch für M7-Gewinde |
 | `KNOB_BORE` | 6,1 | Bohrung für die Schlitzachse Ø 6 (gedruckt meist 0,1–0,2 kleiner → Klemmsitz), nur im geschlitzten Teil der Achse (federt dort) |
 | `KNOB_GUIDE` | 6,3 | Bohrung im ungeschlitzten Teil der Achse (federt nicht): nur Führung, damit der lange Knopf nicht auf ganzer Länge klemmt |
-| `GR_PEG` | 2 / 1 / 0,2 | Stifte hinten an den Buchstaben: Ø (bei schmalen Teilen kleiner), Länge, Spiel je Seite im Sackloch des Gitters (Loch 0,3 tiefer). Mit C15 prüfen |
-| `GR_PIN_D` | 3,9 | Stift Ø (Loch im Korpus PIN_HOLE 4,1; mit C15 am Korpus prüfen) |
+| `GR_PEG` | 2 / 1 / 0,2 | Stifte hinten an den Buchstaben: Ø (bei schmalen Teilen kleiner), Länge, Spiel je Seite im Sackloch des Gitters (Loch 0,3 tiefer). Mit C14 prüfen |
+| `GR_PIN_D` | 3,9 | Stift Ø (Loch im Korpus PIN_HOLE 4,1; mit C14 am Korpus prüfen) |
 
 ## Von dir gemessen (21)
 
@@ -85,7 +85,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (106)
+## Gestaltung festgelegt (107)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -186,12 +186,13 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `LS_Z` | 124 | Deckelschrauben hinten z |
 | `LS_BLOCK_Z0` | 119 | Unterkante der Schraubblöcke hinten am Deckelrahmen (vorher 117; 2 mm mehr Platz für die RC522-Stecker, 3,2 mm Wand unter dem Kernloch) |
 | `GR_T` | 3,6 | Gitterdicke (18 Schichten); liegt hinten auf der Sitzfläche (y = SEAT_D), Vorderfläche 0,2 hinter der Korpusfront |
-| `GR_HOLE` | 3,3 / 4,2 | Löcher Ø und Mindestabstand der Lochmitten (Steg ≥ 0,9 = 2 Linien); Ø 3,3 hält Finger und Stifte vom Lautsprecher fern |
-| `GR_FIELD_R` | 37,5 | Lochfeld rund, nur und ganz vor dem Lautsprecher: deckt den Ausschnitt Ø 73 (SPK_CUT) ab. Membran-Ø nicht gemessen → nicht kleiner. Außerhalb liegt hinter dem Gitter nur die Sitzfläche (Löcher dort bringen keinen Schall) |
-| `GR_RINGS` | 4,2 | Lochfeld in konzentrischen Ringen (Ringabstand), Mitte ein Loch, jeder Ring gleichmäßig geteilt und zum inneren versetzt |
-| `GR_LOGO` | 100 / 70 / 76 | Ausgangsgröße/-lage der Logo-Vorlage (gitter/peppa_box_logo.png); Größe und Lage auf dem Gitter berechnet `gitter_layout()` |
-| `GR_LAYOUT` | 2,5 / 3,5 / 1,5 | Logo-Anordnung: „peppa“ über, „BOX“ unter dem Lochfeld, gleicher Maßstab, so groß wie möglich. Abstand zum Lochfeld, zum Gitterrand, Strahlen zu den Buchstaben |
+| `GR_HOLE` | 3,3 / 4,2 | Löcher Ø und Teilung im Wabenraster, mittig zu (70, 70); Steg 0,9 = 2 Linien |
+| `GR_RIM` | 4,5 | geschlossener Rand außen (an der Vorderfläche) |
+| `GR_RIM_BACK` | 1,2 | Mindeststeg Loch ↔ schräge Oberkante hinten (Sitz fällt oben nach hinten ab) |
+| `GR_LOGO` | 100 / 70 / 76 | Logo Breite, Mitte x, Mitte z (Vorlage Jan 05.11., gitter/peppa_box_logo.png) |
 | `GR_LETTER_T` | 1,2 | Logo-Buchstaben als eigene orange Teile, 1,2 dick, aufgeklebt auf die glatte Gitterfläche (stehen 1,0 vor der Korpusfront; 3D-Effekt, Entscheidung Jan 06.11.) |
-| `GR_POCKET` | 0,2 / 0,1 | Teile ohne Platz für einen Stift (Strahlen): flache Tasche zum Ausrichten, Tiefe = 1 Schicht, Spiel je Seite |
+| `GR_KEEP` | 1,2 | geschlossener beiger Rand um das Logo bis zum ersten Loch |
+| `GR_HALO` | 16 | Beiges Feld um das Logo: Logo-Kontur mit R 16 geglättet (füllt Kerben zwischen den Buchstaben, Lücke a|X, B|O, Innenformen wie das Dreieck im O), dann GR_KEEP Rand; Löcher am Feldrand mit höchstens 2 Nachbarn entfallen. Keine losen Einzellöcher im Feld (Wunsch Jan 06.11.) |
+| `GR_PLENUM` | 1,2 | Luftraum: Gitter hinten über der Lautsprecher-Mulde 1,2 dünner (2,4 statt 3,6), damit der Schall hinter dem Logo zu den Löchern kommt. Lautsprecherrahmen ca. 1,3 hinter der Sitzfläche, Schraubenköpfe liegen dahinter (Jan 05.11.) → 2,5 mm Luft |
 | `GR_EDGE_CH` | 0,4 | Fase 45° an der Vorderkante außen |
 | `GR_PIN_L` | 2,4 | Stiftlänge hinter der Sitzfläche (Loch 2,8 tief), Spitze 0,4 gefast |

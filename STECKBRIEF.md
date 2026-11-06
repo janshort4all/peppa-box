@@ -52,7 +52,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 - **Deckel:** zweifarbig (oranger Kern, beige Haut 0,7 mm), 4 Touchfelder mit Symbolen, Kartenschlitz, Ein-Taste hinten rechts in Mulde. **Deckelrahmen** mit Verteiler-Brücke (MPR121 + 3 WAGO hängend), Tasterhalter, Zungen vorne, 2 Schrauben hinten durch die Rückwand.
 - **Kartenfach:** Karte 70 × 112 × 4 mm, 42 mm tief, 8° geneigt, Federzunge, RC522 in Schienen dahinter.
 - **Rechts:** Drehknopf (y 84, z 60) und Klinke (y 84, z 24). **Links:** Riemen (z 118). **Hinten:** USB-C-Einbaubuchse x 114, z 60, innen höchstens 20 mm tief (Produkt offen; Stecker am Akku-Board gewinkelt oder ≤ 20 mm), Lüftungsschlitze.
-- **Front:** gedrucktes Gitter statt Stoff, **einfarbig beige, klangoptimiert**: rundes Lochfeld (222 Löcher in Ringen) nur vor dem Lautsprecher, Logo als **eigene orange Buchstaben, 1,2 mm erhaben, aufgeklebt** – „peppa“ über, „BOX“ unter dem Lochfeld: `06a` Gitter, `06b` alle Buchstaben, Bild `out/gitter_ansicht.png` (Nachträge 05.11. (6), 06.11. (1–3)).
+- **Front:** gedrucktes Gitter statt Stoff, **einfarbig beige**; Logo groß in der Mitte als **eigene orange Buchstaben, 1,2 mm erhaben, aufgeklebt** (Stifte in Sacklöchern), beiges Feld um das Logo ohne lose Löcher (`GR_HALO`): `06a` Gitter, `06b` alle Buchstaben, Bilder `out/gitter_ansicht.png`, `out/gitter_vorne_nah.png` (Nachträge 05.11. (6), 06.11. (1), (2), (4)).
 - Höhen: Klemmen 77,5 mm, Kartenfach ab 86,8 mm, Deckel-Module ab 117,4 mm.
 
 Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine Stützen. Fuzzy Skin 0,20 / 0,30 Classic **nur über den Modifier `01f_…FUZZY_aussenhaut`** (Prozess „Nur lackiert“, Modifier „Kontur“; alle Korpus-Einstellungen in `v4/out/README.md`); der alte Modifier `01m_…` ist ungültig (siehe Nachtrag 04.11.).
@@ -73,7 +73,7 @@ Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine St�
 4. Nach Lieferung von Reichelt messen: Lautsprecher-Lochabstand, Gewindelängen Drehgeber und Klinke, Tasterhöhe; RC522- und MAX-Maße; NFC-Aufkleber-Dicke.
 5. Coupons drucken und auswerten: C2, C4, C6, C7, C8.
 6. Korpus-Prototyp: Boden einsetzen, Schrauben. Kammerdecke ist seit 04.11. ein Satteldach im Korpus (einteilig, Entscheidung Jan) – nach dem Druck außen auf ca. 95–125 mm Druckhöhe auf Linien ansehen.
-7. Gitter mit Logo: im Modell (Stand 06.11. abends: klangoptimiert, Logo über/unter dem Lochfeld, aufgeklebte Buchstaben). Offen: G-Code C13 auswerten (Fäden), Einstellungen festlegen, C15 drucken, dann Gitter und Buchstaben (G-Code vorher prüfen lassen).
+7. Gitter mit Logo: im Modell (Stand 06.11.: Variante A, Logo groß in der Mitte, aufgeklebte Buchstaben, geglättetes Feld). Offen: G-Code C13 auswerten (Fäden), Einstellungen festlegen, C14 drucken, dann Gitter und Buchstaben (G-Code vorher prüfen lassen); vor dem Kleben Probe hören.
 8. Optional: Lichtleiter für die Lade-LED, Ideen zur optischen Individualisierung (Seitenteile, Deckeleinlage, Magnete).
 
 ## Links (Artefakte, bleiben dauerhaft erhalten)
@@ -579,4 +579,10 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Druck:** weniger Löcher (222 statt 377) = weniger Fahrten über Löcher (Fäden), keine Farbwechsel. Gitter ca. 51 g, Buchstaben ca. 2 g (Platte 94 × 46 mm, „BOX“ dicht unter „peppa“). Prüfungen: keine Kollision, Überhang Gitter 72 mm² (nur Böden der Sacklöcher), Sichtfläche ohne Stege unter 0,4 mm, alle STL geschlossen. Kleinste Details der Buchstaben: e-Schlitz an der engsten Stelle unter 0,9 mm (in C15 enthalten).
 - **Coupon C15** (`coupon_C15_gitter_oben_beige` + `coupon_C15_buchstaben_peppa_orange`, ca. 26 g): obere Gitterhälfte mit halbem Lochfeld, „peppa“ und Strahlen, 2 Stifte. Ersetzt C14. Bilder `out/gitter_ansicht.png`, `out/gitter_vorne_nah.png`.
 - **Als Nächstes:** G-Code C13 auswerten → Einstellungen gegen Fäden; Rollen trocknen; C15; dann Gitter und Buchstaben (G-Code vorher prüfen lassen); vor dem Kleben Probe hören.
+
+## Nachtrag 06.11.2026 (4) – Entscheidung: Variante A bleibt (klangoptimierter Entwurf zurückgenommen)
+
+- Das klangoptimierte Gitter aus Nachtrag (3) gefiel Jan optisch nicht. Vier weitere Entwürfe nur als Bild (nicht im Modell): 1 „Bildschirm“ (großes Logo schwebt 2,5 mm vor dunklem Lochfeld), 2 „Scheibe“ (Logo quer über runder Lautsprecherscheibe, schwebend), 3 „Radio“ (runder Lautsprecher mit orangem Ring, Schriftzug einzeilig darunter), 4 „Emblem“ (Schrift im Bogen). Skript `scratch` nicht im Repository.
+- **Entscheidung Jan (19:11): keiner davon – es bleibt Variante A mit geglättetem Logo-Feld** (Stand Nachtrag (2), Commit 8a9efd7): Logo groß in der Mitte, beiges Feld (`GR_HALO` 16), 377 Löcher, Luftraum 2,5 mm, Buchstaben 1,2 mm erhaben mit Stiften aufgeklebt.
+- Modell, Prüfungen, STL-Dateien und Bilder per `git revert` auf diesen Stand zurückgesetzt (C15 entfällt, C14 gilt wieder). Klang nach Abschätzung: direkt 11 % offen, über den Luftraum ca. 37 %; Hörtest mit dem Gitter vor dem Kleben bleibt wichtig. Reserve, falls es dumpf klingt: Gitter 2 mm vorstehen lassen (Luftraum 4,5 statt 2,5 mm).
 

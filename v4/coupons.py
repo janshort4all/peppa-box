@@ -164,15 +164,15 @@ def c11_korpus_oben():
     return k.translate(t), mod.translate(t)
 
 
-def c15_gitter_oben(parts=None):
-    """Obere Hälfte des Gitters (oberes halbes Lochfeld, schräge Oberkante, zwei Stifte, Sacklöcher und Taschen für „peppa“
-    und die Strahlen), dazu genau diese Teile (eigene Datei). Prüft: Fäden in den Löchern, Oberfläche, Sitz der Buchstaben-Stifte
-    und der Strahlen in ihren Taschen, Kleben, Stifte im Korpus. Ersetzt C13/C14 (06.11.)."""
+def c14_gitter_ecke(parts=None):
+    """Gitter oben links, einfarbig, mit den Sacklöchern für „P“, „e“, „p“, dazu genau diese drei Buchstaben (eigene Datei).
+    Prüft: Fäden in den Löchern nach den neuen Einstellungen, Oberfläche, Sitz der Buchstaben-Stifte, Kleben, Stift in der
+    oberen linken Ecke des Korpus. Ersetzt C13 (Logo eingelegt, 06.11. verworfen)."""
     if parts is None:
         b, o = M.gitter()
     else:
         b, o = parts["gitter_beige"], parts["gitter_logo"]
-    sel = box(5, -5, M.SPK_Z, 135, 10, 135)
+    sel = box(10, -5, 66, 73.1, 10, 131)
     g = b ^ sel
     letters = [p for p in o.decompose() if (p - sel).volume() < 1e-6]
     return M.gitter_druck(g, g), M.buchstaben_druck(letters)
@@ -211,9 +211,9 @@ def all_coupons():
     out["C12_deckel_oberseite_MODIFIER_haut_1wand"] = c
     out["C12_deckel_oberseite_opfer_PLA"] = d
     out["C12_deckel_oberseite_MODIFIER_bruecke_richtung"] = e
-    a, b = c15_gitter_oben()
-    out["C15_gitter_oben_beige"] = a
-    out["C15_buchstaben_peppa_orange"] = b
+    a, b = c14_gitter_ecke()
+    out["C14_gitter_ecke_beige"] = a
+    out["C14_buchstaben_P_e_p_orange"] = b
     a, b = c9_kopfueber()
     out["C9_deckel_kopfueber_felder"] = a
     out["C9_deckel_kopfueber_taste_schlitz"] = b

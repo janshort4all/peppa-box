@@ -76,17 +76,17 @@ def pruefbericht_md(parts, ph):
     lines += ["", "Alle anderen Flächen sind steiler als 45° oder liegen auf der Platte. Kein Teil braucht Stützmaterial.", ""]
     g = K.gitter_pruefung(parts)
     r1, b1 = g["rows"][0], g["rows_b"][0]
+    back = [r for r in g["rows"] if M.GR_T - M.GR_PLENUM < r["z"] < M.GR_T]
     n = lambda v, k=1: f"{v:.{k}f}".replace(".", ",")
     lines += ["## Gitter und Logo-Buchstaben (Schichtanalyse in Druckausrichtung)", "",
-              f"- Lochfeld rund (R {n(M.GR_FIELD_R)}) in Ringen: {g['loecher']} Löcher Ø {n(M.GR_HOLE[0])}, Mindestabstand {n(M.GR_HOLE[1])} (Steg ≥ 0,9 mm = 2 Linien).",
-              f"- Offen direkt vor der Lautsprecheröffnung Ø {M.SPK_CUT:g}: {g['offen_direkt']:.0f} %. Luft bis zum Lautsprecherrahmen {n(g['luft'])} mm.",
-              "- Dämpfung durch das Gitter (Abschätzung, Lochplatte als Luftmasse): " + ", ".join(f"{f // 1000} kHz {n(v)} dB" for f, v in g["daempfung"].items())
-              + " (Stand vorher mit Logo vor dem Lautsprecher: " + ", ".join(f"{f // 1000} kHz {n(v)} dB" for f, v in g["vorher"].items()) + ").",
+              f"- Gitter einfarbig: {g['loecher']} Löcher Ø {n(M.GR_HOLE[0])} im Wabenraster {n(M.GR_HOLE[1])} (Steg 0,9 mm = 2 Linien).",
+              f"- Offen direkt vor der Lautsprecheröffnung: {g['offen_direkt']:.0f} %; über den Luftraum ({n(g['luft'])} mm) erreichbar: {g['offen_mulde']:.0f} % der Öffnung.",
               f"- Gitter Schicht 1 (Sichtfläche): {r1['flaeche']:.0f} mm², schmaler als 1 Linie (0,4 mm): {n(r1['d04'], 2)} mm².",
-              f"- Logo-Maßstab {n(g['massstab'], 3)} der Vorlage; „peppa“ über, „BOX“ unter dem Lochfeld. Buchstaben: {g['teile']} Teile auf einer Platte "
-              f"({g['platte'][3]:.0f} × {g['platte'][4]:.0f} mm), mindestens {n(g['abstand_platte'])} mm Abstand; Schicht 1 {b1['flaeche']:.0f} mm², schmaler als 0,4 mm: {n(b1['d04'], 2)} mm².",
-              f"- {g['stifte']} Stifte in Sacklöchern (Spiel {n(M.GR_PEG[2])} je Seite, Loch 0,3 tiefer); die 3 Strahlen in flachen Taschen (1 Schicht). Überschneidung mit dem Gitter {n(g['sitz'], 3)} mm³.",
-              "- STL geschlossen, keine doppelten Ecken.", ""]
+              f"- Gitter hinten (Luftraum): Rand läuft durch die Lochmitten, schmaler als 0,4 mm höchstens {n(max(r['d04'] for r in back), 2)} mm² je Schicht (Ecken am Lochrand).",
+              f"- Buchstaben: {g['teile']} Teile auf einer Platte ({g['platte'][3]:.0f} × {g['platte'][4]:.0f} mm), mindestens {n(g['abstand_platte'])} mm Abstand; "
+              f"Schicht 1 (Sichtseite) {b1['flaeche']:.0f} mm², schmaler als 0,4 mm: {n(b1['d04'], 2)} mm² (Spitze im e-Schlitz, Ecken).",
+              f"- {g['stifte']} Stifte in Sacklöchern (Spiel {n(M.GR_PEG[2])} je Seite, Loch 0,3 tiefer), Überschneidung mit dem Gitter {n(g['sitz'], 3)} mm³.",
+              "- STL geschlossen, keine doppelten Ecken (Löcher als gedrehte 32-Ecke, Versätze vereinfacht).", ""]
     return "\n".join(lines)
 
 
@@ -113,7 +113,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 
 | Datei | Prüft | Was du mir zurückmeldest |
 | --- | --- | --- |
-| coupon_C15_gitter_oben_beige + coupon_C15_buchstaben_peppa_orange | **Probe vor dem Gitter:** obere Hälfte des Gitters (halbes Lochfeld, schräge Oberkante, 2 Stifte, Sacklöcher und Taschen für „peppa“ und die Strahlen), dazu diese Teile, ca. 26 g | Mit den Gitter- bzw. Buchstaben-Einstellungen (Abschnitt „Gitter“). Fäden in den Löchern weg? Buchstaben-Stifte: leicht hinein, ohne zu wackeln? Strahlen in ihren Taschen? Alles plan? Oben in den Korpus drücken: Stifte fest? |
+| coupon_C14_gitter_ecke_beige + coupon_C14_buchstaben_P_e_p_orange | **Probe vor dem Gitter:** Ecke oben links einfarbig (Löcher, Rand, schräge Oberkante, ein Stift) mit den Sacklöchern für „P“, „e“, „p“, dazu diese drei Buchstaben, ca. 12 g | Mit den Gitter- bzw. Buchstaben-Einstellungen (Abschnitt „Gitter“). Fäden in den Löchern weg? Buchstaben-Stifte: leicht hinein, ohne zu wackeln? Buchstaben liegen plan auf? In die obere linke Ecke des Korpus drücken: Stift fest? |
 | coupon_C12_deckel_oberseite_* (5 Dateien) | **Probe vor dem Deckel:** obere 2,4 mm vorne rechts (Play, Vor, Mond, Kante mit Fase), kopfüber, Symbole vertieft, ca. 15 g | Wie den Deckel einrichten: Variante A mit `_opfer_PLA`, Variante B mit `_MODIFIER_bruecke_richtung`, beide mit `_MODIFIER_haut_1wand`. Beige in den Kreisen so ruhig wie außen? Symbolböden eben bzw. Fäden parallel? |
 | coupon_C7_lochbild_stapel | **Lochbild 58 × 49 mm des Akku-Stapels**, ca. 20 min | Stapel mit den vorhandenen Schrauben daraufsetzen: Fallen alle 4 Köpfe in die Mulden? Liegt die Acrylplatte innerhalb der Ecken-Marken? |
 | coupon_C8_bodenecke_* (2 Teile) | Schattenfuge Boden/Korpus, Zentrierkragen, Senkschraube 3,0 × 12 in den Dom | Rutscht der Kragen leicht hinein, ohne zu wackeln? Sitzt die Schraube bündig? |
@@ -123,7 +123,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | coupon_C1_wand_hinten_usbc | Öffnung für den USB-C-Stecker, 2 Dome für die Soldered-Platine | Platine anschrauben: Buchse mittig hinter der Öffnung? Stecker rastet voll ein? |
 | coupon_C2_deckelecke_* (3 Teile) | Deckelspalt 0,4 mm, Auflage, hintere Deckelschraube | Spalt gleichmäßig? Klappert es? |
 | coupon_C3_taste_* (3 Teile) | Ein-Taste: Kappe, Halter, Kurzhubtaster | Klickt sie sauber, klemmt nichts? |
-| coupon_C4_rahmenstifte_* | Gitter-Stift in Loch 4,0 / 4,1 / 4,2 (1–3 Kerben); der Korpus hat 4,1 | Welches Loch hält fest, lässt sich aber lösen? (C15 prüft die Stifte direkt am Korpus) |
+| coupon_C4_rahmenstifte_* | Gitter-Stift in Loch 4,0 / 4,1 / 4,2 (1–3 Kerben); der Korpus hat 4,1 | Welches Loch hält fest, lässt sich aber lösen? (C14 prüft den Stift direkt am Korpus) |
 | coupon_C5_touch_platte | Touch durch 3,3 mm (links, mit Tasche) und 5,3 mm (rechts) | Später mit dem MPR121: reagieren beide? |
 | coupon_C6_schraubdome | Kernloch 2,3 / 2,5 / 2,7 mm für 3-mm-Kunststoffschrauben | Welches Loch: Schraube geht fest, Dom reißt nicht? |
 
@@ -272,20 +272,16 @@ bzw. nur über den Symbolen, alle Linien parallel (B). Zuerst `coupon_C12_deckel
 am besten zusammen mit dem Drehknopf `07` drucken (beide Orange): Auf der Deckel-Platte müsste CANVAS in Schicht 1–4 jedes Mal
 zwischen Beige und Orange wechseln. Bild: `deckel_draufsicht.png`.
 
-### Gitter (Stand 06.11.2026 abends: klangoptimiert, Logo über und unter dem Lochfeld, ohne Fuzzy)
+### Gitter (Stand 06.11.2026: einfarbig, Buchstaben erhaben und aufgeklebt, ohne Fuzzy)
 
-Das Lochfeld liegt **nur und ganz vor dem Lautsprecher**: rund, 222 Löcher Ø 3,3 in konzentrischen Ringen, deckt den
-Ausschnitt Ø 73 ab. Außerhalb davon liegt hinter dem Gitter nur die Sitzfläche – Löcher dort bringen keinen Schall. Das Logo
-sitzt deshalb außerhalb: **„peppa“ über, „BOX“ unter dem Lochfeld**, beide im gleichen Maßstab (0,64 der Vorlage), so groß wie
-der Platz es erlaubt; die Strahlen bleiben neben dem „a“. Direkt vor dem Lautsprecher sind 45 % offen (vorher 11 %); die
-Dämpfung im Hochton sinkt nach Abschätzung von ca. 7,6 auf 1,5 dB bei 5 kHz (Prüfbericht). Ein Luftraum hinter dem Gitter ist
-nicht mehr nötig – das Gitter ist überall 3,6 mm dick und dadurch steif (Kinderfinger). Bild: `gitter_ansicht.png`.
+Befund C13 (06.11., eingelegtes Logo, zweifarbig): sehr viele Fäden in den Löchern, Fehler im Orange nach den Farbwechseln,
+ein verbrannter dunkler Fleck hinten. Deshalb ohne Farbwechsel: **Gitter einfarbig beige**, die **Buchstaben als eigene orange
+Teile**, 1,2 mm dick, aufgeklebt – sie stehen 1,0 mm vor der Korpusfront (3D-Effekt). Beide Sichtflächen entstehen auf der
+texturierten PEI-Platte (matt wie der Deckel). Jeder Buchstabe hat hinten 2 Stifte Ø 2,0 (die drei Strahlen je einen Stift in
+ihrer Form) und passt nur in seine Sacklöcher im Gitter. Bild: `gitter_ansicht.png` (`v4/gitter/render_gitter.py`).
 
-Gitter einfarbig beige, Vorderfläche auf der texturierten PEI. Die orangen Buchstaben sind eigene Teile, 1,2 mm dick, stehen
-1,0 mm vor der Korpusfront (3D-Effekt); Sichtseite ebenfalls auf der PEI. Jeder Buchstabe hat hinten 2 Stifte Ø 2,0 und passt
-nur in seine Sacklöcher; die drei kleinen Strahlen haben keinen Platz für einen Stift und sitzen in flachen Taschen (1 Schicht tief).
-
-`06a_gitter_beige.stl`: 115,4 × 115,7 × 3,6 mm, 6 Stifte Ø 3,9, ca. 51 g. `06b_logo_buchstaben_orange.stl`: 11 Teile, Sichtseite unten, ca. 2 g.
+`06a_gitter_beige.stl`: 115,4 × 115,7 mm, 3,6 mm dick (über dem Lautsprecher 2,4 mm, dahinter 2,5 mm Luft), 6 Stifte Ø 3,9, ca. 36 g.
+`06b_logo_buchstaben_orange.stl`: 11 Teile in Logo-Reihenfolge auseinandergezogen (mindestens 4 mm Abstand), Sichtseite unten, ca. 4 g.
 
 **Fäden:** Die Einstellungen gegen die Fäden folgen nach der Auswertung des C13-G-Codes (Nachtrag im Steckbrief). Bis dahin:
 Rollen trocknen (Elegoo: 60 °C, 8 h), Platte mit Spülmittel waschen und nicht mehr anfassen.
@@ -298,11 +294,11 @@ Rollen trocknen (Elegoo: 60 °C, 8 h), Platte mit Spülmittel waschen und nicht 
 | | Nahtposition | Rückseite – die im Einbau untere Kante jedes Buchstabens liegt hinten |
 | | Filament | Orange wie Deckel und Knopf |
 
-**Einkleben:** Zuerst trocken probieren: Jeder Buchstabe muss mit leichtem Druck plan aufliegen, die Strahlen liegen in ihren
-Taschen. Geht ein Stift zu stramm, das Loch mit einem 2,5-mm-Bohrer von Hand nachdrehen; ist er locker, füllt der Kleber das Spiel.
-Dann je einen kleinen Tropfen **nur in die Sacklöcher** (Strahlen: ein Hauch auf die Unterseite), Teile eindrücken, Gitter mit der
-Vorderseite nach oben aushärten lassen. Am besten 5-Minuten-Epoxid (Zeit zum Ausrichten, kein Schleier); Sekundenkleber hält auch,
-kann aber einen weißen Schleier bilden. Vor dem Kleben das Gitter einsetzen und Probe hören.
+**Einkleben:** Zuerst trocken probieren: Jeder Buchstabe muss mit leichtem Druck plan aufliegen. Geht ein Stift zu stramm, das
+Loch mit einem 2,5-mm-Bohrer von Hand nachdrehen; ist er locker, füllt der Kleber das Spiel. Dann je einen kleinen Tropfen
+**nur in die Sacklöcher** (nicht auf die Fläche), Buchstaben eindrücken, Gitter mit der Vorderseite nach oben aushärten lassen.
+Am besten 5-Minuten-Epoxid (Zeit zum Ausrichten, kein Schleier); Sekundenkleber hält auch, kann aber um die Fuge einen weißen
+Schleier bilden. Reihenfolge: wie auf der Druckplatte, oben „peppa“ und die Strahlen, unten „BOX“.
 Einsetzen ins Gehäuse: 6 Stifte in die Löcher, gleichmäßig eindrücken. Herausnehmen: Schraubendreher unten in die Kerbe.
 
 ### Drehknopf (Stand 05.11.2026, volle Achse, ohne Fuzzy)

@@ -1000,6 +1000,9 @@ GR_LETTER_T = par("GR_LETTER_T", 1.2, "festgelegt",
 GR_PEG = par("GR_PEG", (2.0, 1.0, 0.2), "Probedruck",
              "Stifte hinten an den Buchstaben: Ø (bei schmalen Teilen kleiner), Länge, Spiel je Seite im Sackloch des Gitters (Loch 0,3 tiefer). Mit C14 prüfen")
 GR_KEEP = par("GR_KEEP", 1.2, "festgelegt", "geschlossener beiger Rand um das Logo bis zum ersten Loch")
+GR_HALO = par("GR_HALO", 16.0, "festgelegt",
+              "Beiges Feld um das Logo: Logo-Kontur mit R 16 geglättet (füllt Kerben zwischen den Buchstaben, Lücke a|X, B|O, Innenformen wie das Dreieck im O), "
+              "dann GR_KEEP Rand; Löcher am Feldrand mit höchstens 2 Nachbarn entfallen. Keine losen Einzellöcher im Feld (Wunsch Jan 06.11.)")
 GR_PLENUM = par("GR_PLENUM", 1.2, "festgelegt",
                 "Luftraum: Gitter hinten über der Lautsprecher-Mulde 1,2 dünner (2,4 statt 3,6), damit der Schall hinter dem Logo zu den Löchern kommt. "
                 "Lautsprecherrahmen ca. 1,3 hinter der Sitzfläche, Schraubenköpfe liegen dahinter (Jan 05.11.) → 2,5 mm Luft")
@@ -1050,7 +1053,8 @@ def gitter_holes(logo=None):
     ct = CLR / math.cos(math.atan((SEAT_D + 1.0) / SEAT_D))
     z_max = _seat_top(SEAT_D) - ct - GR_RIM_BACK - d / 2              # schräge Oberkante hinten
     logo = gitter_logo_cs() if logo is None else logo
-    keep = logo.offset(GR_KEEP, JoinType.Round)
+    halo = logo.offset(GR_HALO, JoinType.Round).offset(-(GR_HALO - GR_KEEP), JoinType.Round)
+    keep = halo
     for (px, pz) in frame_pins():
         keep = keep + CrossSection.circle(GR_PIN_D / 2 + 0.9, SEG).translate([px, pz])
     out = []
@@ -1068,6 +1072,15 @@ def gitter_holes(logo=None):
             if (c - inner).area() > 1e-6 or (c ^ keep).area() > 1e-6:
                 continue
             out.append((x, z))
+    # lose Löcher am Rand des Logo-Feldes (höchstens 2 Nachbarn im Raster) entfernen, bis keine mehr übrig sind
+    zone = halo.offset(4.5, JoinType.Round)
+    near = lambda q: (CrossSection.circle(d / 2, 16).translate([q[0], q[1]]) ^ zone).area() > 0
+    nb = lambda q: sum(1 for r in out if 0 < math.hypot(r[0] - q[0], r[1] - q[1]) < p + 0.1)
+    while True:
+        drop = [q for q in out if near(q) and nb(q) <= 2]
+        if not drop:
+            break
+        out = [q for q in out if q not in drop]
     return out
 
 

@@ -85,7 +85,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (106)
+## Gestaltung festgelegt (107)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -192,6 +192,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `GR_LOGO` | 100 / 70 / 76 | Logo Breite, Mitte x, Mitte z (Vorlage Jan 05.11., gitter/peppa_box_logo.png) |
 | `GR_LETTER_T` | 1,2 | Logo-Buchstaben als eigene orange Teile, 1,2 dick, aufgeklebt auf die glatte Gitterfläche (stehen 1,0 vor der Korpusfront; 3D-Effekt, Entscheidung Jan 06.11.) |
 | `GR_KEEP` | 1,2 | geschlossener beiger Rand um das Logo bis zum ersten Loch |
+| `GR_HALO` | 16 | Beiges Feld um das Logo: Logo-Kontur mit R 16 geglättet (füllt Kerben zwischen den Buchstaben, Lücke a|X, B|O, Innenformen wie das Dreieck im O), dann GR_KEEP Rand; Löcher am Feldrand mit höchstens 2 Nachbarn entfallen. Keine losen Einzellöcher im Feld (Wunsch Jan 06.11.) |
 | `GR_PLENUM` | 1,2 | Luftraum: Gitter hinten über der Lautsprecher-Mulde 1,2 dünner (2,4 statt 3,6), damit der Schall hinter dem Logo zu den Löchern kommt. Lautsprecherrahmen ca. 1,3 hinter der Sitzfläche, Schraubenköpfe liegen dahinter (Jan 05.11.) → 2,5 mm Luft |
 | `GR_EDGE_CH` | 0,4 | Fase 45° an der Vorderkante außen |
 | `GR_PIN_L` | 2,4 | Stiftlänge hinter der Sitzfläche (Loch 2,8 tief), Spitze 0,4 gefast |

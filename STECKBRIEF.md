@@ -562,3 +562,10 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Sparen:** kein Reinigungsturm, kein Spülmaterial, keine Farbwechsel-Zeit mehr.
 - **Als Nächstes:** G-Code und Projekt von C13 auswerten (Rückzug, Fahrwege über Löchern, Z-Hub, Temperatur) → Einstellungen gegen Fäden; Rollen trocknen; dann C14.
 
+## Nachtrag 06.11.2026 (2) – Variante A bleibt, keine losen Löcher im Logo-Feld
+
+- **Frage Jan:** Löcher überall und die Buchstaben darauf kleben? Verglichen (Bild nur im Chat): B = 680 Löcher, direkt offen 29 % statt 13 %, aber 70 % mehr Fahrten über Löcher (Fäden), Buchstaben auf dunklem Lochfeld, angeschnittene Löcher an den Kanten. **Entscheidung Jan: A** (beiges Feld um die Buchstaben).
+- **Wunsch Jan:** die losen Einzellöcher im beigen Feld weg (über dem P, zwischen e|p und p|a oben, zwischen a und X, im Dreieck des O, unter B|O).
+- **Geändert (`GR_HALO` 16):** Das beige Feld ist die Logo-Kontur, mit R 16 geglättet (füllt Kerben, Lücken und Innenformen), plus 1,2 mm Rand; danach entfallen am Feldrand alle Löcher mit höchstens 2 Nachbarn (wiederholt). 400 → 377 Löcher; offen direkt 11 % (vorher 13 %), über den Luftraum 37 % (vorher 40 %). Bild `out/gitter_vorne_nah.png`.
+- Neu gebaut: `06a_gitter_beige.stl`, `coupon_C14_gitter_ecke_beige.stl`; Buchstaben unverändert. Prüfungen ohne Kollision, STL geschlossen.
+

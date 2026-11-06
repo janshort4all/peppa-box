@@ -285,7 +285,7 @@ ihrer Form) und passt nur in seine Sacklöcher im Gitter. Bild: `gitter_ansicht.
 
 **Gegen die Fäden (Befund C13):** Rolle trocknen (Elegoo: 60 °C, 8 h) – wichtigste Maßnahme. Düse heiß reinigen, Silikonwischer
 hinten von PETG-Resten befreien (sonst nimmt die Düse sie wieder auf und sie verbrennen). Platte mit Spülmittel waschen, nicht anfassen.
-Für das Gitter ein eigenes Filamentprofil anlegen (Beige kopieren, „… Peppa Gitter“) und dort die Werte unten eintragen; der Rest wie Deckel.
+Für das Gitter einen eigenen Prozess und ein eigenes Filamentprofil anlegen und alle Werte aus der Tabelle unten eintragen.
 
 **Gitter `06a` – alle Abweichungen von den Elegoo-Standardprofilen** (Drucker „Elegoo Centauri Carbon 2 0.4 nozzle“, Prozess
 „0.20mm Standard @Elegoo CC2 0.4 nozzle“, Filament „Elegoo PETG @ECC2“, Druckbetttyp „Texturierte PEI-Platte“; erweiterte

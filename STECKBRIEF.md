@@ -669,3 +669,11 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Slicer neu (README):** Linienbreite erste Schicht 0,45 (0,5), Elefantenfußkompensation 0 (0,15) – sonst sind die Stege in Schicht 1 wieder zu schmal.
 - **Geprüft:** Nachbildung der Slicer-Sperrfläche auf der neuen STL: Schicht 1–18 alle Löcher einzeln umfahrbar (Schicht 1 nur mit 0,45 / EF 0). `check.py` ohne Befund, STL dicht. Neu: `06a_gitter_beige.stl`, `coupon_C14_gitter_ecke_beige.stl`, `gitter_ansicht.png`. Buchstaben `06b` unverändert (Sacklöcher unverändert).
 - **Offen:** Stifte abtrennen und einkleben (12 Schichten nur Fahrten zwischen 6 Stiften, ca. 4 m quer über die Rückseite) – Entscheidung Jan.
+
+## Nachtrag 07.11.2026 (6) – Erste Schicht des Gitters: Lücken in den Stegen
+
+- **Befund Jan:** In bisherigen Drucken in der ersten Schicht große Fehler, Lücken in den Stegen, Fehler im Lochmuster.
+- **G-Code Schicht 1 ausgewertet:** Der Slicer hat die Fläche vollständig geplant (nur 0,7 % unbelegt, winzige Zwickel an den Stegkreuzungen). Jeder Steg (0,9) bestand aber aus genau **zwei Linien à 0,5 mm, je eine vom Ring des Nachbarlochs** (Mitten ±0,22 mm), dazu 1.092 einzelne Pfade (Mittel 19 mm) mit je Rückzug, Wischen und Wiederanfahren. Setzt ein Ring am Anfang nicht sauber ein oder haftet nicht, bleibt im Steg eine Linie oder eine Lücke. Dazu fuhr der Slicer ca. 4.500-mal quer durch Löcher.
+- **Neues Gitter (Steg 1,4, 297 Löcher):** drei Linien je Steg, ein Fünftel weniger Ringe, Fahrten bleiben auf Material.
+- **Korrektur Einstellung:** „Nur eine Wand in der ersten Schicht“ für das Gitter **aus** lassen (Empfehlung von vorhin zurückgenommen), sonst viele kurze Bodenlinien zwischen den Ringen.
+- **Ohne Modellbezug:** Haftung auf der texturierten PEI (Platte mit Spülmittel, nicht anfassen), Z-Versatz der ersten Schicht, trockenes Filament. Test: C14 drucken und nach 2 Schichten abbrechen.

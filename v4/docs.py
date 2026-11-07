@@ -300,7 +300,7 @@ Einstellungen einschalten). In Klammern der Profilwert, wo er bekannt ist. Proze
 | Prozess → Qualität → Breite der Linie | Erste Schicht | **0,45** (0,5) – seit 07.11.: sonst sind die Stege in Schicht 1 für „Wandüberquerungen vermeiden“ zu schmal |
 | Prozess → Qualität | Elefantenfußkompensation | **0** (0,1) – seit 07.11. (vorher 0,15): die Kompensation weitet die Löcher in Schicht 1, dann fährt der Slicer dort wieder quer durch |
 | | Wandgenerator | **Arachne** (Klassisch) |
-| | Nur eine Wand in der ersten Schicht | **an** (in der Datei vom 07.11. noch aus) |
+| | Nur eine Wand in der ersten Schicht | **aus** (Profilwert) – seit 07.11.: bei an füllt der Slicer den Streifen zwischen den Lochringen (Steg 1,4) mit vielen kurzen Bodenlinien, also noch mehr Anfänge und Rückzüge in Schicht 1 |
 | | Vermeiden von Wandüberquerungen | **an** |
 | | Vermeide das Überqueren der Wand – Maximale Umleitungslänge | **0** (keine Grenze) |
 | Prozess → Struktur | Wandschleifen | **3** (2) |

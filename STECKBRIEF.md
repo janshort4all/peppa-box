@@ -652,3 +652,11 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 ## Nachtrag 07.11.2026 (7) – Niederhalter: passt für die vorhandene Pi-Schraube
 
 - Jan hat vom Pi noch M2,5-Schrauben, Flachkopf, ca. 19,2 inkl. Kopf (→ ca. 17,2–17,7 unter dem Kopf). Mit der Senkung 2 mm hätten sie nicht einmal die Platinenunterseite erreicht (nötig 17,6 bis dort). Geändert: Senkungsboden tief auf **12,9 über der Platine** (`NH_SENK` = Ø 5,6 / 12,9), Säule ab dort als Kragen **Ø 7,2** (`NH_KRAGEN`, Wand 0,8; darunter Ø 6). Schraube reicht 2,7–3,2 unter die Platine → Mutter (2,0) oder Abstandsbolzen. Länge jetzt unabhängig von `NH_KABEL`. Kein Schraubenkauf nötig. Kragen 0,9 über der Steckeroberkante, Abstand zum Kabel des ersten Steckers ca. 0,1–0,5. Prüfungen ohne Kollision. **Offen:** Kopf-Ø ≤ 5,2? Passende Muttern im Pi-Set?
+
+## Nachtrag 07.11.2026 (4) – Gitter: Fäden trotz getrocknetem Filament
+
+- **Befund Jan:** Mit getrocknetem beigem Rapid PETG etwas besser, aber weiter Fäden an den Löchern.
+- **Schichtanalyse `06a` (Druckausrichtung):** Schichten 1–12 je ca. 380–400 Lochkonturen, Schichten 13–18 je 172, zusammen ca. 5.700 Konturen = so viele Rückzüge/Fahrten. Danach 12 Schichten (2,4 mm) nur die 6 Stifte Ø 3,9 → lange Fahrten quer über die Rückseite, Fäden liegen über den Lochöffnungen.
+- **Slicer (README Gitter angepasst):** Düse 235 / 230 °C statt 245 / 240, Z-Hub 0 statt 0,2. Beim Abgleich der Screenshots außerdem noch falsch eingestellt: Nahtposition (Ausgerichtet → Rückseite), Füllung erste Schicht (105 → 50 mm/s), Verlangsamen bei Überhängen (an → aus).
+- **Offen (Vorschlag, nicht umgesetzt):** Stifte vom Gitter trennen, separat mitdrucken und in 1,2 mm tiefe Löcher der Gitterrückseite kleben → keine reinen Fahrschichten mehr, Gitter nur 3,6 mm hoch. Entscheidung Jan nach dem nächsten Druck.
+- **Düse prüfen:** Strang bei 240 °C von Hand fördern (gerade = gut, seitlich/stockend = teilverstopft, würde auch Lücken erklären); PETG-Kruste außen entfernen. Härchen am fertigen Teil: kurz mit Heißluft darüber.

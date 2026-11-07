@@ -229,7 +229,7 @@ Einstellungen einschalten). In Klammern der Profilwert, wo er bekannt ist. Proze
 | | Verlangsamen bei Überhängen | **aus** (an) |
 | Prozess → Sonstiges | Randtyp | **Keine Umrandung** |
 | | Fuzzy Skin | **Deaktiviert** |
-| Filament | Düsentemperatur erste Schicht / andere Schichten | **245 / 240 °C** (250 / 250) |
+| Filament | Düsentemperatur erste Schicht / andere Schichten | **235 / 230 °C** (250 / 250) – seit 07.11. (vorher 245 / 240): Rapid PETG ab 230 °C, weniger Nachtropfen in den Löchern |
 | | Druckbett Texturierte PEI erste / andere Schichten | **80 / 75 °C** (70 / 70) |
 | Filament → Kühlung | Lüftergeschwindigkeit (beide Zeilen) | **35 % / 35 %** (10 / 40) |
 | | Zeile „Minimale Lüftergeschwindigkeit“ → Schichtdauer | **100 s** (30) |
@@ -244,7 +244,7 @@ Einstellungen einschalten). In Klammern der Profilwert, wo er bekannt ist. Proze
 | | Während des Rückzugs wischen / Wischabstand | **an / 2 mm** |
 | | Rückzugsmenge vor der Reinigung | **70 %** |
 | | Schwellenwert für die Fahrstrecke | **0,5 mm** |
-| | Z-Hub-Höhe / Z-Hub Typ | **0,2 mm / Normal** (0,4) |
+| | Z-Hub-Höhe | **0** (0,4) – seit 07.11. (vorher 0,2 Normal): Anheben zieht bei PETG Fäden; die Fahrten laufen über gedrucktem Material (Wandüberquerungen vermeiden) |
 
 Platte: `06a` allein, mittig, nicht drehen (Vorderfläche unten, Oberkante hinten), nur Filament Beige, keine Modifizierer.
 

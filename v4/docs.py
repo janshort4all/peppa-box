@@ -435,6 +435,12 @@ Stützen (flach liegend wäre seine Decke 71 × 42 mm frei in der Luft), die Sch
 liegt in der Schichtebene. Sie biegt sich entlang der Bahnen statt quer zu den Schichten und bricht so nicht an einer Schichtgrenze.
 Die Nase hat 45°-Enden (kein waagerechter Überhang).
 
+**Ohne Stützen, Brücken nur kurz und beidseitig gehalten:** Schachtende 4,8 mm, Schlitz über der Zunge 20 mm, Zungen-Unterseite ca. 17 mm.
+Die Zungen-Unterseite hing bis 07.11. frei (nur an der Wurzel gehalten; ElegooSlicer meldete „schwebende Überhänge“). Jetzt trägt ein
+**Steg unter der Zungenspitze** (1,4 mm, im unteren Schlitz). **Nach dem Druck den Steg mit dem Cutter durchtrennen** (Klinge von außen in
+den 0,8-mm-Schlitz unter der Zungenspitze), dann muss die Zunge frei federn. Die Bögen der waagerecht liegenden Schraubenbohrungen
+drucken wie normale Löcher.
+
 **Schrauben (07.11.):** Die beiden Bohrungen Ø 6,8 gehen jetzt bis ganz unten durch (vorher blieb unten ein Stück des Seitenteils
 im Weg). Der Schraubendreher kommt gerade von unten an den Kopf, der Weg ist etwa 43 mm lang: Schaft mindestens ca. 5 cm frei und
 dünner als 6 mm, die meisten Bithalter sind zu dick. Erst Kartenfach verschrauben, dann den RC522 einschieben.
@@ -444,8 +450,9 @@ dünner als 6 mm, die meisten Bithalter sind zu dick. Erst Kartenfach verschraub
 Alles aus **derselben Rolle** (die Farbe der Teststücke ist egal). Unterschiedliche Rollen auf einer Platte bedeuten einen Filamentwechsel
 in jeder Schicht der unteren 4 mm (20 Wechsel mit Spülmenge). Kartenfach in die Mitte, die drei C15-Stücke daneben, mindestens 10 mm Abstand.
 
-Ausgangspunkt: Drucker „Elegoo Centauri Carbon 2 0.4 nozzle“, Filament „Elegoo PETG @ECC2“, Prozess „0.20mm Standard @Elegoo CC2 0.4 nozzle“,
-Druckbetttyp „Texturierte PEI-Platte“. In Klammern: Profilwert vorher. Alles andere bleibt auf dem Profilwert.
+Ausgangspunkt: Drucker „Elegoo Centauri Carbon 2 0.4 nozzle“, Prozess „0.20mm Standard @Elegoo CC2 0.4 nozzle“, Druckbetttyp
+„Texturierte PEI-Platte“, Filament: das **System**profil der eingelegten Rolle (bei Jan „Elegoo Rapid PETG …“), nicht die für den Korpus
+geänderte Kopie. In Klammern: Profilwert vorher. Alles andere bleibt auf dem Profilwert.
 
 | Reiter → Gruppe | Einstellung | Wert |
 | --- | --- | --- |
@@ -460,11 +467,11 @@ Druckbetttyp „Texturierte PEI-Platte“. In Klammern: Profilwert vorher. Alles
 | Sonstiges → Umrandung (Prozess) | Randtyp / Randbreite / Lücke | Nur Außenrand / 5 mm / 0,1 mm – gilt für das Kartenfach |
 | je C15-Stück (Rechtsklick in der Objektliste → Einstellungen hinzufügen → Sonstiges) | Randtyp | Keine Umrandung – ein Rand an der Kartenkante würde die Breite im Schacht verfälschen |
 | Filament → Druckbett (Texturierte PEI) | Erste Schicht / Andere Schichten | 80 / 75 °C (70 / 70) – gegen Abheben |
-| Filament → Kühlung | alle Werte | Profilwerte. **Nicht** die Korpus-Kühlung (Mindest-Schichtdauer 70 s): Das Kartenfach hat 440 kleine Schichten und würde Stunden länger brauchen |
+| Filament → Kühlung | alle Werte | Profilwerte. **Nicht** die Korpus-Kühlung (Schichtdauer 100 s / 70 s): Dann dauert jede der 442 Schichten mindestens 70 s, der Slicer bremst die Wände auf unter 1 mm/s – 07.11.: 5 h 57 min, davon 4 h Wände. Die 70 s waren nur gegen Querlinien auf der sichtbaren Fuzzy-Außenhaut des Korpus |
 
 Rolle vorher trocknen (Elegoo: 60 °C, 8 h), feuchtes PETG macht Fäden in den Schlitzen um die Zunge.
-Nach dem Druck: Die Zunge muss frei federn (Schlitze rundum offen, Fäden mit dem Cutter heraus), die beiden Bohrungen sind von unten
-durchgängig. Danach C15 testen (Tabelle oben). Für die endgültigen Karten Bügeln nur „Oberste Oberfläche“, damit die Rille wie im Test bleibt.
+Nach dem Druck: Steg unter der Zungenspitze durchtrennen; die Zunge muss frei federn (Schlitze rundum offen, Fäden mit dem Cutter heraus),
+die beiden Bohrungen sind von unten durchgängig. Danach C15 testen (Tabelle oben). Für die endgültigen Karten Bügeln nur „Oberste Oberfläche“, damit die Rille wie im Test bleibt.
 
 ### Niederhalter für die Steckkabel (`11_niederhalter_stiftleiste.stl`, Stand 07.11.2026)
 

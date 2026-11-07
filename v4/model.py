@@ -105,6 +105,7 @@ CARD_IN = par("CARD_IN", 42.0, "festgelegt", "Einstecktiefe")
 SLOT_Y = par("SLOT_Y", 116.0, "festgelegt", "Schlitzmitte auf dem Deckel")
 TILT = par("TILT", 8.0, "festgelegt", "Neigung der Karte nach hinten")
 # Rastung Karte ↔ Kartenfach (07.11.): Nase an der Federzunge rastet in eine Rille vorne in der Karte
+ZUNGE_STEG = par("ZUNGE_STEG", 1.4, "festgelegt", "Druckhilfe: Steg unter der Zungenspitze (Länge in Steckrichtung), nach dem Druck durchschneiden")
 RAST_UEB = par("RAST_UEB", 0.7, "festgelegt", "Nase steht so weit über die Kartenvorderseite (Federweg beim Ein-/Ausziehen); vorher 0 = keine Rastung")
 RAST_TOP = par("RAST_TOP", 0.8, "festgelegt", "Nase: flache Spitze (in Steckrichtung)")
 RAST_EIN = par("RAST_EIN", 30.0, "festgelegt", "Nase: Flanke zur Öffnung (Einstecken), Grad zur Kartenfläche")
@@ -871,7 +872,10 @@ def kartentasche():
                     box(-11, 33.2, -ti - 3, 11, 34, -ti + 0.01)])
     thin = box(-10.2, 14, -ti - 3, 10.2, 33.2, -ti - 2 + 0.6)
     bump = rast_nase(ti)
-    local = local - inner - tongue_cut - thin + bump
+    # Druckhilfe: Steg unter der Zungenspitze im unteren Schlitz (im Druck steht u senkrecht, die Zunge hinge sonst 19 mm frei
+    # über dem Schlitz). Mit Steg wird ihre Unterseite eine Brücke zwischen Wurzel und Steg. Nach dem Druck mit dem Cutter durchtrennen.
+    tie = box(-11.05, 33.2 - ZUNGE_STEG, -ti - 1.4, -10.15, 33.2, -ti)
+    local = local - inner - tongue_cut - thin + bump + tie
     world = to_world(local)
     world = world ^ box(-50, -50, -50, 200, 200, LID_BOT)
     # Flansch unter dem Deckel; vorne bündig mit der Vorderwand

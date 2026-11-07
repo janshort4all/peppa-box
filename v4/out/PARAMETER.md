@@ -91,7 +91,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (120)
+## Gestaltung festgelegt (121)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -133,6 +133,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `CARD_IN` | 42 | Einstecktiefe |
 | `SLOT_Y` | 116 | Schlitzmitte auf dem Deckel |
 | `TILT` | 8 | Neigung der Karte nach hinten |
+| `ZUNGE_STEG` | 1,4 | Druckhilfe: Steg unter der Zungenspitze (Länge in Steckrichtung), nach dem Druck durchschneiden |
 | `RAST_UEB` | 0,7 | Nase steht so weit über die Kartenvorderseite (Federweg beim Ein-/Ausziehen); vorher 0 = keine Rastung |
 | `RAST_TOP` | 0,8 | Nase: flache Spitze (in Steckrichtung) |
 | `RAST_EIN` | 30 | Nase: Flanke zur Öffnung (Einstecken), Grad zur Kartenfläche |

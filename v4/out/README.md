@@ -345,8 +345,41 @@ Rille (Klick). Steht die Karte auf dem Fachboden, liegt die Nase **entspannt** i
 die Nase die Auszugsflanke der Rille hinauf; deren Winkel bestimmt die Kraft (Schätzung 30°: ca. 3–4,5 N, ein Vielfaches des Kartengewichts,
 für ein Kind leicht). Schnittbild: `rastung_schnitt.png`. Vorher hatte die Nase genau 0 mm Überdeckung, die Karte hielt nur durch Reibung.
 
-Druck Kartenfach wie bisher (auf der Seite, Brim, ohne Stützen und Fuzzy). Die Nase liegt in der Schichtebene, die Zunge biegt sich entlang
-der Bahnen. Karte wie bisher (Rückseite unten); Rille und Fase liegen oben und brauchen keine Stütze.
+Warum das Kartenfach hochkant (88,5 mm hoch, Seitenteil auf der Platte) liegt: Der Kartenschacht wird ein senkrechter Schlitz ohne
+Stützen (flach liegend wäre seine Decke 71 × 42 mm frei in der Luft), die Schienen für den RC522 drucken ohne Stütze, und die Federzunge
+liegt in der Schichtebene. Sie biegt sich entlang der Bahnen statt quer zu den Schichten und bricht so nicht an einer Schichtgrenze.
+Die Nase hat 45°-Enden (kein waagerechter Überhang).
+
+**Schrauben (07.11.):** Die beiden Bohrungen Ø 6,8 gehen jetzt bis ganz unten durch (vorher blieb unten ein Stück des Seitenteils
+im Weg). Der Schraubendreher kommt gerade von unten an den Kopf, der Weg ist etwa 43 mm lang: Schaft mindestens ca. 5 cm frei und
+dünner als 6 mm, die meisten Bithalter sind zu dick. Erst Kartenfach verschrauben, dann den RC522 einschieben.
+
+### Kartenfach + C15 auf einer Platte (Stand 07.11.2026)
+
+Alles aus **derselben Rolle** (die Farbe der Teststücke ist egal). Unterschiedliche Rollen auf einer Platte bedeuten einen Filamentwechsel
+in jeder Schicht der unteren 4 mm (20 Wechsel mit Spülmenge). Kartenfach in die Mitte, die drei C15-Stücke daneben, mindestens 10 mm Abstand.
+
+Ausgangspunkt: Drucker „Elegoo Centauri Carbon 2 0.4 nozzle“, Filament „Elegoo PETG @ECC2“, Prozess „0.20mm Standard @Elegoo CC2 0.4 nozzle“,
+Druckbetttyp „Texturierte PEI-Platte“. In Klammern: Profilwert vorher. Alles andere bleibt auf dem Profilwert.
+
+| Reiter → Gruppe | Einstellung | Wert |
+| --- | --- | --- |
+| Qualität → Schichthöhe | Schichthöhe / erste Schicht | 0,2 / 0,2 (bleibt) – die Karten später ebenfalls mit 0,2 drucken, sonst ist die Rille anders gestuft als im Test |
+| Qualität → Präzision | Elefantenfußkompensation | 0,15 (0,1) |
+| Struktur → Wände | Wandschleifen | 3 (2) – die Zunge (1,4 mm) besteht dann ganz aus Wandbahnen |
+| Struktur → Füllung | Fülldichte / Füllmuster | 15 % / Gyroid (Geradlinig) |
+| Geschwindigkeit → erste Schicht | Erste Schicht | 30 mm/s (50) – Haftung des hohen, schmalen Kartenfachs |
+| Stützen | Stützen aktivieren | aus (bleibt) |
+| Sonstiges → Fuzzy Skin | Fuzzy Skin | Keine (bleibt) |
+| Sonstiges → Bügeln | Bügeln | aus (bleibt) – die Teststücke brauchen keine glatte Vorderseite |
+| Sonstiges → Umrandung (Prozess) | Randtyp / Randbreite / Lücke | Nur Außenrand / 5 mm / 0,1 mm – gilt für das Kartenfach |
+| je C15-Stück (Rechtsklick in der Objektliste → Einstellungen hinzufügen → Sonstiges) | Randtyp | Keine Umrandung – ein Rand an der Kartenkante würde die Breite im Schacht verfälschen |
+| Filament → Druckbett (Texturierte PEI) | Erste Schicht / Andere Schichten | 80 / 75 °C (70 / 70) – gegen Abheben |
+| Filament → Kühlung | alle Werte | Profilwerte. **Nicht** die Korpus-Kühlung (Mindest-Schichtdauer 70 s): Das Kartenfach hat 440 kleine Schichten und würde Stunden länger brauchen |
+
+Rolle vorher trocknen (Elegoo: 60 °C, 8 h), feuchtes PETG macht Fäden in den Schlitzen um die Zunge.
+Nach dem Druck: Die Zunge muss frei federn (Schlitze rundum offen, Fäden mit dem Cutter heraus), die beiden Bohrungen sind von unten
+durchgängig. Danach C15 testen (Tabelle oben). Für die endgültigen Karten Bügeln nur „Oberste Oberfläche“, damit die Rille wie im Test bleibt.
 
 ## Schrauben (Stand 06.11.2026)
 

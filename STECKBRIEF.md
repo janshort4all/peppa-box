@@ -622,3 +622,13 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Neu:** Parameter `GR_FORM_SPIEL` = 0,1 (Probedruck) nur für die geformten Stifte; Schlitz = Strahl 0,6 kleiner (Fläche je Schlitz ca. 11,4 / 13,0 / 12,6 statt 13,0 / 14,8 / 14,3 mm²). Runde Stifte bleiben bei 0,2.
 - **Unverändert:** `06b_logo_buchstaben_orange.stl` (die gedruckten orangen Teile passen). Neu gebaut: `06a_gitter_beige.stl`. `check.py` ohne Befund, STL dicht.
 - **Vor dem Neudruck:** beiges PETG trocknen (Härchen/Lücken im letzten Druck). Sitzen die Strahlen dann zu stramm: Stift kurz mit Schleifpapier anfasen, nicht den Schlitz aufbohren.
+
+## Nachtrag 07.11.2026 (4) – Kartenfach: Schrauben von unten frei, Nase mit 45°-Enden, Druck zusammen mit C15
+
+- **Befund Jan (Slicer-Ansicht):** Die Schrauböffnung unten ist mit dem Schraubendreher kaum erreichbar. Ursache: Die Senkung Ø 6,8 ging nur 40 mm nach unten und endete ca. 8 mm über der Unterkante des Kartenfachs (z 89,8, Unterkante 81,8). Das untere Stück des Seitenteils (Verlängerung des Fachbodens) lag in der Säule unter dem Kopf.
+- **Behebung:** Senkung bis ganz unten durch (`kartentasche()`, beide Schrauben). Säule Ø 6 von unten bis zum Kopf frei (geprüft: 0 mm³ im Weg). Weg ca. 43 mm: Schraubendreher mit mind. ca. 5 cm freiem Schaft, dünner als 6 mm (Bithalter meist zu dick). Kein großer Eckausschnitt: Das Seitenteil liegt beim Druck auf der Platte, ohne es hinge die Kartenschacht-Wand ca. 7 mm in der Luft. Am Austritt bleiben kleine dünne Reste (Schichtanalyse: +43 mm² schmaler als 2 Linien, über alle Schichten zusammen).
+- **Rastnase:** Enden 45° angeschrägt (im Druck steht u senkrecht, vorher 1,5 mm waagerechter Überhang am unteren Ende). Kraftrechnung unverändert.
+- **Frage Jan: Warum liegt die STL „nicht richtig gedreht“?** Absicht: hochkant auf dem Seitenteil (88,5 mm hoch). Schacht als senkrechter Schlitz ohne Stützen, RC522-Schienen ohne Stütze, Federzunge in der Schichtebene (biegt entlang der Bahnen).
+- **Druck zusammen mit C15:** ja, alle vier Teile auf einer Platte aus derselben Rolle (sonst Filamentwechsel in jeder Schicht der unteren 4 mm). Vollständige Einstellungen in `v4/out/README.md` (Abschnitt „Kartenfach + C15 auf einer Platte“): Profil 0.20mm Standard, Elefantenfuß 0,15, 3 Wände, 15 % Gyroid, erste Schicht 30 mm/s, Rand nur Außenrand 5 mm / 0,1 (C15 je Objekt ohne Rand), Bett 80/75 °C, Kühlung Profilwerte (nicht die 70-s-Korpus-Kühlung), Rolle trocknen. Karten später auch mit 0,2 mm und Bügeln nur „Oberste Oberfläche“.
+- **Geprüft:** `check.py` ohne Kollision; neu gebaut nur `04_kartenfach.stl` (+ Ansichten).
+

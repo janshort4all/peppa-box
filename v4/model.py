@@ -811,12 +811,12 @@ def rast_geo():
 
 
 def rast_nase(ti):
-    """Prisma quer über die Zunge (u ±8), Profil in (v, w): Einsteckflanke RAST_EIN, Spitze RAST_TOP, tiefe Flanke RAST_TIEF."""
+    """Prisma quer über die Zunge (u ±8, Enden 45° angeschrägt), Profil in (v, w): Einsteckflanke RAST_EIN, Spitze RAST_TOP, tiefe Flanke RAST_TIEF."""
     v0, v1, h = rast_geo()
     a = v0 - h / math.tan(math.radians(RAST_EIN))
     b = v1 + h / math.tan(math.radians(RAST_TIEF))
     base = box(-8, a, -ti - 0.05, 8, b, -ti)
-    top = box(-8, v0, -ti + h - 0.01, 8, v1, -ti + h)
+    top = box(-8 + h, v0, -ti + h - 0.01, 8 - h, v1, -ti + h)     # Enden 45° (im Druck steht u senkrecht: kein waagerechter Überhang)
     return Manifold.batch_hull([base, top])
 
 
@@ -881,7 +881,9 @@ def kartentasche():
     world = world + fl
     for (x, y) in POCKET_SCREWS:
         world = world - cyl_z(x, y, RING_Z0 - 40, 45, HOLE3 / 2)
-        world = world - cyl_z(x, y, RING_Z0 - 40, 40 - (POCKET_GRIP - RING_T), 3.4)    # Senkung von unten: Schraube 3,0 × 12
+        # Senkung von unten (Schraube 3,0 × 12) bis ganz unten durch: Schraubendreher kommt gerade von unten an den Kopf
+        # (bis 07.11. endete sie 8 mm über der Unterkante, die untere Ecke des Seitenteils versperrte den Weg)
+        world = world - cyl_z(x, y, RING_Z0 - 80, 80 - (POCKET_GRIP - RING_T), 3.4)
     return world
 
 

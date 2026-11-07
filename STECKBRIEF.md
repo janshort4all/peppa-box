@@ -592,3 +592,9 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Reinigung:** CC2 hat hinten einen Silikon-Düsenwischer (Startablauf), Ersatzwischer und Reinigungsnadeln im Werkzeugset; eigene Menüfunktion nicht belegt. Vorgehen: auf 250 °C heizen, Fäden mit Pinzette/Messingbürste ab, PETG-Reste am Wischer und an der Silikonhülle entfernen (vermutete Quelle des verbrannten Flecks auf C13), Wischer bei platten Borsten tauschen.
 - **Einstellungen (README Abschnitt „Gitter“, Namen aus ElegooSlicer de.po):** Basis Deckel-Prozess; Vermeiden von Wandüberquerungen an, Maximale Umleitungslänge 0; Außenwand 40 mm/s; eigenes Filamentprofil „… Peppa Gitter“: Düse 245/240 °C, Lüfter 35 % fest, erste 3 Schichten ohne; Überschreiben: Rückzug 1,0 mm, 40/30 mm/s, beim Schichtwechsel an, Wischen an 2 mm / 70 %, Schwellenwert Fahrstrecke 0,5 mm, Z-Hub 0,2 Normal. Rolle trocknen ist die wichtigste Maßnahme. Werte sind begründete Startwerte, nicht am C13-G-Code geprüft → G-Code vor dem Druck an Claude, ideal zuerst C14.
 
+## Nachtrag 07.11.2026 – Gitter gedruckt: Härchen überall; Buchstaben-Test mit neuer oranger Rolle
+
+- **Befund Jan (11:56):** Gitter `06a` mit den Einstellungen aus Nachtrag 06.11. (5) gedruckt: sehr viele feine Härchen überall, Druck unsauber, trotz gereinigter Düse. Jan vermutet zu feuchtes beiges Filament (nicht getrocknet). Passt zum Bild (Härchen überall, nicht nur an einzelnen Stellen). Nicht abgenommen.
+- **Als Nächstes Gitter:** beige Rolle trocknen, dann erneut (Fotos und G-Code an Claude; C13- und Gitter-G-Code auswerten, falls es bleibt).
+- **Buchstaben-Test** mit neuer oranger Rolle: vollständige Einstellungsliste in `v4/out/README.md` (Abschnitt „Gitter“ → Buchstaben). Schichthöhe 0,2 (Buchstaben = 6 Schichten, Stifte 5; weniger Fahrten zwischen den 11 Teilen), Fülldichte 100 %, sonst wie Gitter (245/240 °C, Lüfter 35 %, Rückzug 1,0 mm 40/30, Wischen 2 mm/70 %, Z-Hub 0,2).
+

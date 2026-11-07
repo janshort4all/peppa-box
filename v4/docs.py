@@ -331,11 +331,50 @@ Einstellungen einschalten). In Klammern der Profilwert, wo er bekannt ist. Proze
 
 Platte: `06a` allein, mittig, nicht drehen (Vorderfläche unten, Oberkante hinten), nur Filament Beige, keine Modifizierer.
 
-| Teil | Einstellung | Wert |
+**Buchstaben `06b` – alle Abweichungen von den Elegoo-Standardprofilen** (gleiche Ausgangsprofile wie beim Gitter; Filament: die
+orange Rolle). Schichthöhe bleibt 0,2: Die Buchstaben sind genau 6 Schichten dick, die Stifte 5 Schichten, und weniger Schichten
+heißen weniger Fahrten zwischen den 11 Teilen (Fäden an den Buchstabenkanten).
+
+| Reiter | Einstellung | Wert |
 | --- | --- | --- |
-| Buchstaben `06b` | Prozess | wie Drehknopf: Schichthöhe **0,12** (erste 0,2), 3 Wände, keine Umrandung, Fuzzy aus, Elefantenfuß 0,15 |
-| | Nahtposition | Rückseite – die im Einbau untere Kante jedes Buchstabens liegt hinten |
-| | Filament | Orange wie Deckel und Knopf |
+| Prozess → Qualität | Schichthöhe / erste Schicht | 0,2 / 0,2 (Profilwert, bleibt) |
+| | Nahtposition | **Rückseite** (Ausgerichtet) – die im Einbau untere Kante jedes Buchstabens liegt hinten |
+| | Schrägnaht (Beta) | **Keine** |
+| | Wischbewegung nach innen | **an** (aus) |
+| | Elefantenfußkompensation | **0,15** (0,1) – scharfe Kante an der Sichtseite |
+| | Wandgenerator | **Arachne** (Klassisch) – schmale Stellen (e-Schlitz, Strahlen) sauber |
+| | Nur eine Wand in der ersten Schicht | **an** – Sichtseite wie Deckel und Gitter |
+| | Vermeiden von Wandüberquerungen / Maximale Umleitungslänge | **an / 0** |
+| Prozess → Struktur | Wandschleifen | **3** (2) |
+| | Untere Schalenschichten | **8** (3) – Buchstabe durchgehend massiv |
+| | Überlappung des oberen/unteren massiven Füllung/Wand | **25 %** (5 %) |
+| | Muster der unteren Fläche | Monotonisch (Profilwert, bleibt) – gleiche Linien wie auf dem Gitter |
+| | Fülldichte | **100 %** (15 %) – dünne Teile ganz massiv |
+| Prozess → Geschwindigkeit | Erste Schicht / Füllung der ersten Schicht | **30 / 50 mm/s** (50 / 105) |
+| | Außenwand / Innere Wand | **40 / 120 mm/s** (160 / 200) |
+| | Beschleunigung Außenwand | **2000 mm/s²** (5000) |
+| | Verlangsamen bei Überhängen | **aus** (an) |
+| Prozess → Sonstiges | Randtyp | **Keine Umrandung** – ein Rand säße an der Sichtkante |
+| | Fuzzy Skin | **Deaktiviert** |
+| Filament | Düsentemperatur erste / andere Schichten | **245 / 240 °C** (250 / 250) |
+| | Druckbett Texturierte PEI erste / andere Schichten | **80 / 75 °C** (70 / 70) |
+| Filament → Kühlung | Lüftergeschwindigkeit (beide Zeilen) | **35 % / 35 %** (10 / 40) |
+| | Zeile „Minimale Lüftergeschwindigkeit“ → Schichtdauer | **100 s** (30) |
+| | Zeile „Schwellenwert für die maximale Lüftergeschwindigkeit“ → Schichtdauer | **70 s** (12) |
+| | Äußere Wände nicht verlangsamen | **an** (aus) |
+| | Keine Kühlung für die erste | **3** Schichten |
+| | Überhänge Kühlung Aktivierungsschwelle | **95 %** (10 %) |
+| Filament → Überschreiben der Einstellungen (Häkchen je Zeile) | Länge (Rückzug) | **1,0 mm** |
+| | Rückzugsgeschwindigkeit / Wiedereinzugsgeschwindigkeit | **40 / 30 mm/s** |
+| | Zurückziehen beim Schichtwechsel | **an** |
+| | Während des Rückzugs wischen / Wischabstand | **an / 2 mm** |
+| | Rückzugsmenge vor der Reinigung | **70 %** |
+| | Schwellenwert für die Fahrstrecke | **0,5 mm** |
+| | Z-Hub-Höhe / Z-Hub Typ | **0,2 mm / Normal** (0,4) |
+
+Platte: `06b` allein, mittig, nicht drehen (Sichtseite unten, Stifte oben, „BOX“ hinten), nur Orange, keine Modifizierer.
+Vorher Düse heiß reinigen, Wischer prüfen, Platte waschen. Die orange Rolle ist neu – frisch aus der Verpackung meist trocken genug;
+lag sie offen, auch trocknen.
 
 **Einkleben:** Zuerst trocken probieren: Jeder Buchstabe muss mit leichtem Druck plan aufliegen. Geht ein Stift zu stramm, das
 Loch mit einem 2,5-mm-Bohrer von Hand nachdrehen; ist er locker, füllt der Kleber das Spiel. Dann je einen kleinen Tropfen

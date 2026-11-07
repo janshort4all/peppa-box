@@ -649,3 +649,6 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Druckzeit:** Ursache ist die Korpus-Kühlung im Filamentprofil (Schichtdauer 100 s / 70 s → jede der 442 Schichten mind. 70 s, Wände unter 1 mm/s). Für das Kartenfach das Systemprofil der Rolle mit Werkswerten nehmen. 0,2 mm bleibt (Schlitze 0,8 mm = 4 Schichten; C15 muss wie die späteren Karten gestuft sein).
 - **Geprüft:** `check.py` ohne Kollision; neu gebaut nur `04_kartenfach.stl` (+ Ansichten). README-Abschnitt „Kartenfach + C15“ ergänzt.
 
+## Nachtrag 07.11.2026 (7) – Niederhalter: passt für die vorhandene Pi-Schraube
+
+- Jan hat vom Pi noch M2,5-Schrauben, Flachkopf, ca. 19,2 inkl. Kopf (→ ca. 17,2–17,7 unter dem Kopf). Mit der Senkung 2 mm hätten sie nicht einmal die Platinenunterseite erreicht (nötig 17,6 bis dort). Geändert: Senkungsboden tief auf **12,9 über der Platine** (`NH_SENK` = Ø 5,6 / 12,9), Säule ab dort als Kragen **Ø 7,2** (`NH_KRAGEN`, Wand 0,8; darunter Ø 6). Schraube reicht 2,7–3,2 unter die Platine → Mutter (2,0) oder Abstandsbolzen. Länge jetzt unabhängig von `NH_KABEL`. Kein Schraubenkauf nötig. Kragen 0,9 über der Steckeroberkante, Abstand zum Kabel des ersten Steckers ca. 0,1–0,5. Prüfungen ohne Kollision. **Offen:** Kopf-Ø ≤ 5,2? Passende Muttern im Pi-Set?

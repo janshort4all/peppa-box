@@ -1361,8 +1361,13 @@ NH_Y = par("NH_Y", (-1.5, 18.5), "festgelegt",
            "Dach quer, ab Platinenvorderkante (Seite der gelben Leiste): 20 mm breit (Jan 07.11.), 1,5 mm über die Kante, "
            "damit vor der Schraubensenkung 2 mm Wand bleiben")
 NH_POST = par("NH_POST", 6.0, "festgelegt", "Säule unter jedem Loch, steht auf der Platine (Jan 07.11.)")
-NH_SENK = par("NH_SENK", (5.6, 2.0), "festgelegt",
-              "Senkung oben im Dach für den Schraubenkopf M2,5 Linsen-/Flachkopf (Ø 5,0, ca. 1,8 hoch), Ø × Tiefe")
+NH_SENK = par("NH_SENK", (5.6, 12.9), "festgelegt",
+              "Senkung von oben für den Schraubenkopf (Ø, Höhe des Senkungsbodens über der Platinenoberseite). Boden tief gelegt, damit Jans "
+              "vorhandene Pi-Schraube passt (07.11.: Flachkopf, ca. 19,2 inkl. Kopf → ca. 17,2–17,7 unter dem Kopf): reicht 2,7–3,2 unter die Platine "
+              "(Mutter 2,0 oder Abstandsbolzen). Unabhängig von NH_KABEL. Kopf Ø höchstens 5,2")
+NH_KRAGEN = par("NH_KRAGEN", 7.2, "festgelegt",
+                "Säule ab Senkungsboden aufwärts dicker (Wand 0,8 um die Senkung); darunter Ø 6. Kragen beginnt 0,9 über der Steckeroberkante, "
+                "Abstand zum Kabel des ersten Steckers ca. 0,1–0,5")
 NH_FREI = par("NH_FREI", (17.0, 15.0), "festgelegt",
               "Aussparung an den beiden hinteren Dachecken über den Klemmblöcken der Schmalseiten: Länge ab Platinenende, Dach dort nur bis so weit "
               "ab Vorderkante. Klemmblöcke laut Foto 07.11. ca. 13–15 mm lang, beginnen ca. 18 mm hinter der Vorderkante (aus Foto geschätzt)")
@@ -1390,17 +1395,20 @@ def niederhalter():
     fl, fb = NH_FREI
     for xs in ((xe0 - 1, xe0 + fl), (xe1 - fl, xe1 + 1)):
         roof = roof - box(xs[0], yv + fb, z0 - 1, xs[1], yb + 1, z1 + 1)
+    sd, sh = NH_SENK
+    zs = zp + sh                                  # Senkungsboden
+    assert zs < z0 and zs > zp + NH_STECKER
     posts = [cyl_z(x, y, zp, z0 - zp + 0.01, NH_POST / 2) for (x, y) in holes]
+    posts += [cyl_z(x, y, zs, z0 - zs + 0.01, NH_KRAGEN / 2) for (x, y) in holes]
     m = U([roof] + posts)
-    sd, st = NH_SENK
     for (x, y) in holes:
-        m = m - cyl_z(x, y, zp - 1, z1 - zp + 2, HOLE25 / 2) - cyl_z(x, y, z1 - st, st + 1, sd / 2)
+        m = m - cyl_z(x, y, zp - 1, z1 - zp + 2, HOLE25 / 2) - cyl_z(x, y, zs, z1 - zs + 1, sd / 2)
     return m
 
 
 def niederhalter_schraube():
     """Länge M2,5 unter dem Kopf bis Platinenunterseite (+ Mutter 2,0 bzw. Gewinde im Abstandsbolzen)."""
-    return NH_KABEL + NH_STECKER + NH_T - NH_SENK[1] + 1.6
+    return NH_SENK[1] + 1.6
 
 
 # =====================================================================================

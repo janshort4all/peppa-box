@@ -71,13 +71,15 @@ for dy, d in ((-P / 2, -1), (P / 2, 1)):
     a2.plot([y, y, y + d * 0.8, y + d * 9], [M.NH_STECKER, zk - 0.2, zk, zk], color="#c0392b", lw=3.5, solid_capstyle="round")
 a2.add_patch(Rectangle((ya, z0), yb - ya, M.NH_T, fc="#e07b2a", ec="#a04a10", alpha=0.6))
 a2.add_patch(Rectangle((hy - M.NH_POST / 2, 0), M.NH_POST, z0, fc="#e07b2a", ec="#a04a10", alpha=0.25, ls="--"))
-sd, st = M.NH_SENK
-a2.add_patch(Rectangle((hy - 2.5, z1 - st), 5.0, 1.8, fc="#888", ec="k"))              # Kopf
-L = M.niederhalter_schraube() + 2.4
-a2.add_patch(Rectangle((hy - 1.25, z1 - st - L), 2.5, L, fc="#aaa", ec="k"))           # Schaft
+sd, sh = M.NH_SENK
+a2.add_patch(Rectangle((hy - M.NH_KRAGEN / 2, sh), M.NH_KRAGEN, z0 - sh, fc="#e07b2a", ec="#a04a10", alpha=0.45))   # Kragen
+a2.add_patch(Rectangle((hy - sd / 2, sh), sd, z1 - sh, fc="w", ec="k", lw=0.6))                                  # Senkung
+a2.add_patch(Rectangle((hy - 2.5, sh), 5.0, 1.8, fc="#888", ec="k"))                   # Kopf
+L = 17.4
+a2.add_patch(Rectangle((hy - 1.25, sh - L), 2.5, L, fc="#aaa", ec="k"))                # Schaft
 a2.add_patch(Rectangle((hy - 2.5, -1.6 - 2.0), 5.0, 2.0, fc="#666", ec="k"))           # Mutter
 a2.text(hy - 3.3, -2.6, "Mutter oder\nAbstandsbolzen", fontsize=8, ha="right", va="center")
-a2.text(hy, z1 + 0.6, "M2,5 × 20\nLinsenkopf, versenkt", ha="center", fontsize=8)
+a2.text(hy, z1 + 0.6, "vorhandene Pi-Schraube\n(ca. 19,2 inkl. Kopf), Kopf tief versenkt", ha="center", fontsize=8)
 a2.annotate("", (25, 0), (25, M.NH_STECKER), arrowprops=dict(arrowstyle="<->"))
 a2.text(25.5, M.NH_STECKER / 2, f"{M.NH_STECKER:g} Stecker\n(gemessen)", va="center", fontsize=8.5)
 a2.annotate("", (25, M.NH_STECKER), (25, z0), arrowprops=dict(arrowstyle="<->"))

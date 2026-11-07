@@ -392,7 +392,8 @@ die beiden Bohrungen sind von unten durchgängig. Danach C15 testen (Tabelle obe
 ### Niederhalter für die Steckkabel (`11_niederhalter_stiftleiste.stl`, Stand 07.11.2026)
 
 Steg über der gelben 40er-Stiftleiste des Klemmen-Aufsatzes: Dach 65 × 20 × 4 mm, zwei Säulen Ø 6 auf den beiden freien Löchern
-(Abstand 58), M2,5 von oben, Kopf versenkt. Das Dach liegt 2 mm über den Steckern (12 mm) und drückt über die zur Seite geknickten Kabel
+(Abstand 58), M2,5 von oben (Jans vorhandene Pi-Schraube, ca. 19,2 inkl. Kopf), Kopf tief versenkt: Senkungsboden 12,9 über der Platine,
+Säule dort als Kragen Ø 7,2. Das Dach liegt 2 mm über den Steckern (12 mm) und drückt über die zur Seite geknickten Kabel
 auf die Stecker. Bild: `niederhalter.png`. **Vor dem Druck:** Höhe des geknickten Kabels messen (`NH_KABEL`, vorläufig 2,0).
 
 Inneres Teil, nicht sichtbar. Ausgangspunkt: Drucker „Elegoo Centauri Carbon 2 0.4 nozzle“, Filament „Elegoo PETG @ECC2“,
@@ -411,13 +412,14 @@ Alles andere bleibt auf dem Profilwert.
 | Filament → Druckbett (Texturierte PEI) | Erste Schicht / Andere Schichten | 80 / 75 °C (70 / 70) – gegen Abheben, wie bei allen Teilen |
 | Filament → Kühlung | alle Werte | Profilwerte |
 
-Einzige Überhänge: die Böden der beiden Senkungen (Ring Ø 5,6 um das Loch, 2 mm über der Platte) – kurze Brücken, unkritisch, der
+Einzige Überhänge: die Böden der beiden Senkungen (Ring Ø 5,6 um das Loch, 5,1 mm über der Platte) – kurze Brücken, unkritisch, der
 Schraubenkopf liegt darauf. Rolle vorher trocknen (Elegoo: 60 °C, 8 h). Nach dem Druck: M2,5 muss durch die Säulen gehen; klemmt sie,
 mit einem 2,9-mm-Bohrer von Hand nachdrehen.
 
 **Montage:** Alle Steckkabel ganz auf die Stifte drücken. Kabel direkt über dem Stecker zur Seite knicken: äußere Reihe (Platinenkante)
-nach vorne, innere Reihe nach hinten. Steg aufsetzen, Säulen auf die beiden freien Löcher, M2,5 × 20 von oben, unter der Platine Mutter
-oder (falls dort ein Abstandsbolzen zum Pi sitzt) in den Bolzen schrauben. Nur so fest anziehen, bis der Steg aufliegt.
+nach vorne, innere Reihe nach hinten. Steg aufsetzen, Säulen auf die beiden freien Löcher, vorhandene Pi-Schraube (Flachkopf, ca. 19,2 inkl. Kopf) von oben
+(Schraubendreher durch die 5,6-mm-Senkung), unter der Platine Mutter aus demselben Set oder, falls dort ein Abstandsbolzen zum Pi sitzt,
+in den Bolzen schrauben. Die Schraube reicht ca. 2,7–3,2 mm unter die Platine. Nur so fest anziehen, bis der Steg aufliegt.
 
 ## Schrauben (Stand 06.11.2026)
 
@@ -428,7 +430,7 @@ Alle Dome, Kernlöcher und Senkungen sind auf die vorhandenen Kunststoffschraube
 | Kunststoffschraube 3,0 × 12, Senkkopf | 14 | Boden in den Korpus (6), Deckel hinten durch die Rückwand (2), Deckelrahmen an den Deckel (6, Kopf versenkt im Dom) |
 | Kunststoffschraube 3,0 × 12, Flachkopf | 8 | Lautsprecher (4, mit M3-Scheiben), Kartenfach (2), USB-C-Buchse (2) |
 | Schraube M2,5, ca. 5 mm länger als die jetzigen unter der Acrylplatte | 4 | Stapel von unten durch den Boden (Länge folgt nach deiner Messung) |
-| Schraube M2,5 × 20, Linsen- oder Flachkopf (Kopf Ø ≤ 5,2) + Mutter M2,5 | je 2 | Niederhalter auf der gelben Stiftleiste (Länge gilt für Kabelknick 2,0; nach der Messung prüfen) |
+| vorhandene Pi-Schraube M2,5, Flachkopf, ca. 19,2 inkl. Kopf (Kopf Ø ≤ 5,2) + Mutter M2,5 aus demselben Set | je 2 | Niederhalter auf der gelben Stiftleiste (Länge unabhängig vom Kabelknick) |
 
 ## Was für die Montage noch fehlt (nicht bestellt)
 

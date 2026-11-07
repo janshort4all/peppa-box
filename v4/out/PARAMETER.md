@@ -91,7 +91,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (121)
+## Gestaltung festgelegt (122)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -214,5 +214,6 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `NH_T` | 4 | Dachstärke (Jan 07.11.: stärker, damit es sich nicht durchbiegt); Durchbiegung bei 20 N über 58 mm rechnerisch ca. 0,2 mm |
 | `NH_Y` | -1,5 / 18,5 | Dach quer, ab Platinenvorderkante (Seite der gelben Leiste): 20 mm breit (Jan 07.11.), 1,5 mm über die Kante, damit vor der Schraubensenkung 2 mm Wand bleiben |
 | `NH_POST` | 6 | Säule unter jedem Loch, steht auf der Platine (Jan 07.11.) |
-| `NH_SENK` | 5,6 / 2 | Senkung oben im Dach für den Schraubenkopf M2,5 Linsen-/Flachkopf (Ø 5,0, ca. 1,8 hoch), Ø × Tiefe |
+| `NH_SENK` | 5,6 / 12,9 | Senkung von oben für den Schraubenkopf (Ø, Höhe des Senkungsbodens über der Platinenoberseite). Boden tief gelegt, damit Jans vorhandene Pi-Schraube passt (07.11.: Flachkopf, ca. 19,2 inkl. Kopf → ca. 17,2–17,7 unter dem Kopf): reicht 2,7–3,2 unter die Platine (Mutter 2,0 oder Abstandsbolzen). Unabhängig von NH_KABEL. Kopf Ø höchstens 5,2 |
+| `NH_KRAGEN` | 7,2 | Säule ab Senkungsboden aufwärts dicker (Wand 0,8 um die Senkung); darunter Ø 6. Kragen beginnt 0,9 über der Steckeroberkante, Abstand zum Kabel des ersten Steckers ca. 0,1–0,5 |
 | `NH_FREI` | 17 / 15 | Aussparung an den beiden hinteren Dachecken über den Klemmblöcken der Schmalseiten: Länge ab Platinenende, Dach dort nur bis so weit ab Vorderkante. Klemmblöcke laut Foto 07.11. ca. 13–15 mm lang, beginnen ca. 18 mm hinter der Vorderkante (aus Foto geschätzt) |

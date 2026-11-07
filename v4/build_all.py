@@ -35,6 +35,7 @@ DRUCK = {   # Teil: (Datei, Farbe, Hinweis)
     "drehknopf": ("07_drehknopf_orange.stl", "Orange", "Stirnfläche unten"),
     "ein_taste": ("08_ein_taste_orange.stl", "Orange", "Kopf unten"),
     "riemen_gegenplatte": ("09_riemen_gegenplatte.stl", "Schwarz/Grau", "flach"),
+    "niederhalter": ("11_niederhalter_stiftleiste.stl", "Schwarz/Grau", "Dachoberseite mit den Schraubensenkungen auf der Platte, Säulen nach oben; Steg über der gelben Stiftleiste"),
 }
 
 

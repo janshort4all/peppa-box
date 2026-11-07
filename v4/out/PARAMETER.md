@@ -2,7 +2,7 @@
 
 Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Modell alles neu: Löcher, Halter, Kollisionsprüfung.
 
-## Vorläufig – am echten Teil messen (13)
+## Vorläufig – am echten Teil messen (15)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -19,6 +19,8 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `CLAMP_Z` | 52 | Unterkante der Klemmblöcke über der Acrylplatte |
 | `AUDIO_PLUG` | 20 | Platz hinter der Klinke des Pi: Klinkenstecker 90° gewinkelt (Goobay 67782) |
 | `MAXB` | 19 / 18 / 8 | Verstärker-Klon L, B, Höhe mit Klemme |
+| `NH_KABEL` | 2 | Luft über den Steckern für das direkt über dem Stecker zur Seite geknickte Kabel; das Dach drückt über den Knick auf den Stecker. Nachmessen: Platine bis Oberkante geknicktes Kabel, minus ca. 0,3 Vorspannung |
+| `NH_PCB_Z` | 54 | Acrylplatte bis Oberseite blaue Platine des Aufsatzes, nur für die Prüfung. Aus Stiftspitzen (60) und Steckerhöhe (12) eingegrenzt auf ca. 49–54; oberer Wert = ungünstigster Fall nach oben |
 
 ## Mit Probedruck einstellen (16)
 
@@ -41,7 +43,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `GR_FORM_SPIEL` | 0,1 | Spiel je Seite für die geformten Stifte der drei Strahlen über dem a (Stift = Strahl 0,7 kleiner, unverändert). Mit 0,2 wie bei den runden Stiften saßen die Strahlen spürbar locker (Druck Jan 07.11.), runde Stifte passten gut |
 | `GR_PIN_D` | 3,9 | Stift Ø (Loch im Korpus PIN_HOLE 4,1; mit C14 am Korpus prüfen) |
 
-## Von dir gemessen (21)
+## Von dir gemessen (23)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -66,6 +68,8 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `SCREW_L` | 12 | Einzige vorhandene Schrauben: 3,0 × 12, Senk- und Flachkopf (Jan 03.11.). Alle Dome und Kernlöcher darauf ausgelegt |
 | `JK_NUT` | 8 | Mutter der Klinkenbuchse Ø (Jan 03.11.) |
 | `MPRB` | 34 / 20 / 5 | MPR121-Modul L, B, Höhe: Adafruit 1982 STEMMA-QT-Ausführung, L × B gemessen 03.11.; Höhe 5 mm festgelegt (inkl. Buchsen und Lötstellen) |
+| `NH_LOCH` | 58 | Abstand der beiden freien Löcher an der gelben Stiftleiste (Jan 07.11.; = HAT-Norm, gleiche Lage wie STACK_PAT) |
+| `NH_STECKER` | 12 | Oberseite blaue Platine bis Oberkante Steckkabel-Gehäuse, ohne Kabel (Jan 05.11.) |
 
 ## Aus Datenblatt belegt (15)
 
@@ -87,7 +91,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (115)
+## Gestaltung festgelegt (120)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -206,3 +210,8 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `GR_PLENUM` | 1,2 | Luftraum: Gitter hinten über der Lautsprecher-Mulde 1,2 dünner (2,4 statt 3,6), damit der Schall hinter dem Logo zu den Löchern kommt. Lautsprecherrahmen ca. 1,3 hinter der Sitzfläche, Schraubenköpfe liegen dahinter (Jan 05.11.) → 2,5 mm Luft |
 | `GR_EDGE_CH` | 0,4 | Fase 45° an der Vorderkante außen |
 | `GR_PIN_L` | 2,4 | Stiftlänge hinter der Sitzfläche (Loch 2,8 tief), Spitze 0,4 gefast |
+| `NH_T` | 4 | Dachstärke (Jan 07.11.: stärker, damit es sich nicht durchbiegt); Durchbiegung bei 20 N über 58 mm rechnerisch ca. 0,2 mm |
+| `NH_Y` | -1,5 / 18,5 | Dach quer, ab Platinenvorderkante (Seite der gelben Leiste): 20 mm breit (Jan 07.11.), 1,5 mm über die Kante, damit vor der Schraubensenkung 2 mm Wand bleiben |
+| `NH_POST` | 6 | Säule unter jedem Loch, steht auf der Platine (Jan 07.11.) |
+| `NH_SENK` | 5,6 / 2 | Senkung oben im Dach für den Schraubenkopf M2,5 Linsen-/Flachkopf (Ø 5,0, ca. 1,8 hoch), Ø × Tiefe |
+| `NH_FREI` | 17 / 15 | Aussparung an den beiden hinteren Dachecken über den Klemmblöcken der Schmalseiten: Länge ab Platinenende, Dach dort nur bis so weit ab Vorderkante. Klemmblöcke laut Foto 07.11. ca. 13–15 mm lang, beginnen ca. 18 mm hinter der Vorderkante (aus Foto geschätzt) |

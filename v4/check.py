@@ -19,6 +19,7 @@ def collisions(parts, ph):
     items = [(k, v, "Druckteil") for k, v in parts.items()] + [(k, v, "Bauteil") for k, v in ph.items()]
     allowed = {frozenset(p) for p in [("deckel_orange", "deckel_beige"), ("gitter_beige", "gitter_logo"), ("deckel_orange", "ein_taste"), ("deckel_beige", "ein_taste"),
                                        ("deckelrahmen", "ein_taste"), ("RC522", "RC522-Stecker (Zone)"),
+                                       ("niederhalter", "Pi + Klemmen-Aufsatz"),
                                        ("Klinkenstecker am Pi (Zone)", "USB-C-Stecker am Akku-Board (Zone)"),
                                        ("Klinkenstecker am Pi (Zone)", "Kabel Klemmreihe hinten (Zone)")]}
     out = []
@@ -42,7 +43,9 @@ def gaps(ph, parts):
                  ("Akku-Board mit Zellen", "korpus"), ("Kabel Klemmreihe links (Zone)", "korpus"), ("Kabel Klemmreihe rechts (Zone)", "Drehgeber"),
                  ("Kabel Klemmreihe hinten (Zone)", "USB-C-Platine mit Buchse und Kabeln"), ("USB-C-Stecker am Akku-Board (Zone)", "korpus"),
                  ("WAGO GND A", "korpus"), ("Verstärker", "korpus"), ("boden", "korpus"), ("Lautsprecher", "korpus"), ("Lautsprecher", "gitter_beige"),
-                 ("Kurzhubtaster", "kartenfach"), ("RC522", "deckelrahmen"), ("RC522-Stecker (Zone)", "korpus"), ("RC522-Stecker (Zone)", "deckelrahmen"), ("RC522-Stecker (Zone)", "kartenfach"), ("Touch-Modul MPR121", "kartenfach")):
+                 ("Kurzhubtaster", "kartenfach"),
+                 ("niederhalter", "kartenfach"), ("niederhalter", "deckelrahmen"), ("niederhalter", "korpus"), ("niederhalter", "RC522-Stecker (Zone)"),
+                 ("niederhalter", "Touch-Modul MPR121"), ("niederhalter", "WAGO GND B"), ("RC522", "deckelrahmen"), ("RC522-Stecker (Zone)", "korpus"), ("RC522-Stecker (Zone)", "deckelrahmen"), ("RC522-Stecker (Zone)", "kartenfach"), ("Touch-Modul MPR121", "kartenfach")):
         A = ph.get(a, parts.get(a)); B = ph.get(b, parts.get(b))
         g[f"Abstand {a} ↔ {b}"] = A.min_gap(B, 40.0)
     # Schraubblock hinten rechts am Deckelrahmen (x = LS_X[1]) getrennt, sonst verdeckt der Tasterhalter den Wert
@@ -134,6 +137,8 @@ def orient(name, m):
         m = m.rotate([180, 0, 0])                        # Kopf nach unten (gedreht, nicht gespiegelt)
     elif name == "riemen_gegenplatte":
         m = m.rotate([0, 90, 0])
+    elif name == "niederhalter":
+        m = m.rotate([180, 0, 0])                        # Dachoberseite (mit Senkungen) auf die Platte, Säulen nach oben
     bb = m.bounding_box()
     return m.translate([-bb[0], -bb[1], -bb[2]])
 
@@ -183,7 +188,8 @@ def insertion_bottom(parts, ph):
     above = M.box(-50, -50, M.BASE_T + 0.05, 250, 250, 300)
     fixed = M.U([parts["korpus"] ^ above, parts["riemen_gegenplatte"], parts["deckelrahmen"], parts["kartenfach"],
                  parts["deckel_orange"], parts["ein_taste"]] + [ph[k] for k in M.WALL_PH + M.LID_PH])
-    res = {"boden (Aufbauten)": inter_vol(sweep_down(parts["boden"] ^ above), fixed)}
+    res = {"boden (Aufbauten)": inter_vol(sweep_down(parts["boden"] ^ above), fixed),
+           "niederhalter": inter_vol(sweep_down(parts["niederhalter"]), fixed)}
     for k in M.BASE_PH:
         res[k] = inter_vol(sweep_down(ph[k]), fixed)
     return res

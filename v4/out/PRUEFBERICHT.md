@@ -35,6 +35,12 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | Abstand Lautsprecher ↔ Korpus | 0,0 |
 | Abstand Lautsprecher ↔ gitter_beige | 1,3 |
 | Abstand Kurzhubtaster ↔ Kartenfach | 4,2 |
+| Abstand niederhalter ↔ Kartenfach | 35,2 |
+| Abstand niederhalter ↔ Deckelrahmen | 40,0 |
+| Abstand niederhalter ↔ Korpus | 3,0 |
+| Abstand niederhalter ↔ RC522-Stecker (Zone) | 40,0 |
+| Abstand niederhalter ↔ Touch-Modul MPR121 | 40,0 |
+| Abstand niederhalter ↔ WAGO GND B | 38,0 |
 | Abstand RC522 ↔ Deckelrahmen | 2,0 |
 | Abstand RC522-Stecker (Zone) ↔ Korpus | 5,0 |
 | Abstand RC522-Stecker (Zone) ↔ Deckelrahmen | 0,8 |
@@ -60,6 +66,7 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | 07_drehknopf_orange.stl | 34 × 34 × 23 | – |
 | 08_ein_taste_orange.stl | 17 × 17 × 13 | – |
 | 09_riemen_gegenplatte.stl | 18 × 24 × 4 | – |
+| 11_niederhalter_stiftleiste.stl | 65 × 20 × 18 | – |
 
 Alle anderen Flächen sind steiler als 45° oder liegen auf der Platte. Kein Teil braucht Stützmaterial.
 

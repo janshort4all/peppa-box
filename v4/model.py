@@ -1346,6 +1346,59 @@ def gegenplatte():
     return p - cyl_x(0, 10, STRAP_Y, STRAP_Z, STRAP_HOLE / 2)
 
 
+# --- Niederhalter für die Steckkabel auf der gelben 40er-Stiftleiste des Klemmen-Aufsatzes (Nachtrag 07.11.2026) ---
+NH_LOCH = par("NH_LOCH", 58.0, "gemessen", "Abstand der beiden freien Löcher an der gelben Stiftleiste (Jan 07.11.; = HAT-Norm, gleiche Lage wie STACK_PAT)")
+NH_STECKER = par("NH_STECKER", 12.0, "gemessen", "Oberseite blaue Platine bis Oberkante Steckkabel-Gehäuse, ohne Kabel (Jan 05.11.)")
+NH_KABEL = par("NH_KABEL", 2.0, "vorläufig",
+               "Luft über den Steckern für das direkt über dem Stecker zur Seite geknickte Kabel; das Dach drückt über den Knick auf den Stecker. "
+               "Nachmessen: Platine bis Oberkante geknicktes Kabel, minus ca. 0,3 Vorspannung")
+NH_T = par("NH_T", 4.0, "festgelegt", "Dachstärke (Jan 07.11.: stärker, damit es sich nicht durchbiegt); Durchbiegung bei 20 N über 58 mm rechnerisch ca. 0,2 mm")
+NH_Y = par("NH_Y", (-1.5, 18.5), "festgelegt",
+           "Dach quer, ab Platinenvorderkante (Seite der gelben Leiste): 20 mm breit (Jan 07.11.), 1,5 mm über die Kante, "
+           "damit vor der Schraubensenkung 2 mm Wand bleiben")
+NH_POST = par("NH_POST", 6.0, "festgelegt", "Säule unter jedem Loch, steht auf der Platine (Jan 07.11.)")
+NH_SENK = par("NH_SENK", (5.6, 2.0), "festgelegt",
+              "Senkung oben im Dach für den Schraubenkopf M2,5 Linsen-/Flachkopf (Ø 5,0, ca. 1,8 hoch), Ø × Tiefe")
+NH_FREI = par("NH_FREI", (17.0, 15.0), "festgelegt",
+              "Aussparung an den beiden hinteren Dachecken über den Klemmblöcken der Schmalseiten: Länge ab Platinenende, Dach dort nur bis so weit "
+              "ab Vorderkante. Klemmblöcke laut Foto 07.11. ca. 13–15 mm lang, beginnen ca. 18 mm hinter der Vorderkante (aus Foto geschätzt)")
+NH_PCB_Z = par("NH_PCB_Z", 54.0, "vorläufig",
+               "Acrylplatte bis Oberseite blaue Platine des Aufsatzes, nur für die Prüfung. Aus Stiftspitzen (60) und Steckerhöhe (12) eingegrenzt "
+               "auf ca. 49–54; oberer Wert = ungünstigster Fall nach oben")
+
+
+def niederhalter_geo():
+    """Löcher (x, y), Platinenoberseite z, Platinenvorderkante y, Platinenenden x."""
+    (xa, yf), (xb, _) = stack_holes()[0], stack_holes()[1]
+    assert abs((xb - xa) - NH_LOCH) < 0.01, "Lochabstand Aufsatz ≠ Lochbild Stapel"
+    z_pcb = BASE_T + PAD_H + NH_PCB_Z
+    x0 = STACK_X0 + OVERHANG                     # Pi und Aufsatz: 65 mm, Löcher 3,5 von den Enden
+    return [(xa, yf), (xb, yf)], z_pcb, STACK_Y0, (x0, x0 + 65.0)
+
+
+def niederhalter():
+    """Steg über der gelben Stiftleiste: Dach drückt die Steckkabel auf die Stifte, zwei Säulen auf der Platine, M2,5 von oben."""
+    holes, zp, yv, (xe0, xe1) = niederhalter_geo()
+    z0 = zp + NH_STECKER + NH_KABEL               # Unterseite Dach
+    z1 = z0 + NH_T
+    ya, yb = yv + NH_Y[0], yv + NH_Y[1]
+    roof = box(xe0, ya, z0, xe1, yb, z1)
+    fl, fb = NH_FREI
+    for xs in ((xe0 - 1, xe0 + fl), (xe1 - fl, xe1 + 1)):
+        roof = roof - box(xs[0], yv + fb, z0 - 1, xs[1], yb + 1, z1 + 1)
+    posts = [cyl_z(x, y, zp, z0 - zp + 0.01, NH_POST / 2) for (x, y) in holes]
+    m = U([roof] + posts)
+    sd, st = NH_SENK
+    for (x, y) in holes:
+        m = m - cyl_z(x, y, zp - 1, z1 - zp + 2, HOLE25 / 2) - cyl_z(x, y, z1 - st, st + 1, sd / 2)
+    return m
+
+
+def niederhalter_schraube():
+    """Länge M2,5 unter dem Kopf bis Platinenunterseite (+ Mutter 2,0 bzw. Gewinde im Abstandsbolzen)."""
+    return NH_KABEL + NH_STECKER + NH_T - NH_SENK[1] + 1.6
+
+
 # =====================================================================================
 # Platzhalter (für den Kollisionscheck, nicht zum Drucken)
 # =====================================================================================
@@ -1427,6 +1480,7 @@ def build():
         "drehknopf": drehknopf(),
         "ein_taste": taste(),
         "riemen_gegenplatte": gegenplatte(),
+        "niederhalter": niederhalter(),
     }
     return parts
 

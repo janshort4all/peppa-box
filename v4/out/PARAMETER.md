@@ -20,7 +20,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `AUDIO_PLUG` | 20 | Platz hinter der Klinke des Pi: Klinkenstecker 90° gewinkelt (Goobay 67782) |
 | `MAXB` | 19 / 18 / 8 | Verstärker-Klon L, B, Höhe mit Klemme |
 
-## Mit Probedruck einstellen (14)
+## Mit Probedruck einstellen (15)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -31,6 +31,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `PILOT25` | 2,1 | Kernloch M2,5 (Akku-Board) |
 | `PIN_HOLE` | 4,1 | Loch für Rahmenstift (Coupon C4: 4,0 / 4,1 / 4,2) |
 | `PAD_POCKET` | 2 | Tasche unter dem Feld → 4 mm Kunststoff über dem Kupfer, unter den Symbolen 3,2 mm |
+| `RAST_ALPHA` | 30 | Rille: Auszugsflanke in Grad (C15: 20 / 30 / 40); steiler = fester |
 | `INS_GAP` | 0,6 | Tasche: Spalt an der Außenwand (Einleger laminiert ca. 0,25–0,35 mm) |
 | `BTN_GAP` | 0,25 | Luft je Seite zwischen Kappe und Deckelbohrung (Druck 02.11.: passt) |
 | `ENC_HOLE` | 7,4 | Loch für M7-Gewinde |
@@ -85,7 +86,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (107)
+## Gestaltung festgelegt (115)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -127,6 +128,14 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `CARD_IN` | 42 | Einstecktiefe |
 | `SLOT_Y` | 116 | Schlitzmitte auf dem Deckel |
 | `TILT` | 8 | Neigung der Karte nach hinten |
+| `RAST_UEB` | 0,7 | Nase steht so weit über die Kartenvorderseite (Federweg beim Ein-/Ausziehen); vorher 0 = keine Rastung |
+| `RAST_TOP` | 0,8 | Nase: flache Spitze (in Steckrichtung) |
+| `RAST_EIN` | 30 | Nase: Flanke zur Öffnung (Einstecken), Grad zur Kartenfläche |
+| `RAST_TIEF` | 45 | Nase: Flanke zum Fachboden, steiler als die Rille → die Rille bestimmt die Auszugskraft |
+| `RILLE_T` | 0,9 | Rille: Tiefe (> RAST_UEB, Zunge liegt eingerastet entspannt → kein Kriechen) |
+| `RILLE_SPIEL` | 0,3 | Rille: Spiel zwischen Nase und Auszugsflanke, wenn die Karte auf dem Fachboden steht |
+| `RILLE_L` | 20 | Rille: Länge quer (Nase 16 mm, ±2 mm seitliches Spiel) |
+| `KARTE_FASE` | 0,8 | Einführfase vorne an der Kartenunterkante, 30° (schiebt die Nase beim Einstecken weg) |
 | `INS_LIP` | 1,5 | Lippe überdeckt den Einleger je Seite und unten; Unterseite 45°, druckbar ohne Stütze |
 | `INS_WALL` | 1,2 | Außenwand neben der Tasche |
 | `INS_FRONT` | 0,6 | Lippe an der Fensterkante mindestens so dick |

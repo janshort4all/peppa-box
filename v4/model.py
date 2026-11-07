@@ -104,6 +104,16 @@ CARD_T = par("CARD_T", 4.0, "festgelegt", "Karte Dicke")
 CARD_IN = par("CARD_IN", 42.0, "festgelegt", "Einstecktiefe")
 SLOT_Y = par("SLOT_Y", 116.0, "festgelegt", "Schlitzmitte auf dem Deckel")
 TILT = par("TILT", 8.0, "festgelegt", "Neigung der Karte nach hinten")
+# Rastung Karte ↔ Kartenfach (07.11.): Nase an der Federzunge rastet in eine Rille vorne in der Karte
+RAST_UEB = par("RAST_UEB", 0.7, "festgelegt", "Nase steht so weit über die Kartenvorderseite (Federweg beim Ein-/Ausziehen); vorher 0 = keine Rastung")
+RAST_TOP = par("RAST_TOP", 0.8, "festgelegt", "Nase: flache Spitze (in Steckrichtung)")
+RAST_EIN = par("RAST_EIN", 30.0, "festgelegt", "Nase: Flanke zur Öffnung (Einstecken), Grad zur Kartenfläche")
+RAST_TIEF = par("RAST_TIEF", 45.0, "festgelegt", "Nase: Flanke zum Fachboden, steiler als die Rille → die Rille bestimmt die Auszugskraft")
+RAST_ALPHA = par("RAST_ALPHA", 30.0, "Probedruck", "Rille: Auszugsflanke in Grad (C15: 20 / 30 / 40); steiler = fester")
+RILLE_T = par("RILLE_T", 0.9, "festgelegt", "Rille: Tiefe (> RAST_UEB, Zunge liegt eingerastet entspannt → kein Kriechen)")
+RILLE_SPIEL = par("RILLE_SPIEL", 0.3, "festgelegt", "Rille: Spiel zwischen Nase und Auszugsflanke, wenn die Karte auf dem Fachboden steht")
+RILLE_L = par("RILLE_L", 20.0, "festgelegt", "Rille: Länge quer (Nase 16 mm, ±2 mm seitliches Spiel)")
+KARTE_FASE = par("KARTE_FASE", 0.8, "festgelegt", "Einführfase vorne an der Kartenunterkante, 30° (schiebt die Nase beim Einstecken weg)")
 # Einschubtasche für ein Papier-Cover (statt Aufkleber): von oben einschieben, Rahmen mit 45°-Lippen (Schwalbenschwanz)
 INS_GAP = par("INS_GAP", 0.6, "Probedruck", "Tasche: Spalt an der Außenwand (Einleger laminiert ca. 0,25–0,35 mm)")
 INS_LIP = par("INS_LIP", 1.5, "festgelegt", "Lippe überdeckt den Einleger je Seite und unten; Unterseite 45°, druckbar ohne Stütze")
@@ -790,6 +800,52 @@ def rc_local():
     return (u0, u0 + RC_L, v0, v0 + RC_B, w0, w0 + RC_T)
 
 
+CARD_FLOOR = CARD_IN + 0.5      # Fachboden: hier steht die gesteckte Karte auf
+
+
+def rast_geo():
+    """Nase an der Federzunge im Kartenrahmen (v): Lage der flachen Spitze v_top0..v_top1 und Höhe über der Zungenfläche."""
+    h = 2 * 0.4 + RAST_UEB                      # 0,4 Luft je Seite im Fach + Überdeckung
+    v_top1 = 33.0 - h / math.tan(math.radians(RAST_TIEF))     # Fuß der tiefen Flanke endet 0,2 vor dem freien Zungenende (33,2)
+    return v_top1 - RAST_TOP, v_top1, h
+
+
+def rast_nase(ti):
+    """Prisma quer über die Zunge (u ±8), Profil in (v, w): Einsteckflanke RAST_EIN, Spitze RAST_TOP, tiefe Flanke RAST_TIEF."""
+    v0, v1, h = rast_geo()
+    a = v0 - h / math.tan(math.radians(RAST_EIN))
+    b = v1 + h / math.tan(math.radians(RAST_TIEF))
+    base = box(-8, a, -ti - 0.05, 8, b, -ti)
+    top = box(-8, v0, -ti + h - 0.01, 8, v1, -ti + h)
+    return Manifold.batch_hull([base, top])
+
+
+def karte_rille(alpha=None):
+    """Rille vorne in der Karte (Druckkoordinaten der Karte: y ab Unterkante, z = CARD_T Vorderseite).
+    Steht die Karte auf dem Fachboden, liegt die Nase entspannt in der Rille (Spiel RILLE_SPIEL zur Auszugsflanke).
+    Beim Herausziehen läuft die Nasenecke die Auszugsflanke (alpha) hinauf; beim Einstecken drückt die Flanke die Karte auf den Boden."""
+    alpha = RAST_ALPHA if alpha is None else alpha
+    ta = math.tan(math.radians(alpha))
+    v0, v1, h = rast_geo()
+    T = CARD_T
+    y_corner = CARD_FLOOR - v1                       # tiefe Nasenecke in Kartenkoordinaten
+    y_a = y_corner - RILLE_SPIEL - RAST_UEB / ta     # Auszugsflanke an der Kartenfläche
+    y_open_face = CARD_FLOOR - (v0 - RAST_UEB / math.tan(math.radians(RAST_EIN)))   # Einsteckflanke der Nase in Höhe der Kartenfläche
+    y_b = y_open_face + 1.0                          # obere Rillenkante: 1 mm Luft (Karte darf etwas höher stehen)
+    x0, x1 = CARD_W / 2 - RILLE_L / 2, CARD_W / 2 + RILLE_L / 2
+    d = RILLE_T
+    face = box(x0, y_a, T - 0.001, x1, y_b, T + 1)
+    bot = box(x0 + d, y_a + d / ta, T - d, x1 - d, y_b - d, T - d + 0.001)
+    return Manifold.batch_hull([face, bot])
+
+
+def karte_fase():
+    """Einführfase vorne an der Unterkante (30°)."""
+    T, f = CARD_T, KARTE_FASE
+    return Manifold.batch_hull([box(-1, -1, T - f, CARD_W + 1, 0.0, T + 1),
+                                box(-1, -1, T, CARD_W + 1, f / math.tan(math.radians(30)), T + 1)])
+
+
 def kartentasche():
     wi = CARD_W / 2 + 0.75
     ti = CARD_T / 2 + 0.4
@@ -814,7 +870,7 @@ def kartentasche():
     tongue_cut = U([box(-11, 14, -ti - 3, -10.2, 34, -ti + 0.01), box(10.2, 14, -ti - 3, 11, 34, -ti + 0.01),
                     box(-11, 33.2, -ti - 3, 11, 34, -ti + 0.01)])
     thin = box(-10.2, 14, -ti - 3, 10.2, 33.2, -ti - 2 + 0.6)
-    bump = Manifold.batch_hull([box(-8, 29.5, -ti - 0.05, 8, 30.5, -ti + 0.8), box(-8, 28, -ti - 0.05, 8, 32, -ti)])
+    bump = rast_nase(ti)
     local = local - inner - tongue_cut - thin + bump
     world = to_world(local)
     world = world ^ box(-50, -50, -50, 200, 200, LID_BOT)
@@ -843,11 +899,11 @@ def rc522_stecker_zone():
 
 def _karte_nach_kartenrahmen(m):
     """Druckkoordinaten der Karte (x, y ab Unterkante, z ab Rückseite) → Kartenrahmen (u, v, w); Drehung 180° um x, keine Spiegelung."""
-    return m.rotate([180, 0, 0]).translate([-CARD_W / 2, CARD_IN, CARD_T / 2 + 0.4])
+    return m.rotate([180, 0, 0]).translate([-CARD_W / 2, CARD_FLOOR, CARD_T / 2 + 0.4])
 
 
 def karte_world():
-    """gesteckte Karte (von der Zunge an die Rückwand gedrückt) in Einbaulage"""
+    """gesteckte Karte (steht auf dem Fachboden, liegt an der Rückwand, Nase in der Rille) in Einbaulage"""
     return to_world(_karte_nach_kartenrahmen(karte_print()))
 
 
@@ -872,7 +928,7 @@ def karte_fenster():
     return x0, INS_Y0 + INS_LIP, CARD_W - x0, CARD_H
 
 
-def karte_print():
+def karte_print(alpha=None):
     """Karte flach, Rückseite unten (NFC-Tasche an der Platte, Decke Ø 25 mm als Brücke), Vorderseite mit Einschubtasche oben.
     Koordinaten wie von vorne gesehen: x nach rechts, y = 0 Kartenunterkante (steckt im Fach), z = 0 Rückseite.
     Tasche: Boden auf zf, Spalt INS_GAP an der Außenwand, darüber Lippen mit 45°-Unterseite, oben offen."""
@@ -891,6 +947,7 @@ def karte_print():
     c = c - U([gap, wedge, window])
     c = c - cyl_z(CARD_W / 2, CARD_H, -1, zf + 1.01, GRIP_R)                         # Griffmulde hinten oben
     c = c - cyl_z(CARD_W / 2, 1.0 + NFC_D / 2, -1, 1 + NFC_T + 0.4, NFC_D / 2 + 0.3)   # NFC-Tasche hinten unten
+    c = c - karte_rille(alpha) - karte_fase()                                          # Rastung (07.11.)
     return c
 
 

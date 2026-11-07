@@ -50,7 +50,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 - **Stapel auf dem Boden:** Überhang mit BOOT-Taste links, gelbe Stifte vorne, Anschlusskante (USB-C, Schalter, Pi-Klinke) hinten. 4 Auflagen mit Mulde; Befestigung später mit M2,5-Schrauben von unten (alte Länge + ca. 5 mm, Linsen-/Flachkopf). **Offen:** Länge der vorhandenen Schrauben.
 - **Hinten auf dem Boden:** Mulden für WAGO GND A, WAGO 5 V, Verstärker. Rechter Teil frei (Kabelreserve, Elko).
 - **Deckel:** zweifarbig (oranger Kern, beige Haut 0,7 mm), 4 Touchfelder mit Symbolen, Kartenschlitz, Ein-Taste hinten rechts in Mulde. **Deckelrahmen** mit Verteiler-Brücke (MPR121 + 3 WAGO hängend), Tasterhalter, Zungen vorne, 2 Schrauben hinten durch die Rückwand.
-- **Kartenfach:** Karte 70 × 112 × 4 mm, 42 mm tief, 8° geneigt, Federzunge, RC522 in Schienen dahinter.
+- **Kartenfach:** Karte 70 × 112 × 4 mm, 42 mm tief, 8° geneigt, Federzunge mit Rastnase (Karte hat vorne eine Rille, seit 07.11.), RC522 in Schienen dahinter.
 - **Rechts:** Drehknopf (y 84, z 60) und Klinke (y 84, z 24). **Links:** Riemen (z 118). **Hinten:** USB-C-Einbaubuchse x 114, z 60, innen höchstens 20 mm tief (Produkt offen; Stecker am Akku-Board gewinkelt oder ≤ 20 mm), Lüftungsschlitze.
 - **Front:** gedrucktes Gitter statt Stoff, **einfarbig beige**; Logo groß in der Mitte als **eigene orange Buchstaben, 1,2 mm erhaben, aufgeklebt** (Stifte in Sacklöchern), beiges Feld um das Logo ohne lose Löcher (`GR_HALO`): `06a` Gitter, `06b` alle Buchstaben, Bilder `out/gitter_ansicht.png`, `out/gitter_vorne_nah.png` (Nachträge 05.11. (6), 06.11. (1), (2), (4)).
 - Höhen: Klemmen 77,5 mm, Kartenfach ab 86,8 mm, Deckel-Module ab 117,4 mm.
@@ -597,4 +597,20 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Befund Jan (11:56):** Gitter `06a` mit den Einstellungen aus Nachtrag 06.11. (5) gedruckt: sehr viele feine Härchen überall, Druck unsauber, trotz gereinigter Düse. Jan vermutet zu feuchtes beiges Filament (nicht getrocknet). Passt zum Bild (Härchen überall, nicht nur an einzelnen Stellen). Nicht abgenommen.
 - **Als Nächstes Gitter:** beige Rolle trocknen, dann erneut (Fotos und G-Code an Claude; C13- und Gitter-G-Code auswerten, falls es bleibt).
 - **Buchstaben-Test** mit neuer oranger Rolle: vollständige Einstellungsliste in `v4/out/README.md` (Abschnitt „Gitter“ → Buchstaben). Schichthöhe 0,2 (Buchstaben = 6 Schichten, Stifte 5; weniger Fahrten zwischen den 11 Teilen), Fülldichte 100 %, sonst wie Gitter (245/240 °C, Lüfter 35 %, Rückzug 1,0 mm 40/30, Wischen 2 mm/70 %, Z-Hub 0,2).
+
+## Nachtrag 07.11.2026 (2) – Kartenfach: Schrauben geprüft, Rastung der Karte neu
+
+- **Frage Jan:** Ist das Kartenfach auf die Schrauben 3,0 × 12 ausgelegt? Ja (seit Anfang so modelliert): Flachkopf von unten, 8 mm Flansch (`POCKET_GRIP`), 4 mm im Deckel, Spitze 0,5 mm vor dem Ende des Kernlochs (4,5 tief), darüber 2 mm Deckel. Senkung Ø 6,8 für Kopf Ø 6.
+- **Befund Jan:** Die Karte hält kaum, lässt sich sehr leicht herausziehen; vermutlich fehlt ein Gegenstück in der Karte. Bestätigt im Modell: Die Nase der Federzunge stand genau 0,8 mm hoch = Luft zwischen Kartenfläche und Vorderwand → **0 mm Überdeckung**, die Zunge berührte die Karte nur, und die Karte hatte keine Vertiefung.
+- **Neu (Modell, Parameter `RAST_*`, `RILLE_*`, `KARTE_FASE`):**
+  - Nase 1,5 mm hoch, also **0,7 mm über der Kartenfläche** (`RAST_UEB`). Flanke zur Öffnung 30° (leichtes Einstecken), flache Spitze 0,8, Flanke zum Boden 45°. Endet 0,2 mm vor dem freien Zungenende.
+  - Karte: **Rille vorne** quer, 20 mm lang, 0,9 mm tief (`RILLE_T`), mittig über der Nase; Auszugsflanke `RAST_ALPHA` (Standard 30°, Probedruck). Steht die Karte auf dem Fachboden, liegt die Nase entspannt in der Rille (0,3 mm Spiel zur Flanke, 0,2 mm zum Rillengrund) → kein Kriechen der Zunge. Steht die Karte etwas hoch, drückt die Flanke sie auf den Boden.
+  - Karte: **Einführfase 30°** vorne an der Unterkante (0,8 mm), schiebt die Nase beim Einstecken weg.
+  - Rechnung (Zunge 1,4 × 20,4 mm, Hebel ca. 17 mm, E 1500–2200 MPa geschätzt, Reibung 0,3): Auszug ca. 2–3 N (20°), 3–4,5 N (30°), 4,5–6,5 N (40°); Einstecken ca. 3–4,5 N; Biegespannung ca. 11 MPa nur beim Durchrasten. Karte wiegt ca. 0,2 N.
+  - Restwand der Karte zwischen Rille und NFC-Tasche 2,3 mm.
+  - Gesteckte Karte im Modell steht jetzt auf dem Fachboden (`CARD_FLOOR` = 42,5) statt 0,5 mm darüber; Fenster der Covertasche beginnt damit 1,0 mm über dem Deckel.
+- **Geprüft:** `check.py` ohne Kollision (auch Karte ↔ Kartenfach), Abstände unverändert; Profil Nase/Rille nachgerechnet (Federweg 0,7 mm, Steigung = tan α). Neu gebaut: `04_kartenfach.stl`, `10_karte_orange.stl`; alle anderen STL unverändert. Schnittbild `v4/out/rastung_schnitt.png` (`v4/rastung_schnitt.py`).
+- **Neu Coupon C15** (`coupon_C15_karte_rastung_20grad/_30grad/_40grad`): untere 60 mm der Karte, 1/2/3 Kerben oben, je ca. 8 g. Mit dem neuen Kartenfach testen: Klick, kopfüber schütteln, Herausziehen durch das Kind. Ergebnis → `RAST_ALPHA`, dann Karten drucken.
+- **Folge:** Bereits gedruckte Karten haben keine Rille. Im neuen Kartenfach drückt die Nase dauerhaft 0,7 mm auf sie (hält durch Reibung, Zunge bleibt gespannt) → neu drucken, sobald der Winkel feststeht.
+- **Ablauf:** 1. `04_kartenfach.stl` drucken (Einstellungen wie bisher, auf der Seite, Brim). 2. C15 (drei Stücke) drucken und testen. 3. Winkel melden, Karten drucken.
 

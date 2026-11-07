@@ -178,6 +178,26 @@ def c14_gitter_ecke(parts=None):
     return M.gitter_druck(g, g), M.buchstaben_druck(letters)
 
 
+C15_WINKEL = (20.0, 30.0, 40.0)
+C15_H = 60.0      # 42,5 im Fach + Deckel + ca. 12 mm zum Greifen
+
+
+def c15_karte_rastung():
+    """Drei Kartenstücke (untere 60 mm der Karte) mit verschiedener Auszugsflanke der Rille (RAST_ALPHA 20 / 30 / 40°).
+    Kerben oben in der Mitte: 1 Kerbe = 20°, 2 = 30°, 3 = 40°. Mit dem neuen Kartenfach `04` testen: Halt beim Schütteln
+    und Kopfüberhalten, Herausziehen durch das Kind, Klick beim Einstecken. Druck wie die Karte: Rückseite unten."""
+    out = []
+    for i, a in enumerate(C15_WINKEL):
+        c = M.karte_print(a) ^ box(-1, -1, -1, M.CARD_W + 1, C15_H, M.CARD_T + 1)
+        n = i + 1
+        for j in range(n):
+            x = M.CARD_W / 2 + (j - (n - 1) / 2) * 4.0
+            c = c - M.Manifold.batch_hull([box(x - 1.2, C15_H - 0.01, -1, x + 1.2, C15_H + 1, M.CARD_T + 1),
+                                           box(x - 0.05, C15_H - 2.0, -1, x + 0.05, C15_H - 1.99, M.CARD_T + 1)])
+        out.append(base_at_zero(c))
+    return out
+
+
 def all_coupons():
     out = {}
     out["C1_wand_rechts_drehgeber_klinke"] = c1_wand_rechts()
@@ -214,6 +234,8 @@ def all_coupons():
     a, b = c14_gitter_ecke()
     out["C14_gitter_ecke_beige"] = a
     out["C14_buchstaben_P_e_p_orange"] = b
+    for a, k in zip(C15_WINKEL, c15_karte_rastung()):
+        out[f"C15_karte_rastung_{int(a)}grad"] = k
     a, b = c9_kopfueber()
     out["C9_deckel_kopfueber_felder"] = a
     out["C9_deckel_kopfueber_taste_schlitz"] = b

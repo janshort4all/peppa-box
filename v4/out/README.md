@@ -21,6 +21,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | Datei | Prüft | Was du mir zurückmeldest |
 | --- | --- | --- |
 | coupon_C14_gitter_ecke_beige + coupon_C14_buchstaben_P_e_p_orange | **Probe vor dem Gitter:** Ecke oben links einfarbig (Löcher, Rand, schräge Oberkante, ein Stift) mit den Sacklöchern für „P“, „e“, „p“, dazu diese drei Buchstaben, ca. 12 g | Mit den Gitter- bzw. Buchstaben-Einstellungen (Abschnitt „Gitter“). Fäden in den Löchern weg? Buchstaben-Stifte: leicht hinein, ohne zu wackeln? Buchstaben liegen plan auf? In die obere linke Ecke des Korpus drücken: Stift fest? |
+| coupon_C15_karte_rastung_20grad / _30grad / _40grad | **Rastung der Karte (07.11.):** untere 60 mm der Karte mit Rille, Auszugsflanke 20° / 30° / 40° (1 / 2 / 3 Kerben oben), je ca. 8 g. Braucht das **neue** Kartenfach `04` (Nase 0,7 mm über der Karte) | Wie die Karte drucken (Rückseite unten). Einstecken: deutlicher Klick? Box kopfüber halten und schütteln: bleibt das Stück drin? Kann dein Sohn es ohne Mühe herausziehen? Den passenden Winkel Claude melden (`RAST_ALPHA`, Standard 30°), danach die Karten drucken |
 | coupon_C12_deckel_oberseite_* (5 Dateien) | **Probe vor dem Deckel:** obere 2,4 mm vorne rechts (Play, Vor, Mond, Kante mit Fase), kopfüber, Symbole vertieft, ca. 15 g | Wie den Deckel einrichten: Variante A mit `_opfer_PLA`, Variante B mit `_MODIFIER_bruecke_richtung`, beide mit `_MODIFIER_haut_1wand`. Beige in den Kreisen so ruhig wie außen? Symbolböden eben bzw. Fäden parallel? |
 | coupon_C7_lochbild_stapel | **Lochbild 58 × 49 mm des Akku-Stapels**, ca. 20 min | Stapel mit den vorhandenen Schrauben daraufsetzen: Fallen alle 4 Köpfe in die Mulden? Liegt die Acrylplatte innerhalb der Ecken-Marken? |
 | coupon_C8_bodenecke_* (2 Teile) | Schattenfuge Boden/Korpus, Zentrierkragen, Senkschraube 3,0 × 12 in den Dom | Rutscht der Kragen leicht hinein, ohne zu wackeln? Sitzt die Schraube bündig? |
@@ -50,7 +51,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | 08_ein_taste_orange.stl | Orange | Kopf unten |
 | 09_riemen_gegenplatte.stl | Schwarz/Grau | flach |
 | 02_deckel_einfarbig.stl | eine Farbe | Prototyp, gleiche Form wie 02a + 02b; Symbole 0,8 mm vertieft |
-| 10_karte_orange.stl | Orange | Rückseite unten (NFC-Tasche an der Platte), Einschubtasche oben; Cover auf Papier von oben einschieben |
+| 10_karte_orange.stl | Orange | Rückseite unten (NFC-Tasche an der Platte), Einschubtasche oben; Cover auf Papier von oben einschieben. Rille vorne unten + Einführfase für die Rastung (seit 07.11.; ältere Karten ohne Rille neu drucken) |
 
 Die Dateien liegen bereits in Druckausrichtung, auch der Deckel: `02a` und `02b` liegen seit 05.11. **kopfüber**
 (Oberseite auf der Platte, hinten bleibt hinten). Das Tastenloch ist offen (keine Mulde, keine Opferschicht mehr).
@@ -335,6 +336,17 @@ ist eine 1 mm dünne Haut nur an den Außenflächen – Fuzzy entsteht ausschlie
 
 Alle Module und Klemmen liegen in Mulden mit 2,5 mm Rand. Ein Streifen doppelseitiges Montageband oder ein Tropfen Heißkleber reicht.
 Unter dem Deckel hängen sie kopfüber; dort am besten Montageband nehmen.
+
+## Kartenfach und Karte: Rastung (Stand 07.11.2026)
+
+Die Federzunge vorne im Kartenfach hat eine Nase, die 0,7 mm über die Kartenvorderseite ragt. Die Karte hat vorne unten eine passende Rille
+(0,9 mm tief) und unten eine Einführfase. Beim Einstecken schiebt die Fase die Nase weg, die Nase gleitet über die Karte und springt in die
+Rille (Klick). Steht die Karte auf dem Fachboden, liegt die Nase **entspannt** in der Rille (die Zunge kriecht nicht). Zum Herausziehen muss
+die Nase die Auszugsflanke der Rille hinauf; deren Winkel bestimmt die Kraft (Schätzung 30°: ca. 3–4,5 N, ein Vielfaches des Kartengewichts,
+für ein Kind leicht). Schnittbild: `rastung_schnitt.png`. Vorher hatte die Nase genau 0 mm Überdeckung, die Karte hielt nur durch Reibung.
+
+Druck Kartenfach wie bisher (auf der Seite, Brim, ohne Stützen und Fuzzy). Die Nase liegt in der Schichtebene, die Zunge biegt sich entlang
+der Bahnen. Karte wie bisher (Rückseite unten); Rille und Fase liegen oben und brauchen keine Stütze.
 
 ## Schrauben (Stand 06.11.2026)
 

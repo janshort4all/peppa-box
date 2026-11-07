@@ -1056,6 +1056,9 @@ GR_LETTER_T = par("GR_LETTER_T", 1.2, "festgelegt",
                   "Logo-Buchstaben als eigene orange Teile, 1,2 dick, aufgeklebt auf die glatte Gitterfläche (stehen 1,0 vor der Korpusfront; 3D-Effekt, Entscheidung Jan 06.11.)")
 GR_PEG = par("GR_PEG", (2.0, 1.0, 0.2), "Probedruck",
              "Stifte hinten an den Buchstaben: Ø (bei schmalen Teilen kleiner), Länge, Spiel je Seite im Sackloch des Gitters (Loch 0,3 tiefer). Mit C14 prüfen")
+GR_FORM_SPIEL = par("GR_FORM_SPIEL", 0.1, "Probedruck",
+                    "Spiel je Seite für die geformten Stifte der drei Strahlen über dem a (Stift = Strahl 0,7 kleiner, unverändert). "
+                    "Mit 0,2 wie bei den runden Stiften saßen die Strahlen spürbar locker (Druck Jan 07.11.), runde Stifte passten gut")
 GR_KEEP = par("GR_KEEP", 1.2, "festgelegt", "geschlossener beiger Rand um das Logo bis zum ersten Loch")
 GR_HALO = par("GR_HALO", 16.0, "festgelegt",
               "Beiges Feld um das Logo: Logo-Kontur mit R 16 geglättet (füllt Kerben zwischen den Buchstaben, Lücke a|X, B|O, Innenformen wie das Dreieck im O), "
@@ -1200,7 +1203,8 @@ def gitter_buchstaben_cs():
 def gitter_stifte(cs):
     """Stift-Querschnitte unter einem Logo-Teil. Buchstaben: zwei runde Stifte möglichst weit auseinander (verdrehsicher), dort,
     wo der Buchstabe am breitesten ist. Schmale Teile (Strahlen), in die nur ein runder Stift passt: ein Stift in der Form des
-    Teils, 0,7 mm kleiner (verdrehsicher). Das Sackloch im Gitter (Stift + Spiel) bleibt mindestens 0,4 mm unter dem Rand verdeckt."""
+    Teils, 0,7 mm kleiner (verdrehsicher). Das Sackloch im Gitter (Stift + Spiel) bleibt mindestens 0,4 mm unter dem Rand verdeckt
+    (geformte Stifte mit GR_FORM_SPIEL 0,1 → 0,6 mm)."""
     import cv2
     import numpy as np
     R = 20.0                                                        # px je mm
@@ -1260,7 +1264,8 @@ def gitter():
                 body.append(Manifold.batch_hull([ext_xz(pc, yf - 0.01, yf + L - 0.3), ext_xz(tip, yf + L - 0.01, yf + L)]))
             else:                                                       # geformter Stift (Strahlen): gerade, ohne Fase
                 body.append(ext_xz(pc, yf - 0.01, yf + L))
-            sacks.append(ext_xz(pc.offset(clr, JoinType.Round).simplify(0.005), yf - 1, yf + L + 0.3))
+            spiel = clr if _konvex(pc) else GR_FORM_SPIEL                # geformte Stifte: engeres Spiel (Druck 07.11.)
+            sacks.append(ext_xz(pc.offset(spiel, JoinType.Round).simplify(0.005), yf - 1, yf + L + 0.3))
         letters.append(U(body))
     pins = []
     r = GR_PIN_D / 2

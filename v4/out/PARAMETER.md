@@ -20,7 +20,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `AUDIO_PLUG` | 20 | Platz hinter der Klinke des Pi: Klinkenstecker 90° gewinkelt (Goobay 67782) |
 | `MAXB` | 19 / 18 / 8 | Verstärker-Klon L, B, Höhe mit Klemme |
 
-## Mit Probedruck einstellen (15)
+## Mit Probedruck einstellen (16)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -38,6 +38,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `KNOB_BORE` | 6,1 | Bohrung für die Schlitzachse Ø 6 (gedruckt meist 0,1–0,2 kleiner → Klemmsitz), nur im geschlitzten Teil der Achse (federt dort) |
 | `KNOB_GUIDE` | 6,3 | Bohrung im ungeschlitzten Teil der Achse (federt nicht): nur Führung, damit der lange Knopf nicht auf ganzer Länge klemmt |
 | `GR_PEG` | 2 / 1 / 0,2 | Stifte hinten an den Buchstaben: Ø (bei schmalen Teilen kleiner), Länge, Spiel je Seite im Sackloch des Gitters (Loch 0,3 tiefer). Mit C14 prüfen |
+| `GR_FORM_SPIEL` | 0,1 | Spiel je Seite für die geformten Stifte der drei Strahlen über dem a (Stift = Strahl 0,7 kleiner, unverändert). Mit 0,2 wie bei den runden Stiften saßen die Strahlen spürbar locker (Druck Jan 07.11.), runde Stifte passten gut |
 | `GR_PIN_D` | 3,9 | Stift Ø (Loch im Korpus PIN_HOLE 4,1; mit C14 am Korpus prüfen) |
 
 ## Von dir gemessen (21)

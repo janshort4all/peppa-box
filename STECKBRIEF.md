@@ -614,3 +614,11 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Folge:** Bereits gedruckte Karten haben keine Rille. Im neuen Kartenfach drückt die Nase dauerhaft 0,7 mm auf sie (hält durch Reibung, Zunge bleibt gespannt) → neu drucken, sobald der Winkel feststeht.
 - **Ablauf:** 1. `04_kartenfach.stl` drucken (Einstellungen wie bisher, auf der Seite, Brim). 2. C15 (drei Stücke) drucken und testen. 3. Winkel melden, Karten drucken.
 
+
+## Nachtrag 07.11.2026 (3) – Gitter: Schlitze der drei Strahlen enger
+
+- **Befund Jan (Druck Gitter + Buchstaben):** Runde Stifte der Buchstaben sitzen sehr gut in ihren Sacklöchern; die drei Strahlen über dem „a“ sitzen in ihren Schlitzen spürbar locker.
+- **Modell geprüft:** Die Schlitze liegen vollständig unter den Strahlen (Abstand zum Rand 0,5 mm, nichts ragt heraus). Ursache ist das Spiel: Strahl ca. 3,0 mm breit, geformter Stift bis 1,6 mm breit (Strahl 0,7 kleiner), Schlitz bis 2,0 mm → 0,2 mm je Seite wie bei den runden Stiften. Bei einem dünnen, spitz zulaufenden Stift ist das relativ viel; runde Löcher drucken zudem eher etwas enger als gerade Schlitzwände.
+- **Neu:** Parameter `GR_FORM_SPIEL` = 0,1 (Probedruck) nur für die geformten Stifte; Schlitz = Strahl 0,6 kleiner (Fläche je Schlitz ca. 11,4 / 13,0 / 12,6 statt 13,0 / 14,8 / 14,3 mm²). Runde Stifte bleiben bei 0,2.
+- **Unverändert:** `06b_logo_buchstaben_orange.stl` (die gedruckten orangen Teile passen). Neu gebaut: `06a_gitter_beige.stl`. `check.py` ohne Befund, STL dicht.
+- **Vor dem Neudruck:** beiges PETG trocknen (Härchen/Lücken im letzten Druck). Sitzen die Strahlen dann zu stramm: Stift kurz mit Schleifpapier anfasen, nicht den Schlitz aufbohren.

@@ -67,7 +67,7 @@ Alle anderen Flächen sind steiler als 45° oder liegen auf der Platte. Kein Tei
 
 - Gitter einfarbig: 377 Löcher Ø 3,3 im Wabenraster 4,2 (Steg 0,9 mm = 2 Linien).
 - Offen direkt vor der Lautsprecheröffnung: 11 %; über den Luftraum (2,5 mm) erreichbar: 37 % der Öffnung.
-- Gitter Schicht 1 (Sichtfläche): 9863 mm², schmaler als 1 Linie (0,4 mm): 0,00 mm².
+- Gitter Schicht 1 (Sichtfläche): 9868 mm², schmaler als 1 Linie (0,4 mm): 0,00 mm².
 - Gitter hinten (Luftraum): Rand läuft durch die Lochmitten, schmaler als 0,4 mm höchstens 0,99 mm² je Schicht (Ecken am Lochrand).
 - Buchstaben: 11 Teile auf einer Platte (119 × 66 mm), mindestens 4,2 mm Abstand; Schicht 1 (Sichtseite) 2529 mm², schmaler als 0,4 mm: 0,63 mm² (Spitze im e-Schlitz, Ecken).
 - 19 Stifte in Sacklöchern (Spiel 0,2 je Seite, Loch 0,3 tiefer), Überschneidung mit dem Gitter -0,000 mm³.

@@ -677,3 +677,10 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Neues Gitter (Steg 1,4, 297 Löcher):** drei Linien je Steg, ein Fünftel weniger Ringe, Fahrten bleiben auf Material.
 - **Korrektur Einstellung:** „Nur eine Wand in der ersten Schicht“ für das Gitter **aus** lassen (Empfehlung von vorhin zurückgenommen), sonst viele kurze Bodenlinien zwischen den Ringen.
 - **Ohne Modellbezug:** Haftung auf der texturierten PEI (Platte mit Spülmittel, nicht anfassen), Z-Versatz der ersten Schicht, trockenes Filament. Test: C14 drucken und nach 2 Schichten abbrechen.
+
+## Nachtrag 07.11.2026 (7) – G-Code des neuen Gitters (Steg 1,4) geprüft: druckfertig
+
+- **Einstellungen** (Datei Jan, 3 h 18 min): alle wie README, auch erste Schicht 0,45, Elefantenfuß 0, „Nur eine Wand in der ersten Schicht“ aus, Z-Hub 0, 235/230 °C.
+- **Fahrten durch Löcher:** 203 statt ca. 62.000, alle mit Rückzug. Schichten 1–11 und 13–17: keine. Rest nur dort, wo der Slicer obere Flächen nicht überfährt: Schicht 12 (letzte Schicht vor dem Luftraum, 85 kurze) und Schicht 18 (hinterste Schicht, 9 lange Diagonalen quer über den Luftraum); dazu wie bisher 12 Schichten nur Stifte. Diese Fäden liegen hinten im offenen Luftraum und lassen sich vor dem Einbau abziehen oder kurz mit Heißluft entfernen.
+- **Schicht 1:** Fläche zu 99,8 % belegt (vorher 99,3 %), Stege mit breiteren Linien.
+- **Nebeneffekt:** ca. 2.100 statt 1.150 Rückzüge je Schicht. Ursache: Arachne setzt in jeden Zwickel zwischen drei Löchern einen kurzen Mittelstrich (Median 0,3 mm). Die liegen auf Material, nicht über Löchern; Druckzeit +25 min. Nicht geändert (ungeprüft wäre „Minimale Wandlänge“ höher; gilt nicht für Schicht 1).

@@ -66,7 +66,7 @@ d.text((30, 18), "Frontgitter mit Logo – Gitter beige einfarbig, Buchstaben or
 d.text((820, 90), "von vorne", fill=(70, 62, 54), font=F)
 d.text((800, 860), "Druckplatten von oben: Gitter (Vorderfläche unten, Oberkante hinten)", fill=(70, 62, 54), font=F)
 d.text((800, 886), "und alle 11 Logo-Teile (Sichtseite unten, Stifte oben)", fill=(70, 62, 54), font=F)
-d.text((30, 1500), f"{g['loecher']} Löcher Ø {M.GR_HOLE[0]:g} im Wabenraster {M.GR_HOLE[1]:g} (Steg 0,9) · Gitter {M.GR_T:g} mm, über der Mulde {M.GR_T - M.GR_PLENUM:g} mm · 6 Stifte Ø {M.GR_PIN_D:g}".replace(".", ","), fill=(90, 82, 74), font=F)
+d.text((30, 1500), f"{g['loecher']} Löcher Ø {M.GR_HOLE[0]:g} im Wabenraster {M.GR_HOLE[1]:g} (Steg {M.GR_HOLE[1] - M.GR_HOLE[0]:.1f}) · Gitter {M.GR_T:g} mm, über der Mulde {M.GR_T - M.GR_PLENUM:g} mm · 6 Stifte Ø {M.GR_PIN_D:g}".replace(".", ","), fill=(90, 82, 74), font=F)
 d.text((30, 1528), f"offen direkt vor dem Lautsprecher {g['offen_direkt']:.0f} %, mit Luftraum dahinter {g['offen_mulde']:.0f} % der Öffnung · {g['stifte']} Stifte unter den Buchstaben", fill=(90, 82, 74), font=F)
 p = _os.path.join(ROOT2, "v4/out/gitter_ansicht.png")
 cv.save(p); print(p)

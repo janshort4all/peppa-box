@@ -213,9 +213,10 @@ Einstellungen einschalten). In Klammern der Profilwert, wo er bekannt ist. Proze
 | Prozess → Qualität | Nahtposition | **Rückseite** (Ausgerichtet) |
 | | Schrägnaht (Beta) | **Keine** |
 | | Wischbewegung nach innen | **an** (aus) |
-| | Elefantenfußkompensation | **0,15** (0,1) |
+| Prozess → Qualität → Breite der Linie | Erste Schicht | **0,45** (0,5) – seit 07.11.: sonst sind die Stege in Schicht 1 für „Wandüberquerungen vermeiden“ zu schmal |
+| Prozess → Qualität | Elefantenfußkompensation | **0** (0,1) – seit 07.11. (vorher 0,15): die Kompensation weitet die Löcher in Schicht 1, dann fährt der Slicer dort wieder quer durch |
 | | Wandgenerator | **Arachne** (Klassisch) |
-| | Nur eine Wand in der ersten Schicht | **an** |
+| | Nur eine Wand in der ersten Schicht | **an** (in der Datei vom 07.11. noch aus) |
 | | Vermeiden von Wandüberquerungen | **an** |
 | | Vermeide das Überqueren der Wand – Maximale Umleitungslänge | **0** (keine Grenze) |
 | Prozess → Struktur | Wandschleifen | **3** (2) |

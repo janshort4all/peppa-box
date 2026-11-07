@@ -1054,7 +1054,10 @@ def stoffrahmen():
 
 # --- Gitter vorne mit Logo (ersetzt Stoff + Stoffrahmen, Nachtrag 05.11.2026 (6)) ---
 GR_T = par("GR_T", 3.6, "festgelegt", "Gitterdicke (18 Schichten); liegt hinten auf der Sitzfläche (y = SEAT_D), Vorderfläche 0,2 hinter der Korpusfront")
-GR_HOLE = par("GR_HOLE", (3.3, 4.2), "festgelegt", "Löcher Ø und Teilung im Wabenraster, mittig zu (70, 70); Steg 0,9 = 2 Linien")
+GR_HOLE = par("GR_HOLE", (3.3, 4.7), "festgelegt",
+              "Löcher Ø und Teilung im Wabenraster, mittig zu (70, 70). Steg 1,4 (seit 07.11., vorher Teilung 4,2 / Steg 0,9): "
+              "„Vermeiden von Wandüberquerungen“ vergrößert jedes Loch um 1,5 × Linienabstand (ca. 0,6 je Seite); "
+              "bei Steg 0,9 verschmolzen die Löcher, der Slicer fuhr ca. 62.000-mal quer durch Löcher (Fäden). Ab ca. 1,3 wird jedes Loch umfahren")
 GR_RIM = par("GR_RIM", 4.5, "festgelegt", "geschlossener Rand außen (an der Vorderfläche)")
 GR_RIM_BACK = par("GR_RIM_BACK", 1.2, "festgelegt", "Mindeststeg Loch ↔ schräge Oberkante hinten (Sitz fällt oben nach hinten ab)")
 GR_LOGO = par("GR_LOGO", (100.0, 70.0, 76.0), "festgelegt", "Logo Breite, Mitte x, Mitte z (Vorlage Jan 05.11., gitter/peppa_box_logo.png)")

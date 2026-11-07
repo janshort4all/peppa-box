@@ -79,7 +79,7 @@ def pruefbericht_md(parts, ph):
     back = [r for r in g["rows"] if M.GR_T - M.GR_PLENUM < r["z"] < M.GR_T]
     n = lambda v, k=1: f"{v:.{k}f}".replace(".", ",")
     lines += ["## Gitter und Logo-Buchstaben (Schichtanalyse in Druckausrichtung)", "",
-              f"- Gitter einfarbig: {g['loecher']} Löcher Ø {n(M.GR_HOLE[0])} im Wabenraster {n(M.GR_HOLE[1])} (Steg 0,9 mm = 2 Linien).",
+              f"- Gitter einfarbig: {g['loecher']} Löcher Ø {n(M.GR_HOLE[0])} im Wabenraster {n(M.GR_HOLE[1])} (Steg {n(round(M.GR_HOLE[1] - M.GR_HOLE[0], 1))} mm: breit genug, dass der Slicer jedes Loch umfährt).",
               f"- Offen direkt vor der Lautsprecheröffnung: {g['offen_direkt']:.0f} %; über den Luftraum ({n(g['luft'])} mm) erreichbar: {g['offen_mulde']:.0f} % der Öffnung.",
               f"- Gitter Schicht 1 (Sichtfläche): {r1['flaeche']:.0f} mm², schmaler als 1 Linie (0,4 mm): {n(r1['d04'], 2)} mm².",
               f"- Gitter hinten (Luftraum): Rand läuft durch die Lochmitten, schmaler als 0,4 mm höchstens {n(max(r['d04'] for r in back), 2)} mm² je Schicht (Ecken am Lochrand).",
@@ -297,9 +297,10 @@ Einstellungen einschalten). In Klammern der Profilwert, wo er bekannt ist. Proze
 | Prozess → Qualität | Nahtposition | **Rückseite** (Ausgerichtet) |
 | | Schrägnaht (Beta) | **Keine** |
 | | Wischbewegung nach innen | **an** (aus) |
-| | Elefantenfußkompensation | **0,15** (0,1) |
+| Prozess → Qualität → Breite der Linie | Erste Schicht | **0,45** (0,5) – seit 07.11.: sonst sind die Stege in Schicht 1 für „Wandüberquerungen vermeiden“ zu schmal |
+| Prozess → Qualität | Elefantenfußkompensation | **0** (0,1) – seit 07.11. (vorher 0,15): die Kompensation weitet die Löcher in Schicht 1, dann fährt der Slicer dort wieder quer durch |
 | | Wandgenerator | **Arachne** (Klassisch) |
-| | Nur eine Wand in der ersten Schicht | **an** |
+| | Nur eine Wand in der ersten Schicht | **an** (in der Datei vom 07.11. noch aus) |
 | | Vermeiden von Wandüberquerungen | **an** |
 | | Vermeide das Überqueren der Wand – Maximale Umleitungslänge | **0** (keine Grenze) |
 | Prozess → Struktur | Wandschleifen | **3** (2) |

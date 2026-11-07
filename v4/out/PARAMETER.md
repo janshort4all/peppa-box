@@ -201,7 +201,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `LS_Z` | 124 | Deckelschrauben hinten z |
 | `LS_BLOCK_Z0` | 119 | Unterkante der Schraubblöcke hinten am Deckelrahmen (vorher 117; 2 mm mehr Platz für die RC522-Stecker, 3,2 mm Wand unter dem Kernloch) |
 | `GR_T` | 3,6 | Gitterdicke (18 Schichten); liegt hinten auf der Sitzfläche (y = SEAT_D), Vorderfläche 0,2 hinter der Korpusfront |
-| `GR_HOLE` | 3,3 / 4,2 | Löcher Ø und Teilung im Wabenraster, mittig zu (70, 70); Steg 0,9 = 2 Linien |
+| `GR_HOLE` | 3,3 / 4,7 | Löcher Ø und Teilung im Wabenraster, mittig zu (70, 70). Steg 1,4 (seit 07.11., vorher Teilung 4,2 / Steg 0,9): „Vermeiden von Wandüberquerungen“ vergrößert jedes Loch um 1,5 × Linienabstand (ca. 0,6 je Seite); bei Steg 0,9 verschmolzen die Löcher, der Slicer fuhr ca. 62.000-mal quer durch Löcher (Fäden). Ab ca. 1,3 wird jedes Loch umfahren |
 | `GR_RIM` | 4,5 | geschlossener Rand außen (an der Vorderfläche) |
 | `GR_RIM_BACK` | 1,2 | Mindeststeg Loch ↔ schräge Oberkante hinten (Sitz fällt oben nach hinten ab) |
 | `GR_LOGO` | 100 / 70 / 76 | Logo Breite, Mitte x, Mitte z (Vorlage Jan 05.11., gitter/peppa_box_logo.png) |

@@ -74,6 +74,7 @@ if sudo test -f "$RASPOTIFY"; then
     setze LIBRESPOT_VOLUME_CTRL fixed
     setze LIBRESPOT_INITIAL_VOLUME 100
     sudo sed -i 's|^LIBRESPOT_DISABLE_CREDENTIAL_CACHE=|#LIBRESPOT_DISABLE_CREDENTIAL_CACHE=|' "$RASPOTIFY"
+    sudo systemctl restart raspotify 2> /dev/null || true   # neue Einstellungen (Zugangsdaten merken) wirksam
     echo "Raspotify eingestellt (Name, feste Lautstaerke, Zugangsdaten merken)."
 else
     echo "FEHLER: $RASPOTIFY fehlt, Raspotify-Installation hat nicht geklappt."; exit 1
@@ -102,6 +103,7 @@ schritt "7/7 Box in der Spotify-App bekannt machen"
 if sudo test -f /var/lib/raspotify/credentials.json; then
     echo "Raspotify kennt dein Konto schon."
 else
+    sudo systemctl restart raspotify 2> /dev/null || true   # sicher mit der aktuellen Einstellung
     echo "Jetzt am Handy: Spotify-App -> etwas abspielen -> Geraete -> 'Peppa Box' waehlen."
     echo "Ich warte bis zu 5 Minuten ..."
     i=0

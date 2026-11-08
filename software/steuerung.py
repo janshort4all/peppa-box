@@ -513,7 +513,7 @@ class Steuerung:
             self._netzfehler(e, jetzt)
             return
         self.letzter_befehl = jetzt
-        self.log(f"Karte weg, Pause (Spotify {status})")
+        self.log(f"Pause (Spotify {status})")
         if status < 300 or status in (403, 404):      # 403: war schon pausiert, 404: nichts aktiv
             self.ist = ("pause", self.ist[1])
             self._erledigt(nr)

@@ -41,7 +41,7 @@ import i2c
 import lautstaerke
 import spotify
 import toene
-from steuerung import Steuerung
+from steuerung import LibrespotLast, Steuerung
 
 GERAET = "Peppa Box"          # Name in /etc/raspotify/conf (LIBRESPOT_NAME)
 ABFRAGE = 1.0                 # Sekunden zwischen zwei Abfragen des Lesers
@@ -144,7 +144,7 @@ class Player:
         self.jetzt, self.schlaf, self.log = jetzt, schlaf, log
         self.zustand = {"karte": None, "link": None, "spotify_bereit": False, "problem": None, "leser": None}
         self.ansager = ansager or toene.Ansager(log=log)
-        self.st = Steuerung(sp, geraet=GERAET, log=log)
+        self.st = Steuerung(sp, geraet=GERAET, log=log, lokal=LibrespotLast() if sp is spotify else None)
         self.auto = automatik.Automatik(SpotifyFuerAutomatik(self.st, sp), lautstaerke, einstellungen, log=log,
                                         ausschalten=lambda: self.herunterfahren("Auto-Aus", None))
         self.regler = bedienung.Regler(lautstaerke, einstellungen, log=log)

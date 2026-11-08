@@ -33,6 +33,7 @@ abgelaufen, hilft nur spotify_login.py; das steht dann im Zustand für die Elter
 Alles Äußere (Spotify, Dienste, Uhr) wird übergeben, damit sich die Abläufe mit simulierter Zeit
 prüfen lassen (test_steuerung.py).
 """
+import os
 import shutil
 import subprocess
 import threading
@@ -54,6 +55,55 @@ WARTEN = [2, 5, 15, 30, 60, 120, 300]   # Abstände bei wiederholten Fehlern
 NACH_UMSTELLUNG = 3        # s nach dem Ausgangswechsel, bevor nach dem Gerät gefragt wird
 SPRUNG_MAX = 5             # so viele Titelsprünge werden höchstens vorgemerkt
 SYSTEMCTL = shutil.which("systemctl") or "/usr/bin/systemctl"
+LOKAL_MIN_PROZENT = 2.0     # librespot rechnet mindestens so viel (% eines Kerns) -> dekodiert gerade Musik
+
+
+class LibrespotLast:
+    """Lokaler Beleg, dass Raspotify gerade Musik dekodiert: Rechenzeit des Prozesses librespot.
+    Hintergrund (08.11.2026): Die Spotify-Web-API meldete bei hörbarer Musik "spielt: nein" und eine
+    stehende Position; die Prüfung startete deshalb immer wieder neu. Beim Spielen braucht librespot
+    einige Prozent CPU (gesehen: 7,7 %), in Pause praktisch nichts.
+    Aufruf liefert True/False, None wenn (noch) nicht messbar (kein Prozess, erste Messung)."""
+
+    def __init__(self, proc="/proc", jetzt=time.monotonic, tick=None):
+        self.proc, self.jetzt = proc, jetzt
+        try:
+            self.tick = tick or os.sysconf("SC_CLK_TCK")
+        except (ValueError, OSError, AttributeError):
+            self.tick = 100
+        self.vorher = None          # (pid, ticks, zeit)
+
+    def _pid(self):
+        try:
+            for name in os.listdir(self.proc):
+                if name.isdigit():
+                    try:
+                        with open(os.path.join(self.proc, name, "comm")) as f:
+                            if f.read().strip() == "librespot":
+                                return name
+                    except OSError:
+                        continue
+        except OSError:
+            pass
+        return None
+
+    def _ticks(self, pid):
+        try:
+            with open(os.path.join(self.proc, pid, "stat")) as f:
+                felder = f.read().rsplit(")", 1)[1].split()
+            return int(felder[11]) + int(felder[12])    # utime + stime (Feld 14, 15)
+        except (OSError, IndexError, ValueError):
+            return None
+
+    def __call__(self):
+        pid = self._pid()
+        t = self.jetzt()
+        ticks = self._ticks(pid) if pid else None
+        vorher, self.vorher = self.vorher, (pid, ticks, t) if ticks is not None else None
+        if ticks is None or not vorher or vorher[0] != pid or t - vorher[2] < 0.5:
+            return None
+        prozent = (ticks - vorher[1]) / self.tick / (t - vorher[2]) * 100
+        return prozent >= LOKAL_MIN_PROZENT
 
 
 # ---------------------------------------------------------------- Dienste (echte Umsetzung)
@@ -91,8 +141,9 @@ class Dienste:
 
 class Steuerung:
     def __init__(self, spotify, dienste=None, geraet="Peppa Box", jetzt=time.monotonic,
-                 log=print, bei_bereit=None):
+                 log=print, bei_bereit=None, lokal=None):
         self.sp, self.dienste = spotify, dienste or Dienste()
+        self.lokal = lokal or (lambda: None)   # Messfühler: spielt Raspotify wirklich? (LibrespotLast)
         self.geraet, self.jetzt, self.log, self.bei_bereit = geraet, jetzt, log, bei_bereit
         self._sperre = threading.Condition()
         # Wunsch (vom Kartenleser) und erreichter Zustand
@@ -395,6 +446,7 @@ class Steuerung:
                 self.ist = ("startet", uri)
             self.phase = "pruefen"
             self.pruef = {"nr": nr, "uri": uri, "naechste": jetzt + PRUEF_ERSTE, "proben": [], "anzahl": 0}
+            self._lokal_messen()                        # Ausgangswert für den lokalen Beleg
             return
         self._befehl_fehlgeschlagen(status, data, jetzt)
 
@@ -495,12 +547,17 @@ class Steuerung:
             z = None
         p["anzahl"] += 1
         p["naechste"] = jetzt + PRUEF_ABSTAND
+        lokal = self._lokal_messen()
         probe = None
         if z is not None:
             gut = (not z.get("leer")) and z.get("geraet") == self.dev and z.get("spielt")
-            probe = (gut, z.get("titel"), z.get("position", 0), jetzt)
+            # lokal: Spotify kennt die Box und einen Titel, und librespot dekodiert wirklich
+            lokal_gut = bool(lokal) and not z.get("leer") and z.get("geraet") == self.dev
+            probe = (gut, z.get("titel"), z.get("position", 0), jetzt, lokal_gut)
         p["proben"].append(probe)
         if self._laeuft_sicher(p["proben"]):
+            if not p["proben"][-1][0]:
+                self.log("  Spotify meldet keine Wiedergabe, Raspotify spielt aber nachweislich – läuft.")
             with self._sperre:
                 if p["nr"] == self.wunsch_nr:
                     self.ist = ("spielt", p["uri"])
@@ -526,11 +583,21 @@ class Steuerung:
 
     @staticmethod
     def _laeuft_sicher(proben):
-        """Zwei aufeinanderfolgende gute Proben, gleicher Titel, Position rückt vor."""
+        """Zwei aufeinanderfolgende gute Proben mit gleichem Titel: entweder meldet Spotify "spielt" und
+        die Position rückt vor, oder librespot dekodiert lokal nachweislich (Spotify-Meldung hinkt nach)."""
         if len(proben) < 2 or proben[-1] is None or proben[-2] is None:
             return False
-        (g1, t1, p1, z1), (g2, t2, p2, z2) = proben[-2], proben[-1]
-        return g1 and g2 and t1 == t2 and t1 is not None and p2 - p1 >= 500
+        (g1, t1, p1, _, l1), (g2, t2, p2, _, l2) = proben[-2], proben[-1]
+        if t1 != t2 or t1 is None:
+            return False
+        return (g1 and g2 and p2 - p1 >= 500) or (l1 and l2)
+
+    def _lokal_messen(self):
+        try:
+            return self.lokal()
+        except Exception as e:                          # Messfühler darf nie die Steuerung stören
+            self.log(f"  Lokale Prüfung nicht möglich: {e!r}")
+            return None
 
     # ------------------------------------------------------------ Tasten-Befehle (vor, zurück, spulen)
 

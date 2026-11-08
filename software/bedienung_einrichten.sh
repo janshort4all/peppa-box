@@ -47,6 +47,15 @@ zeile_sicherstellen "dtoverlay=rotary-encoder,pin_a=17,pin_b=27,relative_axis=1,
 zeile_sicherstellen "gpio=5=ip,pu" "gpio=5="
 zeile_sicherstellen "gpio=26=ip,pu" "gpio=26="
 
+# /dev/i2c-1 gibt es nur mit dem Kernel-Modul i2c-dev. raspi-config laedt es beim Einschalten von I2C,
+# ein frisch aufgesetztes System ohne raspi-config nicht (Befund 08.11.2026: Touch-Chip "/dev/i2c-1 fehlt").
+MODULE="${PEPPA_MODULES_LOAD:-/etc/modules-load.d}/peppa-i2c.conf"
+if [ ! -f "$MODULE" ] && ! grep -qs '^i2c-dev' /etc/modules; then
+    echo "i2c-dev" | sudo tee "$MODULE" > /dev/null
+    sudo modprobe i2c-dev 2> /dev/null || true
+    echo "Kernel-Modul i2c-dev wird jetzt beim Start geladen."
+fi
+
 if [ "$NEUSTART" = 1 ]; then
     echo "config.txt wurde geaendert: Bitte einmal neu starten (sudo reboot)."
 else

@@ -38,7 +38,15 @@ class Bedienung(unittest.TestCase):
         with open(p, "w") as f:
             f.write('#!/bin/sh\nexec "$@"\n')
         os.chmod(p, os.stat(p).st_mode | stat.S_IEXEC)
-        self.env = dict(os.environ, PATH=bin_ + ":" + os.environ["PATH"], PEPPA_CONFIG_TXT=self.cfg)
+        self.env = dict(os.environ, PATH=bin_ + ":" + os.environ["PATH"], PEPPA_CONFIG_TXT=self.cfg,
+                        PEPPA_MODULES_LOAD=self.tmp.name)
+
+    def test_i2c_dev_wird_geladen(self):
+        with open(self.cfg, "w") as f:
+            f.write(CONFIG_TXT)
+        self.assertEqual(self.lauf().returncode, 0)
+        with open(os.path.join(self.tmp.name, "peppa-i2c.conf")) as f:
+            self.assertEqual(f.read().strip(), "i2c-dev")
 
     def lauf(self):
         return subprocess.run(["sh", os.path.join(HIER, "bedienung_einrichten.sh")], env=self.env,

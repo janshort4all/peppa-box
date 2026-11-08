@@ -117,6 +117,34 @@ else
     fi
 fi
 
+# Zweiter Durchlauf nach dem Neustart: Die Verstaerker-Karte (hifiberry-dac) erscheint erst nach dem
+# Neustart, erst dann kann lautsprecher_einrichten.sh Mischer, Regler und Raspotify-Ausgang anlegen
+# (Befund 08.11.2026). Einmal-Dienst: laeuft nach dem Neustart, entfernt sich und startet noch einmal neu.
+if ! grep -qi hifiberry /proc/asound/cards 2> /dev/null; then
+    if sudo -n true 2> /dev/null; then
+        sudo tee /etc/systemd/system/peppa-einrichten-2.service > /dev/null <<EOF
+[Unit]
+Description=Peppa Box Einrichtung, zweiter Durchlauf (einmalig)
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=$BENUTZER
+ExecStart=/bin/sh -c 'sh $REPO/software/dienst_einrichten.sh > $HOME/einrichtung-2.log 2>&1; sudo systemctl disable peppa-einrichten-2; sudo rm -f /etc/systemd/system/peppa-einrichten-2.service; sudo reboot'
+
+[Install]
+WantedBy=multi-user.target
+EOF
+        sudo systemctl daemon-reload
+        sudo systemctl enable peppa-einrichten-2 > /dev/null 2>&1
+        echo "Nach dem Neustart folgt automatisch der zweite Durchlauf (Lautsprecher), danach noch ein Neustart."
+        echo "Protokoll: ~/einrichtung-2.log. Insgesamt ca. 3 Minuten, bis die Ansage kommt."
+    else
+        echo "WICHTIG: Nach dem Neustart noch einmal ausfuehren: sh $REPO/software/dienst_einrichten.sh && sudo reboot"
+    fi
+fi
+
 printf '\nFertig. Die Box startet jetzt neu. Danach: Eltern-Seite http://peppabox.local\n'
 sleep 3
 sudo reboot

@@ -133,14 +133,12 @@ class Felder(Basis):
         self.tippen("play")
         self.assertEqual(self.st.aufrufe, [("play",)])
 
-    def test_play_ohne_karte_sagt_karte_auflegen_mit_sperre(self):
-        self.st.antwort_play = "keine_karte"
+    def test_play_ohne_karte_bleibt_still(self):
+        self.st.antwort_play = "keine_karte"                    # Wunsch Jan 08.11.: keine Ansage
         self.tippen("play")
-        self.tippen("play")
-        self.assertEqual(self.gesagt, ["karte_auflegen"])                 # zweites Mal innerhalb 8 s still
         self.uhr.t += 9
         self.tippen("play")
-        self.assertEqual(self.gesagt, ["karte_auflegen", "karte_auflegen"])
+        self.assertEqual(self.gesagt, [])
 
     def test_play_bei_leerer_karte(self):
         self.st.antwort_play = "keine_karte"

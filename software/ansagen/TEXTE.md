@@ -11,7 +11,7 @@ Probehören: Eltern-Seite → Bedienung → Ansagen anhören, oder `python3 ~/pe
 | `peppa_box_bereit.wav` | Peppa Box bereit – viel Spaß! | Spotify kennt die Box, einmal je Einschalten |
 | `tschuess.wav` | Tschüss, bis bald! | Ein-Taste 2 s gehalten |
 | `karte_leer.wav` | Auf dieser Karte ist noch keine Musik. | Karte ohne (Spotify-)Link |
-| `karte_auflegen.wav` | Leg eine Karte auf! | Play-Feld ohne Karte |
+| `karte_auflegen.wav` | Leg eine Karte auf! | derzeit nicht verwendet (abgeschaltet 08.11., Wunsch Jan) |
 | `ruhezeit.wav` | Jetzt ist Ruhezeit. Gute Nacht! | Karte/Play in der Ruhezeit „keine Musik“ |
 | `moment.wav` | Einen Moment, die Musik kommt gleich. | Karte wartet 8 s auf Musik |
 | `kein_internet.wav` | Ich finde gerade kein Internet. Ich versuche es weiter. | Karte wartet 25 s, kein Netz |

@@ -129,7 +129,10 @@ class Bedienung:
         r = self.st.taste_play()
         if r == "keine_karte":
             liegt, _ = self.karte()
-            self._sagen("karte_leer" if liegt else "karte_auflegen")
+            if liegt:
+                self._sagen("karte_leer")
+            else:   # keine Ansage "Leg eine Karte auf" (Wunsch Jan 08.11.: nervt, v. a. bei Fehlberuehrungen)
+                self.log("Play-Feld ohne Karte – nichts zu tun.")
         else:
             self.log("Play-Feld: " + ("Pause" if r == "pause" else "weiter"))
 

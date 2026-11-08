@@ -6,7 +6,7 @@
 #      (der MAX98357A hat keinen eigenen Regler, Spotify steht fest auf 100 %)
 #   3. Dienst peppa-stille: spielt dauerhaft Stille in den Mischer, damit der Takt nie abreisst und
 #      der Verstaerker wach bleibt (sonst knackt es bei jedem Abspielbeginn). Reihenfolge gegen das
-#      Knacken beim Ein-/Ausschalten: stumm -> Stille startet -> 0,5 s spaeter SD frei;
+#      Knacken beim Ein-/Ausschalten: stumm -> Stille startet -> 0,5 s spaeter SD hoch (3,3 V, nicht offen: Befund 08.11.);
 #      beim Stoppen erst stumm, dann Stille aus.
 #   4. Raspotify gibt ueber "lautsprecher" aus und darf den Mischer mitbenutzen (kein eigenes IPC)
 #   5. Kopfhoerer: eigener Mischer "kopfhoerer" auf der Pi-Klinke (Karte "Headphones"), damit Spotify
@@ -21,7 +21,7 @@ KARTEN="${PEPPA_KARTEN:-/proc/asound/cards}"
 SYSTEMD="${PEPPA_SYSTEMD:-/etc/systemd/system}"
 BENUTZER="$(id -un)"
 NEUSTART=0
-SD_START="gpio=16=op,dl"        # beim Einschalten stumm; peppa-stille gibt SD frei
+SD_START="gpio=16=op,dl"        # beim Einschalten stumm; peppa-stille setzt SD danach hoch
 
 # --- 1. config.txt
 zeile_sicherstellen() {   # $1 = Zeile, $2 = Anfang zum Erkennen; vorhandene andere Fassung wird ersetzt
@@ -85,9 +85,23 @@ pcm.peppa_plug {
     type plug
     slave.pcm "peppa_dmix"
 }
+# SD liegt fest auf 3,3 V = Verstaerker spielt den linken Kanal. Darum hier L+R gemischt auf beide Kanaele.
+pcm.peppa_mono {
+    type route
+    slave.pcm "peppa_plug"
+    slave.channels 2
+    ttable.0.0 0.5
+    ttable.1.0 0.5
+    ttable.0.1 0.5
+    ttable.1.1 0.5
+}
+pcm.peppa_mono_plug {
+    type plug
+    slave.pcm "peppa_mono"
+}
 pcm.lautsprecher {
     type softvol
-    slave.pcm "peppa_plug"
+    slave.pcm "peppa_mono_plug"
     control {
         name "Lautsprecher"
         card $KARTE
@@ -145,7 +159,7 @@ Before=raspotify.service peppa-player.service
 Type=simple
 ExecStartPre=$PINCTRL set 16 op dl
 ExecStart=$APLAY -q -D peppa_dmix -t raw -r 44100 -c 2 -f S16_LE /dev/zero
-ExecStartPost=/bin/sh -c 'sleep 0.5; $PINCTRL set 16 ip pn'
+ExecStartPost=/bin/sh -c 'sleep 0.5; $PINCTRL set 16 op dh'
 ExecStop=$PINCTRL set 16 op dl
 Restart=always
 RestartSec=2

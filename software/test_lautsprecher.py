@@ -160,7 +160,7 @@ class Einrichtungsskript(unittest.TestCase):
         self.assertIn("-D peppa_dmix", dienst)
         self.assertLess(dienst.index("ExecStartPre=") , dienst.index("ExecStart="))
         self.assertRegex(dienst, r"ExecStartPre=\S*pinctrl set 16 op dl")
-        self.assertRegex(dienst, r"ExecStartPost=.*sleep 0\.5; \S*pinctrl set 16 ip pn")
+        self.assertRegex(dienst, r"ExecStartPost=.*sleep 0\.5; \S*pinctrl set 16 op dh")
         self.assertRegex(dienst, r"ExecStop=\S*pinctrl set 16 op dl")
         self.assertIn("PrivateIPC=no", self.lesen(os.path.join(self.systemd, "raspotify.service.d", "peppa-ipc.conf")))
         rasp = self.lesen(self.rasp)

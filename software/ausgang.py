@@ -53,8 +53,10 @@ class Helfer:
 
 
 def verstaerker(an, log=print):
-    """MAX98357A über SD (P16): an = Eingang ohne Pull (Verstärker läuft), aus = Ausgang tief (stumm)."""
-    return gpio.pinctrl_setzen(gpio.VERSTAERKER_SD, *(("ip", "pn") if an else ("op", "dl")), log=log)
+    """MAX98357A über SD (P16): an = Ausgang hoch (3,3 V), aus = Ausgang tief (stumm).
+    Nicht mehr offen lassen (Befund 08.11.2026): Offen lag SD bei 0–0,2 V, an der Abschaltschwelle des
+    Verstärkers -> Knistern, Aussetzer. Hoch = linker Kanal; die Mischung L+R macht ALSA (peppa_mono)."""
+    return gpio.pinctrl_setzen(gpio.VERSTAERKER_SD, *(("op", "dh") if an else ("op", "dl")), log=log)
 
 
 class Ausgang:

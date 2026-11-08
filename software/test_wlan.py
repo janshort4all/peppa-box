@@ -107,6 +107,15 @@ esac''')
         self.assertTrue(os.path.exists(self.keyfile))
         self.assertEqual(os.listdir(self.netplan), [])
 
+    def test_rueckfall_schaltet_sich_nach_erfolg_ab(self):
+        self.assertEqual(self.lauf("wlan_beschleunigen.sh").returncode, 0)
+        open(self.verbunden, "w").close()
+        r = self.lauf("wlan_rueckfall.sh", PEPPA_RUECKFALL_FRIST="120")
+        self.assertIn("abgeschaltet", r.stdout)
+        with open(self.log) as f:
+            self.assertIn("systemctl disable peppa-wlan-rueckfall.service", f.read())
+        self.assertTrue(os.path.isdir(self.sicherung))                   # Rückweg von Hand bleibt
+
     def test_rueckfall_ohne_sicherung_still(self):
         r = self.lauf("wlan_rueckfall.sh", PEPPA_RUECKFALL_FRIST="0")
         self.assertEqual((r.returncode, r.stdout), (0, ""))

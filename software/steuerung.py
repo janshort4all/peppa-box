@@ -21,6 +21,11 @@ Abgefangen wird
   401 / 429 / Netz weg     Token erneuern / Wartezeit von Spotify einhalten / mit wachsendem
                            Abstand wiederholen (nie Dauerfeuer).
   Pause durch Automatik    (Schlummer-Timer, Ruhezeit) gilt als gewollt: keine "Reparatur".
+  Tasten im Deckel         Play = Pause/Weiter bei liegender Karte (Karte weg nach Tasten-Pause
+                           ändert nichts), vor/zurück = Titel springen, Halten = spulen. Befehle
+                           werden zusammengefasst und nur gesendet, solange Musik zur Karte läuft.
+  Kopfhörer ein/aus        Raspotify wird mit dem anderen Ausgang neu gestartet (ausfuehren() vom
+                           Player); lief Musik, geht es an derselben Stelle weiter.
 
 Grenzen: Raspotify-Neustarts höchstens alle NEUSTART_ABSTAND Sekunden. Ist die Spotify-Anmeldung
 abgelaufen, hilft nur spotify_login.py; das steht dann im Zustand für die Eltern-Seite.
@@ -46,6 +51,8 @@ NEUSTART_ABSTAND = 120     # höchstens ein Raspotify-Neustart je ... Sekunden
 NACH_NEUSTART = 6          # s nach einem Neustart, bevor nach dem Gerät gefragt wird
 WACHE_ABSTAND = 5          # s: Startzeit von Raspotify vergleichen (Absturz erkennen, nur lokal)
 WARTEN = [2, 5, 15, 30, 60, 120, 300]   # Abstände bei wiederholten Fehlern
+NACH_UMSTELLUNG = 3        # s nach dem Ausgangswechsel, bevor nach dem Gerät gefragt wird
+SPRUNG_MAX = 5             # so viele Titelsprünge werden höchstens vorgemerkt
 SYSTEMCTL = shutil.which("systemctl") or "/usr/bin/systemctl"
 
 
@@ -111,19 +118,86 @@ class Steuerung:
         self.naechste_wache = 0.0
         self.raspotify_start = None
         self.problem = None         # Klartext für die Eltern-Seite
+        self.problem_art = None     # netz | anmeldung | geraet | spotify (für Ansagen)
         self._gemeldet = None       # gegen Wiederholung derselben Meldung
         self.nach_neustart_uebertragen = False
+        # Tasten und Ausgang
+        self.karte_uri = None       # Link der liegenden Karte (auch nach Tasten-Pause)
+        self.wunsch_zeit = None     # seit wann der aktuelle "spielen"-Wunsch besteht
+        self.sprung = 0             # vorgemerkte Titelsprünge (+ vor, - zurück)
+        self.spul_ms = 0            # vorgemerktes Spulen
+        self.umstellung = None      # (ziel, ausfuehren): Ausgang wechseln
 
     # ------------------------------------------------------------ vom Kartenleser / der Automatik
 
     def karte_auf(self, uri):
         with self._sperre:
+            self.karte_uri = uri
             self._wunsch_setzen(("spielen", uri))
 
     def karte_weg(self):
         with self._sperre:
+            self.karte_uri = None
             if self.wunsch and self.wunsch[0] == "spielen":
                 self._wunsch_setzen(("pause", None))
+
+    # ------------------------------------------------------------ Tasten im Deckel
+
+    def taste_play(self):
+        """Play/Pause. Gibt "pause", "weiter" oder "keine_karte" zurück."""
+        with self._sperre:
+            if self.wunsch and self.wunsch[0] == "spielen":
+                self._wunsch_setzen(("pause", None))
+                return "pause"
+            if self.karte_uri:
+                self._wunsch_setzen(("spielen", self.karte_uri))
+                return "weiter"
+            return "keine_karte"
+
+    def pausieren(self):
+        """Pause wünschen, die Karte bleibt gemerkt (Ein-Taste vor dem Ausschalten). True, wenn etwas lief."""
+        with self._sperre:
+            if self.wunsch and self.wunsch[0] == "spielen":
+                self._wunsch_setzen(("pause", None))
+                return True
+            return False
+
+    def _laeuft(self):
+        return (self.wunsch is not None and self.wunsch[0] == "spielen"
+                and self.ist is not None and self.ist[0] in ("spielt", "startet"))
+
+    def taste_springen(self, richtung):
+        """Titel vor (+1) / zurück (-1). Nur, solange Musik zur Karte läuft. True = vorgemerkt."""
+        with self._sperre:
+            if not self._laeuft():
+                return False
+            self.sprung = max(-SPRUNG_MAX, min(SPRUNG_MAX, self.sprung + (1 if richtung > 0 else -1)))
+            self._sperre.notify_all()
+            return True
+
+    def taste_spulen(self, ms):
+        with self._sperre:
+            if not self._laeuft():
+                return False
+            self.spul_ms += int(ms)
+            self._sperre.notify_all()
+            return True
+
+    def ausgang_umstellen(self, ziel, ausfuehren):
+        """Kopfhörer ein/aus: ausfuehren(ziel) stellt Raspotify um (Neustart) und gibt True/False
+        zurück. Läuft im Faden der Steuerung, damit nie zwei Neustarts gleichzeitig laufen."""
+        with self._sperre:
+            self.umstellung = (ziel, ausfuehren)
+            self._sperre.notify_all()
+
+    def wartezeit(self):
+        """Sekunden, die eine Karte schon auf Musik wartet; None, wenn nichts wartet."""
+        with self._sperre:
+            if not (self.wunsch and self.wunsch[0] == "spielen") or self.wunsch_zeit is None:
+                return None
+            if self.ist == ("spielt", self.wunsch[1]):
+                return None
+            return self.jetzt() - self.wunsch_zeit
 
     def extern_pausiert(self):
         """Automatik (Timer, Ruhezeit) hat pausiert: gewollt, nicht reparieren, Karte weg = nichts tun."""
@@ -138,10 +212,14 @@ class Steuerung:
     def _wunsch_setzen(self, w):
         if w == self.wunsch and self.erledigt_nr != self.wunsch_nr:
             return                                  # derselbe Wunsch ist schon unterwegs
+        if w[0] == "spielen" and w != self.wunsch:
+            self.wunsch_zeit = self.jetzt()
         self.wunsch = w
         self.wunsch_nr += 1
         self.fehler = 0
         self.naechster_versuch = 0.0
+        if w[0] != "spielen":
+            self.sprung = self.spul_ms = 0
         if self.phase == "pruefen":
             self.phase, self.pruef = "frei", None   # neuer Wunsch hat Vorrang vor der Prüfung
         self._sperre.notify_all()
@@ -168,14 +246,19 @@ class Steuerung:
 
     @property
     def status(self):
-        return {"spotify_bereit": self.bereit, "problem": self.problem}
+        return {"spotify_bereit": self.bereit, "problem": self.problem, "problem_art": self.problem_art}
 
     # ------------------------------------------------------------ ein Schritt (auch für Tests)
 
     def tick(self):
         jetzt = self.jetzt()
         self._wache(jetzt)
+        if self.umstellung is not None:
+            self._umstellen(jetzt)
+            return
         if jetzt < self.naechster_versuch or jetzt < self.neustart_wartet_bis:
+            return
+        if self._befehle(jetzt):
             return
         if self.phase == "pruefen":
             self._pruefen(jetzt)
@@ -212,7 +295,7 @@ class Steuerung:
             self.dev = None
             if self.dev_fehlt_seit is None:
                 self.dev_fehlt_seit = jetzt
-                self._melden(f"Spotify kennt die Box gerade nicht (Gerät '{self.geraet}' fehlt).")
+                self._melden(f"Spotify kennt die Box gerade nicht (Gerät '{self.geraet}' fehlt).", "geraet")
         return self.dev
 
     def _leerlauf(self, jetzt):
@@ -348,13 +431,13 @@ class Steuerung:
     def _netzfehler(self, e, jetzt, zaehlen=True):
         name = type(e).__name__
         if name == "AnmeldungFehlt":
-            self._melden(str(e))
+            self._melden(str(e), "anmeldung")
             self.naechster_versuch = jetzt + 60
             return
         warte = WARTEN[min(self.fehler, len(WARTEN) - 1)]
         if zaehlen:
             self.fehler += 1
-        self._melden(f"Keine Verbindung zu Spotify ({e!r}), neuer Versuch in {warte} s.")
+        self._melden(f"Keine Verbindung zu Spotify ({e!r}), neuer Versuch in {warte} s.", "netz")
         self.naechster_versuch = jetzt + warte
 
     def _pause(self, nr, jetzt):
@@ -449,6 +532,96 @@ class Steuerung:
         (g1, t1, p1, z1), (g2, t2, p2, z2) = proben[-2], proben[-1]
         return g1 and g2 and t1 == t2 and t1 is not None and p2 - p1 >= 500
 
+    # ------------------------------------------------------------ Tasten-Befehle (vor, zurück, spulen)
+
+    def _befehle_verwerfen(self):
+        with self._sperre:
+            self.sprung = self.spul_ms = 0
+
+    def _befehle(self, jetzt):
+        """Vorgemerkte Sprünge/Spulen senden. True, wenn dieser Durchlauf damit belegt ist."""
+        with self._sperre:
+            sprung, spul = self.sprung, self.spul_ms
+            laeuft = self._laeuft()
+        if not sprung and not spul:
+            return False
+        if not laeuft:                                  # inzwischen Pause oder Karte weg
+            self._befehle_verwerfen()
+            return False
+        if jetzt - self.letzter_befehl < BEFEHL_ABSTAND:
+            return True
+        dev = self.dev
+        try:
+            if dev is None:
+                dev = self._geraet(jetzt)
+            if dev is None:
+                self._befehle_verwerfen()
+                return False
+            if sprung:
+                n = 1 if sprung > 0 else -1
+                status, data = (self.sp.naechster if n > 0 else self.sp.vorheriger)(dev)
+                with self._sperre:
+                    self.sprung -= n if self.sprung * n > 0 else 0
+                text = "Nächster Titel" if n > 0 else "Vorheriger Titel"
+            else:
+                with self._sperre:
+                    delta, self.spul_ms = self.spul_ms, 0
+                z = self.sp.zustand()
+                if not z or z.get("leer") or z.get("geraet") != dev:
+                    return True
+                ziel = max(0, int(z.get("position", 0)) + delta)
+                status, data = self.sp.springen(dev, ziel)
+                text = f"Spulen {'vor' if delta > 0 else 'zurück'} auf {ziel // 1000} s"
+        except Exception as e:
+            self._befehle_verwerfen()
+            self._netzfehler(e, jetzt, zaehlen=False)
+            return True
+        self.letzter_befehl = jetzt
+        self.log(f"{text} (Spotify {status})")
+        if status >= 300:
+            self._befehle_verwerfen()
+            if status == 401:
+                self.sp.token_verwerfen()
+            elif status == 429:
+                warte = (data or {}).get("retry_after", 5) if isinstance(data, dict) else 5
+                self.naechster_versuch = jetzt + max(1, warte)
+            elif status == 404:
+                self.dev, self.dev_zeit = None, -1e9
+        if self.phase == "pruefen" and self.pruef:       # Titel/Stelle hat sich bewusst geändert:
+            self.pruef.update(proben=[], anzahl=0, naechste=jetzt + PRUEF_ERSTE)   # Prüfung neu
+        return True
+
+    # ------------------------------------------------------------ Ausgang wechseln (Kopfhörer)
+
+    def _umstellen(self, jetzt):
+        with self._sperre:
+            ziel, ausfuehren = self.umstellung
+            self.umstellung = None
+            lief = self._laeuft()
+        try:
+            ok = ausfuehren(ziel)
+        except Exception as e:
+            self.log(f"Ausgang wechseln fehlgeschlagen: {e!r}")
+            ok = False
+        if not ok:
+            return
+        self.raspotify_start = self.dienste.startzeit("raspotify")   # eigener Neustart, kein "Absturz"
+        self.dev, self.dev_zeit, self.dev_fehlt_seit = None, -1e9, None
+        with self._sperre:
+            if lief:                                    # weiter an derselben Stelle
+                self.ist = ("pause", self.wunsch[1])
+                self.nach_neustart_uebertragen = True
+                if self.erledigt_nr == self.wunsch_nr:
+                    self.erledigt_nr = self.wunsch_nr - 1
+                self.wunsch_zeit = jetzt
+                self.fehler = 0
+            elif self.ist and self.ist[0] in ("spielt", "startet"):
+                self.ist = ("pause", self.ist[1])
+            self.phase, self.pruef = "frei", None
+            self.sprung = self.spul_ms = 0
+        self.naechster_versuch = self.neustart_wartet_bis = jetzt + NACH_UMSTELLUNG
+        self.log(f"Ausgang: {ziel}" + (", Musik geht gleich weiter." if lief else "."))
+
     # ------------------------------------------------------------ Neustart
 
     def _raspotify_neu(self, jetzt, grund):
@@ -472,10 +645,12 @@ class Steuerung:
 
     def _ok(self):
         self.problem = None
+        self.problem_art = None
         self._gemeldet = None
 
-    def _melden(self, text):
+    def _melden(self, text, art="spotify"):
         self.problem = text
+        self.problem_art = art
         if text != self._gemeldet:
             self.log(text)
             self._gemeldet = text

@@ -248,6 +248,10 @@ class RC522:
         else:
             self.clrb(TXCTRL, 0x03)
 
+    def schlafen(self):
+        """Soft-Power-Down (wenige µA), z. B. vor dem Ausschalten. Aufwecken: neu einrichten (Soft-Reset)."""
+        self.w(CMD, 0x10)
+
     def close(self):
         self.spi.close()
 

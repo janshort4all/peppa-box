@@ -221,3 +221,18 @@ def fortsetzen(device_id):
 
 def pause(device_id):
     return api("PUT", "/me/player/pause", None, {"device_id": device_id})
+
+
+def naechster(device_id):
+    """Nächster Titel (Touchfeld "vor")."""
+    return api("POST", "/me/player/next", None, {"device_id": device_id})
+
+
+def vorheriger(device_id):
+    """Vorheriger Titel (Touchfeld "zurück")."""
+    return api("POST", "/me/player/previous", None, {"device_id": device_id})
+
+
+def springen(device_id, position_ms):
+    """An eine Stelle im laufenden Titel springen (Spulen, z. B. in Hörbüchern)."""
+    return api("PUT", "/me/player/seek", None, {"position_ms": int(max(0, position_ms)), "device_id": device_id})

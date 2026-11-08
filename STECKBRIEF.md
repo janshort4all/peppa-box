@@ -1,4 +1,4 @@
-# Peppa Box – Projekt-Steckbrief (Stand 25.10.2026)
+# Peppa Box – Projekt-Steckbrief (Stand 08.11.2026)
 
 Eigenbau einer Toniebox-Alternative für Kinder. Eine NFC-Karte mit aufgeklebtem Cover-Bild startet eine Spotify-Playlist.
 Gehäuse: gedruckter Würfel 140 × 140 × 140 mm in Beige mit orangen Akzenten, Elegoo Centauri Carbon 2 mit CANVAS (4 Rollen), PETG.
@@ -27,17 +27,18 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 | Pi | Raspberry Pi OS Lite 64-bit (Debian 13 Trixie, 06.10.2026) auf SanDisk Ultra 128 GB A1; Ton über die Pi-Klinke getestet, gut |
 | Stapel | Akku-Board + Pi + Klemmen-Aufsatz verschraubt, auf dem gedruckten Boden (Version mit DAC-Stiften) montiert, passt |
 | Druck | **Korpus 04./05.11. gedruckt – perfekt, abgenommen.** Deckel 05.11. (Symbole vertieft) nicht abgenommen; Symbole bleiben vertieft (ertastbar), Variante B (gerichtete Brücken) mit C12 bestätigt; als Nächstes ganzer Deckel, G-Code vorher prüfen (Nachtrag 05.11. (5)) |
-| Verstärker | Stiftleiste und Lautsprecherklemme werden gerade gelötet |
+| Verdrahtung | **Komplett verdrahtet, exakt nach Verdrahtungsplan 08.11.** (Jan, 08.11. abends) |
+| Software | **Alle Bedienelemente programmiert (08.11. (3))**: Touchfelder, Drehknopf, Ein-Taste, Kopfhörer-Umschaltung, Akku-Ansage und -Schutz, Ansagen. Am Pi einrichten und testen (Anleitung im Nachtrag) |
 
 ## Hardware (endgültig)
 
 - Raspberry Pi 3A+
 - Waveshare UPS HAT (D) mit 2 × BAK N21700CG50; Acrylplatte 85 × 55 mm, Messingbolzen, Lochbild 58 × 49 mm
 - BerryBase GPIO-Breakout-HAT mit Federklemmen (Reihen 1–8, A–H, I–P); gelbe Stifte gehen durch
-- MAX98357A-Klon (Lautsprecher, I2S an Pin 12, 35, 40; SD/stumm an Pin 36)
+- MAX98357A-Klon (Lautsprecher, I2S an den gelben Stiften P18 BCLK, P19 LRC, P21 DIN; SD/stumm an P16)
 - Visaton FRS 8, 4 Ω, in eigener geschlossener Kammer vorne
-- Kopfhörer: **direkt aus der Klinke des Pi** (DAC entfällt, 25.10.). Kabel Goobay 67782 (ein Stecker 90°) halbiert zur Lumberg 1503-09 in der rechten Wand. Steckererkennung: Öffner L an Pin 37. Beim Ein-/Ausstecken stellt das Programm den Spotify-Ausgang um (3–5 s Pause), Lautsprecher stumm, Lautstärke begrenzt
-- RC522 (SPI), MPR121 (I2C 0x5A, 4 Kupfer-Touchfelder im Deckel), STEC11B03 Drehgeber, Kurzhubtaster 12 × 12 × 7,3 (BerryBase KHT1212PV73) hinter gedruckter Ein-Taste (an SCL zum Wecken)
+- Kopfhörer: **direkt aus der Klinke des Pi** (DAC entfällt, 25.10.). Kabel Goobay 67782 (ein Stecker 90°) halbiert zur Lumberg 1503-09 in der rechten Wand. Steckererkennung: Öffner L (Fahne C) an gelbem Stift P26. Beim Ein-/Ausstecken stellt das Programm den Spotify-Ausgang um (3–5 s Pause), Lautsprecher stumm, Lautstärke begrenzt
+- RC522 (SPI, Klemmen B–E, RST an I = 3,3 V), MPR121 (I2C 0x5A, SDA Klemme 2, SCL über WAGO an Klemme 3, INT an P05, 4 Kupfer-Touchfelder im Deckel), STEC11B03 Drehgeber (A P17, B P27, C GND A), Kurzhubtaster 12 × 12 × 7,3 (BerryBase KHT1212PV73) hinter gedruckter Ein-Taste (an SCL zum Wecken)
 - WAGO: auf dem Boden 5 V (3-fach) und GND A (5-fach); unter dem Deckel 3,3 V, SCL (je 3-fach) und GND B (5-fach)
 - Elko 1000 µF / 10 V an 5 V / GND A
 
@@ -57,16 +58,17 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 
 Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine Stützen. Fuzzy Skin 0,20 / 0,30 Classic **nur über den Modifier `01f_…FUZZY_aussenhaut`** (Prozess „Nur lackiert“, Modifier „Kontur“; alle Korpus-Einstellungen in `v4/out/README.md`); der alte Modifier `01m_…` ist ungültig (siehe Nachtrag 04.11.).
 
-## Software (Plan, Kapitel 9 im Konzept-Dokument)
+## Software (Stand 08.11.2026, Einzelheiten in den Nachträgen)
 
-- Raspotify/librespot als Spotify-Lautsprecher (Premium nötig), eigenes Python-Programm für Karte, Tasten, Drehgeber, Kopfhörer-Umschaltung, Spotify Web API zum Starten der Playlist.
-- Lautstärke lokal regeln, Spotify fest auf 100 %.
-- Schreibschutz (Overlay) mit eigener kleiner Datenpartition, Wartungsmodus für Updates; ganz zum Schluss einrichten.
-- Watchdog, automatischer Neustart der Dienste; Ziel unter 20 s bis zum Startton.
-- Offen: Karten anlernen (E9: Link per Handy auf die Karte oder Zuordnungsliste), Einstellungsseite/App für Eltern.
+- Raspotify/librespot als Spotify-Lautsprecher, Player `software/peppa_player.py` (Dienst `peppa-player`): Karte (Link steht auf der Karte), Touchfelder, Drehknopf, Ein-Taste, Kopfhörer-Umschaltung, Akku-Wache, Ansagen, Automatik (Timer, Ruhezeit, Auto-Aus), Spotify-Steuerung mit Selbstreparatur.
+- Eltern-Seite `software/peppa_web.py` (Dienst `peppa-web`, `http://peppabox.local`): Zustand, Lautstärke, Zeiten, Bedienung live prüfen und einstellen, Ansagen anhören, Update/Rückweg.
+- Lautstärke lokal (softvol bzw. Regler der Klinke), Spotify fest auf 100 %.
+- Watchdogs: systemd-Watchdog für den Player, Hardware-Wächter des Pi (15 s), alle Fäden überwacht.
+- Noch offen: Schreibschutz-Overlay (ganz zum Schluss), WLAN wechseln unterwegs (Konzept 02.11., später), Tailscale, Android-Apps.
 
 ## Offene Punkte
 
+0. **Software am Pi einrichten und alle Bedienelemente testen** (Nachtrag 08.11.2026 (3)).
 1. Reichelt-Bestellung klären; DAC und Cinch-Kabel stornieren, ebenso die 32-GB-SD-Karte.
 2. Bestellen (gesammelt): Klinkenkabel Goobay 67782, Kunststoffschrauben 3,0 mm (Sortiment), 4 × M2,5 (Länge folgt), USB-C-Verlängerung (Produkt offen), Montageband.
 3. Länge der M2,5-Schrauben unter der Acrylplatte messen → Auflagenhöhe anpassen.
@@ -99,6 +101,7 @@ In einem neuen Chat die Zip anhängen und sagen: „Entpacke nach /home/claude/m
 | `v4/gitter/` | Logo-Vorlage (`peppa_box_logo.png`), Vektorisierung (`logo.py`), Bild zum Gitter (`render_gitter.py` → `out/gitter_ansicht.png`) |
 | `plan/gen_plan5.py` | erzeugt `verdrahtungsplan.html` (nach Baugruppen, Aufdrucke des Aufsatzes) |
 | `plan/einkaufsliste.html` | Einkaufsliste (Daten stehen im Skriptteil) |
+| `software/` | Player, Eltern-Seite, Einrichtung, Tests (`cd software && python3 -m unittest`) |
 | `v4/out/` | aktuelle STL-Dateien, Bilder, PARAMETER.md, PRUEFBERICHT.md |
 
 Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
@@ -700,3 +703,53 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Belegung (verbindlich):** Deckel-Strang D1 WAGO 3,3 V ← A · D2 WAGO GND B ← G · D3 WAGO SCL ← 3 · D4 RC522 SDA → E · D5 SCK → D · D6 MOSI → B · D7 MISO → C · D8 RST → I · D9 MPR121 SDA → 2 · D10 MPR121 INT → P05. Boden: B1 WAGO 5 V ← 8 · B2 WAGO GND A ← 4 · B3–B6 MAX BCLK/LRC/DIN/SD → P18/P19/P21/P16. Korpus: K1/K2 Drehgeber A/B → P17/P27 · K3 Drehgeber C → WAGO GND A · K4 Lautsprecher → MAX · K5 Klinke C → P26 · K6 Goobay → Pi-Klinke · K7 USB-C → Akku-Board. Jumper: 2, 3, 4, 8, A, B, C, D, E, G, I.
 - Ein-Taste: Beinchen unten rechts + unten links (Jan gemessen 08.11.: Durchgang nur gedrückt). Drehgeber-Taster als Reserve angelötet; später z. B. Klemme 5 (GND) + P06.
 - Plan: `plan/gen_plan5.py` → `plan/verdrahtungsplan.html`, veröffentlicht unter dem bisherigen Link (Artefakt Verdrahtungsplan). `gen_plan4.py` entfernt.
+
+## Nachtrag 08.11.2026 (3) – Software für alle Bedienelemente
+
+**Stand Jan:** Box komplett verdrahtet, exakt nach Verdrahtungsplan 08.11. (2). Auftrag: alle noch offene Software, quer geprüft, komfortabel, fehlerfrei, Box fängt sich bei Fehlern selbst; bestehende Funktionen bleiben.
+
+**Geprüft vor dem Schreiben (Quellen):**
+- STEC11B03: 15 Impulse / 30 Rasten (Alps-Tabelle, Bürklin, Rapid) → Raste = halber Takt → Kernel-Overlay `rotary-encoder` mit `steps-per-period=2`; Overlay schaltet die Pull-ups ein (softsolder.com, Overlay-README). Richtung des Kernel-Treibers aus dem Quellcode `rotary_encoder.c` (`rotary_encoder_half_period_irq`); die Rückfall-Abtastung zählt gleich.
+- Adafruit 1982: INT mit Pull-up auf 3,3 V auf der Platine, ADDR 100 kΩ nach GND → 0x5A (Adafruit-Tutorial). MPR121-Einstellungen nach Adafruit-Bibliothek/AN3944 (Auto-Konfiguration 3,3 V: USL 200, TL 180, LSL 130), Prüfwert CDT 0x24 nach Reset.
+- Pi-Klinke: hinter dem Trennkondensator Widerstand nach Masse (Raspberry-Pi-Audioschaltung, Hackaday „Behind the pin“) → P26 mit Pull-up liest ohne Stecker **tief** (Öffner verbindet mit L), mit Stecker **hoch**. Für den Pi 3A+ nicht am Gerät belegt → Seite zeigt den Pegel live, Richtung umstellbar.
+- GPIO 3 nach Masse weckt den angehaltenen Pi (mehrere Quellen); I2C bleibt nutzbar. bcm2835-Watchdog: höchstens 15 s. librespot schließt das Audiogerät bei Pause und beendet sich bei Gerätefehlern. pico2wave (libttspico-utils) in Debian 13 non-free, arm64.
+
+**Bedienung (Felder E0–E3 wie Verdrahtungsplan, in der Seite änderbar):**
+
+| Element | Funktion |
+| --- | --- |
+| E0 zurück | antippen: vorheriger Titel; halten (ab 0,7 s): 15 s zurückspulen alle 0,8 s |
+| E1 Play | antippen: Pause / weiter, die Karte bleibt liegen (Karte weg nach Tasten-Pause ändert nichts; wieder auflegen = weiter) |
+| E2 vor | antippen: nächster Titel; halten: vorspulen |
+| E3 Mond | antippen: Schlummer-Timer 15 → 30 → 45 → 60 Min → aus, je mit Ansage; 5 s halten: Akkustand ansagen |
+| Drehknopf | Lautstärke 2 % je Raste (einstellbar), nie über die Höchstlautstärke, nie unter 5 % |
+| Ein-Taste | aus: einschalten (Pi selbst); kurz: Akkustand ansagen; 2 s halten: „Tschüss“, Musik pausiert, **beim Loslassen** aus (sonst weckte die noch gedrückte Taste sofort wieder) |
+| Kopfhörer | einstecken: Lautsprecher sofort stumm (SD), Spotify auf Kopfhörer, Startlautstärke Kopfhörer (30 %, jedes Mal); ausstecken: Kopfhörer sofort still, zurück auf Lautsprecher in der alten Lautstärke. Musik läuft an derselben Stelle weiter (Pause ca. 3–5 s) |
+
+Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) lösen nichts aus; Feld meldet über 60 s Berührung → neu kalibriert; Ein-Taste beim Start gedrückt → erst nach Loslassen beachtet; über 15 s gedrückt (klemmt) → nie ausschalten; Kopfhörer entprellt (0,4 s), höchstens alle 3 s umschalten.
+
+**Ansagen** (`toene.py`, Texte in `software/ansagen/TEXTE.md`): bereit, Tschüss, Akku 10–100 %, lädt, voll, schwach, leer, unbekannt, Timer 15/30/45/60/aus, Karte leer, Karte auflegen, Ruhezeit, „Einen Moment, die Musik kommt gleich“ (Karte wartet 8 s), kein Internet / Spotify-Anmeldung (25 s). Quelle: eigene WAV in `software/ansagen/` → sonst Sprachausgabe pico2wave (einmal erzeugt, auf −3 dBFS angehoben, gespeichert) → sonst Töne. **Bisher nur „bereit“ als Aufnahme**; die übrigen spricht vorerst der Pi. Eigene Aufnahmen (ElevenLabs, Helmut) einfach als MP3 an Claude schicken.
+
+**Akku-Wache:** alle 15 s; ≤ 15 % einmal „fast leer“; ≤ 3,30 V bei 3 Messungen in Folge: Ansage und sauber ausschalten (schützt die SD-Karte vor hartem Abschalten). Schwellen festgelegt, nicht gemessen. Eltern-Seite zeigt beim Laden den letzten Prozentwert ohne Netzteil (offener Punkt 05.11. erledigt).
+
+**Selbstheilung:** Kartenleser fehlt beim Start → Rest läuft, neuer Versuch alle 10 s (vorher stoppte der ganze Player). Touch-Chip fällt aus / Überstrom / misst nicht mehr → neu einrichten mit wachsendem Abstand, hängender I2C-Bus wird freigetaktet (9 Takte + STOP, SCL nie aktiv hoch). INT hängt → nur noch Abfrage alle 0,25 s. Ein-Taste an SCL: Pegel direkt aus dem GPIO-Register, nur gelesen wenn gerade keine eigene I2C-Übertragung läuft, 3 gleiche Proben; Akku wird nicht gelesen, solange die Taste gedrückt ist. Drehknopf ohne Kernel-Gerät → selbst abtasten. Kopfhörer-Helfer fehlt → Lautsprecher bleibt, neuer Versuch jede Minute. Jeder Faden überwacht und neu gestartet; hängt einer über 30 s → Player beendet sich, systemd startet neu; Hardware-Wächter des Pi bei Systemhänger. Beim Ausschalten Touch-Chip (Stopp) und RC522 (Power-Down) schlafen gelegt.
+
+**Neue/geänderte Dateien:** `gpio.py`, `i2c.py`, `mpr121.py`, `drehgeber.py`, `bedienung.py`, `ausgang.py`, `peppa_ausgang.sh` (Root-Helfer → `/usr/local/sbin/peppa-ausgang`), `bedienung_einrichten.sh` (config.txt), `bedienung_test.py` (Konsole), `ansagen/TEXTE.md`; erweitert: `peppa_player.py`, `steuerung.py` (Pause/Weiter, vor/zurück, spulen, Ausgangswechsel), `spotify.py`, `toene.py`, `akku.py`, `automatik.py`, `lautstaerke.py`, `einstellungen.py` (Bereich `bedienung`), `rc522.py`, `peppa_web.py`, `web/index.html` (Bereich „Bedienung“), `lautsprecher_einrichten.sh` (Mischer `kopfhoerer`), `dienst_einrichten.sh` (Gruppen gpio/spi/input, sudo-Freigabe Helfer, Watchdog, pico2wave, TimeoutStopSec), `wlan_rueckfall.sh` (schaltet sich nach dem ersten erfolgreichen Start ab – offener Punkt 02.11. erledigt).
+
+**Geprüft ohne Hardware:** 210 Tests (vorher 82), simulierte Uhr; 38 von 38 eingebauten Fehlern erkannt (2 weitere als gleichwertig erkannt: ändern kein Verhalten). ALSA-Konfiguration mit echtem `aplay -L` gelesen (alle 5 Geräte). Eltern-Seite in Chrome auf Handygröße hell/dunkel bedient (Live-Anzeige, Speichern, Ablehnung doppelter Elektrode, Ansagen), keine Konsolenfehler.
+
+**Einrichten am Pi (einmal, per SSH):**
+1. `cd ~/peppa-box && git pull && sh software/dienst_einrichten.sh` (fragt nach dem sudo-Passwort; installiert pico2wave, braucht Internet).
+2. `sudo reboot` (config.txt: Drehgeber-Overlay, Pull-ups P05/P26; Gruppen, Watchdog).
+
+**Testen (Eltern-Seite → Bedienung → „Prüfen und einstellen“, oder `python3 ~/peppa-box/software/bedienung_test.py`):**
+1. Drehknopf: Zähler ändert sich, „Kernel-Treiber“ (grün). Rechts herum muss lauter werden, sonst „Drehrichtung umkehren“.
+2. Touch: jedes Feld leuchtet beim Berühren, nur das richtige. Balken: ohne Berührung deutlich unter dem roten Strich, mit Berührung deutlich darüber; sonst Touch-Schwelle anpassen. Vertauscht → Felder-Zuordnung.
+3. Ein-Taste: „gedrückt“ beim Drücken; kurz drücken → Akkustand wird angesagt.
+4. Kopfhörer: „P26 gerade“ ohne Stecker **tief**, mit Stecker **hoch** (sonst Pegel-Richtung umstellen). Mit Musik einstecken → Lautsprecher still, nach ca. 3–5 s weiter im Kopfhörer, leise; ausstecken → zurück.
+5. Mit Karte: Play (Pause/weiter), vor/zurück, vor halten (spulen), Mond 1× (Ansage 15 Min), 5 s Mond (Akku).
+6. Ein-Taste 2 s halten → „Tschüss“, loslassen → Box geht aus; kurz drücken → startet wieder.
+7. Ansagen anhören (Seite) – Klang der Sprachausgabe beurteilen.
+8. Protokoll bei Auffälligkeiten: Seite → „Letzte Meldungen“ oder `journalctl -u peppa-player -n 100`.
+
+**Noch offen / am Gerät zu bestätigen:** Polung P26; Touch-Schwelle durch 4 mm PETG (Standard 8/4 ist Startwert); Drehrichtung; Klang/Lautstärke der Sprachausgabe; Akku-Schwellen; ob der L-Kanal beim Ausstecken während Kopfhörer-Musik den Eingang P26 stört (Kopfhörer werden deshalb sofort auf 0 gestellt).

@@ -16,6 +16,8 @@ import shutil
 import subprocess
 import time
 
+import einstellungen
+
 AUSGABEN = {
     "kopfhoerer": {"karte": "Headphones", "regler": "PCM"},
     "lautsprecher": {"suche": "hifiberry", "regler": "Lautsprecher"},
@@ -66,8 +68,12 @@ def eingerichtet(ausgang):
 
 
 def aktive_ausgabe():
-    """Welcher Ausgang gerade Ton macht. Solange es keine Kopfhörer-Erkennung (Öffner an Pin 37)
-    gibt: der Lautsprecher, sobald er eingerichtet ist, sonst die Klinke."""
+    """Welcher Ausgang gerade Ton macht. Der Player schreibt nach jeder Umschaltung (Kopfhörer an P26)
+    den Ausgang nach /dev/shm/peppa-box-ausgang.json. Fehlt die Angabe: der Lautsprecher, sobald er
+    eingerichtet ist, sonst die Klinke."""
+    z = einstellungen.lauf_lesen("ausgang")
+    if isinstance(z, dict) and z.get("ausgang") in AUSGABEN and eingerichtet(z["ausgang"]):
+        return z["ausgang"]
     return "lautsprecher" if eingerichtet("lautsprecher") else "kopfhoerer"
 
 

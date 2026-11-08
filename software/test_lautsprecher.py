@@ -217,6 +217,29 @@ class Einrichtungsskript(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
         self.assertEqual(self.lesen(self.cfg), "dtparam=audio=on\n[pi5]\nfoo=1\n")
 
+    def test_kopfhoerer_mischer_und_umgeschaltet_bleibt(self):
+        self.schreiben(self.cfg, CONFIG_TXT)
+        self.schreiben(self.rasp, RASPOTIFY.replace('"plughw:CARD=Headphones,DEV=0"', '"kopfhoerer"'))
+        self.schreiben(self.cards, KARTEN_MIT)
+        r = self.lauf()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        a = self.lesen(self.asound)
+        self.assertIn("pcm.kopfhoerer {", a)
+        self.assertIn('pcm "hw:CARD=Headphones,DEV=0"', a)
+        self.assertIn("ipc_key 5151", a)
+        self.assertLess(a.index("pcm.kopfhoerer"), a.index("# <<< peppa-box lautsprecher"))
+        self.assertIn('LIBRESPOT_DEVICE="kopfhoerer"', self.lesen(self.rasp))       # vom Player umgeschaltet
+
+    def test_ohne_kopfhoerer_karte_nur_lautsprecher(self):
+        self.schreiben(self.cfg, CONFIG_TXT)
+        self.schreiben(self.rasp, RASPOTIFY)
+        self.schreiben(self.cards, KARTEN_MIT.split(" 1 [")[0].replace(" 0 [Headphones     ]", " 0 [Andere         ]") +
+                       " 1 [sndrpihifiberry]: RPi-simple - snd_rpi_hifiberry_dac\n")
+        r = self.lauf()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertNotIn("pcm.kopfhoerer", self.lesen(self.asound))
+        self.assertIn("Kopfhoerer-Karte (Headphones) nicht gefunden", r.stdout)
+
     def test_raspotify_ohne_device_zeile(self):
         self.schreiben(self.cfg, CONFIG_TXT)
         self.schreiben(self.rasp, 'LIBRESPOT_NAME="Peppa Box"\n#LIBRESPOT_DEVICE="default"\n')

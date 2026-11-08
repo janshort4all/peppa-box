@@ -7,6 +7,7 @@ DIY-Toniebox-Alternative: Eine NFC-Karte mit Cover startet eine Spotify-Playlist
 - `v4/out/` – aktuelle STL-Dateien, Ansichten, PARAMETER.md, PRUEFBERICHT.md, README zum Druck
 - `v3/concept3.py` – Software-Renderer für die Ansichten
 - `plan/` – Verdrahtungsplan (Generator + HTML) und Einkaufsliste
+- `software/` – Player (Karte, Touchfelder, Drehknopf, Ein-Taste, Kopfhörer, Akku, Ansagen), Eltern-Seite, Einrichtungsskripte, Tests (`cd software && python3 -m unittest`)
 
 ## Lokal ausführen
 

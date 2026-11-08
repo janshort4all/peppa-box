@@ -70,6 +70,20 @@ input.schalter:checked::after { transform:translateX(20px); }
 .grenze { margin-top:12px; } .grenze .kopf { display:flex; justify-content:space-between; }
 .klein { font-size:14px; margin:0 0 2px; }
 #tknoepfe button { padding-left:4px; padding-right:4px; white-space:nowrap; }
+.felder { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:14px; }
+.feld { border:2px solid var(--rand); border-radius:50%; aspect-ratio:1; display:flex; flex-direction:column;
+        align-items:center; justify-content:center; transition:background .1s, border-color .1s; }
+.feld .sym { font-size:24px; line-height:1; } .feld .nr { font-size:12px; color:var(--leise); margin-top:2px; }
+.feld.an { background:var(--orange); border-color:var(--orange); color:#fff; } .feld.an .nr { color:#fff; }
+.feld.aus { opacity:.4; }
+.delta { display:grid; grid-template-columns:5.5em 1fr 3em; gap:8px; align-items:center; font-size:14px; margin:6px 0; }
+.delta .spur { position:relative; height:12px; border-radius:6px; background:var(--rand); overflow:hidden; }
+.delta .spur div { position:absolute; left:0; top:0; bottom:0; background:var(--gut); }
+.delta .spur i { position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--rot); }
+.ansage { display:flex; align-items:center; gap:10px; padding:6px 0; border-top:1px solid var(--rand); font-size:14px; }
+.ansage:first-child { border-top:0; }
+.ansage button { width:auto; min-height:38px; padding:6px 12px; margin:0; flex:none; }
+.ansage .q { font-size:12px; color:var(--leise); }
 </style></head>
 <body><main>
 <div id="banner" class="versteckt">Keine Verbindung zur Box</div>
@@ -150,6 +164,46 @@ input.schalter:checked::after { transform:translateX(20px); }
     <div class="leise">Solange diese Seite offen ist, bleibt die Box an.</div>
   </div>
   <div id="zergebnis"></div>
+</section>
+
+<section class="box">
+  <h2>Bedienung</h2>
+  <div class="felder" id="bfelder"></div>
+  <div class="raster">
+    <div><div class="leise">Drehknopf</div><div class="wert" id="bdreh">–</div></div>
+    <div><div class="leise">Ein-Taste</div><div class="wert" id="btaste">–</div></div>
+    <div><div class="leise">Kopfhörer</div><div class="wert" id="bklinke">–</div></div>
+    <div><div class="leise">Touch-Chip</div><div class="wert" id="btouch">–</div></div>
+  </div>
+  <div id="bhinweis"></div>
+  <details id="bdetails" style="margin-top:8px"><summary>Prüfen und einstellen</summary>
+    <div class="leise klein" style="margin-top:6px">Abstand zur Grundlinie je Feld (Strich = Schwelle). Berühren muss deutlich über den Strich gehen, ohne Berührung deutlich darunter bleiben.</div>
+    <div id="bdeltas"></div>
+    <div class="grenze"><div class="kopf"><span>Touch-Schwelle <small class="leise">(kleiner = empfindlicher)</small></span><b id="bschwellew"></b></div>
+      <input type="range" id="bschwelle" min="2" max="30" step="1" oninput="$('bschwellew').textContent = this.value"></div>
+    <div class="trenner"><b>Drehknopf</b>
+      <div class="grenze"><div class="kopf"><span>Je Raste</span><b id="bschrittw"></b></div>
+        <input type="range" id="bschritt" min="1" max="10" step="1" oninput="$('bschrittw').textContent = this.value + '\u00a0%'"></div>
+      <label class="zeile"><span>Drehrichtung umkehren<br><span class="leise">falls rechts herum leiser wird</span></span>
+        <input type="checkbox" class="schalter" id="bumkehren"></label>
+    </div>
+    <div class="trenner"><b>Kopfhörer</b>
+      <label class="zeile"><span>Kopfhörer erkennen<br><span class="leise">aus: immer Lautsprecher</span></span>
+        <input type="checkbox" class="schalter" id="bkerkennung"></label>
+      <label class="zeile"><span>Stecker steckt bei Pegel<br><span class="leise" id="bpegel">P26: –</span></span>
+        <select id="bkpolung"><option value="hoch">hoch</option><option value="tief">tief</option></select></label>
+    </div>
+    <div class="trenner"><b>Felder</b> <span class="leise">(welche Elektrode des Touch-Chips)</span>
+      <div id="bzuordnung"></div>
+    </div>
+    <button class="haupt" onclick="bedienungSpeichern()">Speichern</button>
+    <div id="bergebnis2"></div>
+  </details>
+  <details id="adetails" style="margin-top:4px"><summary>Ansagen anhören</summary>
+    <div class="leise klein" style="margin-top:6px">Aufnahme = eigene Datei in software/ansagen, Sprachausgabe = vom Pi gesprochen (Ersatz, bis es eine Aufnahme gibt).</div>
+    <div id="aliste">wird geladen …</div>
+    <div id="aergebnis"></div>
+  </details>
 </section>
 
 <section class="box">
@@ -254,9 +308,11 @@ async function karte() {
     zeige($('banner'), false);
     const da = k.laeuft && k.karte;           // alte Angaben eines gestoppten Players nicht zeigen
     $('kpunkt').className = 'punkt' + (!k.laeuft ? ' rot' : da ? ' an' : '');
-    $('ktext').textContent = !k.laeuft ? 'Player läuft nicht' : da ? 'Aufgelegt' : 'keine Karte aufgelegt';
+    $('ktext').textContent = !k.laeuft ? 'Player läuft nicht' : k.leser ? k.leser : da ? 'Aufgelegt' : 'keine Karte aufgelegt';
+    if (k.laeuft && k.leser) $('kpunkt').className = 'punkt rot';
     $('uid').textContent = da ? k.karte : '';
     $('link').textContent = da ? (k.link || 'Kein Link auf der Karte') : '';
+    if (!$('bdetails').open) bedienungAnzeigen(k.bedienung);
   } catch (e) { zeige($('banner'), true); }
 }
 
@@ -276,10 +332,11 @@ async function zustand() {
   } else {
     const laedt = a.prozent == null;
     $('aproz').textContent = laedt ? 'lädt' : a.prozent + ' %';
+    const vorher = laedt && a.prozent_ohne_netzteil != null ? ` · zuletzt ${a.prozent_ohne_netzteil} % ohne Netzteil` : '';
     $('abalken').style.width = laedt ? '100%' : a.prozent + '%';
     $('abalken').style.background = laedt ? 'var(--warn)' : a.prozent < 15 ? 'var(--rot)' : a.prozent < 30 ? 'var(--warn)' : 'var(--gut)';
     const r = {laedt: 'Netzteil steckt, Akku wird geladen', akku: 'Akkubetrieb', voll: 'Netzteil steckt, Akku voll', ruhend: 'kaum Strom'}[a.richtung];
-    $('atext').textContent = `${r} · ${a.spannung.toFixed(2).replace('.', ',')} V · ` + (laedt ? 'Prozent erst ohne Netzteil' : 'Prozent geschätzt');
+    $('atext').textContent = `${r} · ${a.spannung.toFixed(2).replace('.', ',')} V · ` + (laedt ? 'Prozent erst ohne Netzteil' + vorher : 'Prozent geschätzt');
   }
 
   const p = z.player, sp = z.dienste.raspotify === 'active';
@@ -450,6 +507,7 @@ const geaendert = {grenzen: false, ruhe: false};
 let stand = 0;                                 // zählt Speichervorgänge: ältere Antworten sind veraltet
 function formFuellen() {
   if (!einst) return;
+  bedienungFuellen();
   AUSGAENGE.forEach(([a]) => {
     zeige($(`g-${a}-hinweis`), !ausgaenge[a]);
     if (geaendert.grenzen) return;
@@ -529,6 +587,101 @@ async function schalter(bereich, name, wert) {
   zustand();
 }
 
+// ------------------------------------------------------------ Bedienung
+
+const FELDER = [['zurueck', '\u23EE', 'zurück'], ['play', '\u23EF', 'Play'], ['vor', '\u23ED', 'vor'], ['schlaf', '\u263E', 'Mond']];
+function felderBauen() {
+  $('bfelder').innerHTML = FELDER.map(([f, sym, name]) =>
+    `<div class="feld" id="f-${f}"><div class="sym">${sym}</div><div class="nr" id="fn-${f}">${name}</div></div>`).join('');
+  $('bdeltas').innerHTML = FELDER.map(([f, sym, name]) =>
+    `<div class="delta"><span>${sym} ${name}</span><div class="spur"><div id="d-${f}"></div><i id="s-${f}"></i></div><b id="dw-${f}">–</b></div>`).join('');
+  $('bzuordnung').innerHTML = FELDER.map(([f, sym, name]) =>
+    `<label class="zeile"><span>${sym} ${name}</span><select id="z-${f}">${[0, 1, 2, 3].map(n => `<option value="${n}">E${n}</option>`).join('')}</select></label>`).join('');
+}
+function bedienungAnzeigen(b) {
+  if (!b || !b.laeuft) {
+    FELDER.forEach(([f]) => $('f-' + f).className = 'feld aus');
+    ['bdreh', 'btaste', 'bklinke', 'btouch'].forEach(id => setze(id, '–'));
+    $('bhinweis').innerHTML = '<div class="hinweis">Keine Angaben vom Player (läuft er?).</div>';
+    return;
+  }
+  const t = b.touch, zu = (einst && einst.bedienung) ? einst.bedienung.felder : null;
+  FELDER.forEach(([f]) => {
+    $('f-' + f).className = 'feld' + (!t.ok ? ' aus' : t.beruehrt.includes(f) ? ' an' : '');
+    if (zu) $('fn-' + f).textContent = 'E' + zu[f];
+  });
+  setze('btouch', t.ok ? 'bereit' : 'Fehler', t.ok ? 'gut' : 'rot');
+  const d = b.drehknopf;
+  if (!d.art) setze('bdreh', 'nicht gefunden', 'rot');
+  else setze('bdreh', `${d.schritte} <small>Rasten<br>${d.letzter ? 'zuletzt ' + (d.letzter > 0 ? '+1' : '−1') : ''}${d.art === 'kernel' ? '' : ' · ohne Kernel-Treiber'}</small>`, d.art === 'kernel' ? 'gut' : 'warn');
+  if (!b.taste.bekannt) setze('btaste', 'unbekannt', 'warn');
+  else setze('btaste', b.taste.gedrueckt ? 'gedrückt' : 'los', b.taste.gedrueckt ? 'an' : 'gut');
+  const k = b.klinke;
+  setze('bklinke', (k.eingesteckt ? 'eingesteckt' : 'nein') + (k.umstellung ? '<br><small>schaltet um …</small>' :
+        `<br><small>${k.ausgang === 'kopfhoerer' ? 'Ton über Kopfhörer' : k.ausgang === 'lautsprecher' ? 'Ton über Lautsprecher' : ''}</small>`),
+        k.fehler ? 'warn' : k.eingesteckt ? 'an' : 'gut');
+  $('bpegel').textContent = 'P26 gerade: ' + (k.pegel == null ? '–' : k.pegel ? 'hoch' : 'tief');
+  const h = [];
+  if (!t.ok && t.fehler) h.push('Touch-Chip: ' + t.fehler);
+  if (k.fehler) h.push('Kopfhörer: ' + k.fehler);
+  if (!b.gpio) h.push('GPIO nicht lesbar: Ein-Taste und Kopfhörer-Erkennung aus.');
+  $('bhinweis').innerHTML = h.map(x => `<div class="hinweis fehler">${esc(x)}</div>`).join('');
+  if (t.roh) {
+    const schwelle = einst ? einst.bedienung.touch_schwelle : 8, skala = Math.max(40, schwelle * 3);
+    FELDER.forEach(([f]) => {
+      const e = zu ? zu[f] : FELDER.findIndex(x => x[0] === f), r = t.roh[e];
+      if (!r) return;
+      const delta = Math.max(0, r[2]);
+      $('d-' + f).style.width = Math.min(100, delta / skala * 100) + '%';
+      $('d-' + f).style.background = delta >= schwelle ? 'var(--orange)' : 'var(--gut)';
+      $('s-' + f).style.left = Math.min(100, schwelle / skala * 100) + '%';
+      $('dw-' + f).textContent = r[2];
+    });
+  }
+}
+async function bedienungLive() {
+  if (!$('bdetails').open || document.visibilityState !== 'visible') return;
+  try { bedienungAnzeigen(await holen('/api/bedienung')); } catch (e) {}
+  setTimeout(bedienungLive, 300);
+}
+geaendert.bedienung = false;
+function bedienungFuellen() {
+  if (!einst || geaendert.bedienung) return;
+  const b = einst.bedienung;
+  $('bschwelle').value = b.touch_schwelle; $('bschwellew').textContent = b.touch_schwelle;
+  $('bschritt').value = b.drehknopf_schritt; $('bschrittw').textContent = b.drehknopf_schritt + '\u00a0%';
+  $('bumkehren').checked = b.drehknopf_umkehren; $('bkerkennung').checked = b.kopfhoerer_erkennung;
+  $('bkpolung').value = b.klinke_eingesteckt_bei;
+  FELDER.forEach(([f]) => { $('z-' + f).value = b.felder[f]; });
+}
+async function bedienungSpeichern() {
+  const felder = {};
+  FELDER.forEach(([f]) => { felder[f] = +$('z-' + f).value; });
+  const s = +$('bschwelle').value;
+  stand++;
+  const erg = await sicher('/api/einstellungen', {bedienung: {touch_schwelle: s, touch_loslassen: Math.max(1, Math.floor(s / 2)),
+    drehknopf_schritt: +$('bschritt').value, drehknopf_umkehren: $('bumkehren').checked,
+    kopfhoerer_erkennung: $('bkerkennung').checked, klinke_eingesteckt_bei: $('bkpolung').value, felder}});
+  stand++;
+  if (erg.ok) { einst = erg.einstellungen; geaendert.bedienung = false; formFuellen(); }
+  hinweis('bergebnis2', erg, true);
+}
+$('bdetails').addEventListener('input', () => { geaendert.bedienung = true; }, true);
+$('bdetails').addEventListener('change', () => { geaendert.bedienung = true; }, true);
+$('bdetails').addEventListener('toggle', () => { if ($('bdetails').open) { einstellungenLaden(); bedienungLive(); } });
+
+const QUELLE = {aufnahme: 'Aufnahme', sprache: 'Sprachausgabe', ton: 'nur Töne'};
+async function ansagenLaden() {
+  try {
+    const a = await holen('/api/ansagen');
+    $('aliste').innerHTML = a.ansagen.map(x => `<div class="ansage"><button onclick="ansageSpielen('${x.name}')">\u25B6</button>
+      <span>${esc(x.text)}<br><span class="q">${QUELLE[x.quelle] || x.quelle} · ${x.name}</span></span></div>`).join('');
+  } catch (e) { $('aliste').textContent = 'Keine Verbindung zur Box.'; }
+}
+async function ansageSpielen(name) { hinweis('aergebnis', await sicher('/api/ansage', {name}), true); }
+$('adetails').addEventListener('toggle', () => { if ($('adetails').open) ansagenLaden(); });
+
+felderBauen();
 grenzenBauen();
 karte(); zustand(); einstellungenLaden();
 setInterval(() => { if (document.visibilityState === 'visible') karte(); }, 1000);

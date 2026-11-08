@@ -31,8 +31,22 @@ STANDARD = {
     # Box ausschalten, wenn so lange nichts gespielt wird. Standard aus, damit sie nicht mitten in
     # einer Wartung (Update, Test) von selbst herunterfährt.
     "auto_aus": {"an": False, "minuten": 30},
+    # Bedienung am Gerät (Touchfelder, Drehknopf, Kopfhörer-Erkennung)
+    "bedienung": {
+        # MPR121: Berührung zählt, wenn der Messwert um so viel unter der Grundlinie liegt;
+        # kleiner = empfindlicher. Loslassen muss kleiner sein als Berühren.
+        "touch_schwelle": 8,
+        "touch_loslassen": 4,
+        # welche Elektrode (E0 ... E3 des MPR121) welches Feld ist (Verdrahtungsplan 08.11.2026)
+        "felder": {"zurueck": 0, "play": 1, "vor": 2, "schlaf": 3},
+        "drehknopf_schritt": 2,               # Prozent je Raste
+        "drehknopf_umkehren": False,          # falls rechts herum leiser wird
+        "kopfhoerer_erkennung": True,
+        "klinke_eingesteckt_bei": "hoch",     # Pegel an P26 bei eingestecktem Stecker
+    },
 }
 
+FELDER = ("zurueck", "play", "vor", "schlaf")
 MIN_LAUT = 5                                  # darunter ist die Box praktisch stumm
 ZEIT = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 _cache = {"mtime": None, "daten": None}
@@ -119,7 +133,40 @@ def bereinigen(neu, basis):
             else:
                 raise ValueError(f"auto_aus: unbekannter Wert '{k}'")
 
-    unbekannt = set(neu) - {"lautstaerke", "ruhezeit", "auto_aus"}
+    bed = neu.get("bedienung")
+    if bed is not None:
+        if not isinstance(bed, dict):
+            raise ValueError("bedienung: Objekt erwartet")
+        ziel = erg["bedienung"]
+        for k, v in bed.items():
+            if k == "touch_schwelle":
+                ziel[k] = _ganzzahl(v, "Touch-Schwelle", 2, 40)
+            elif k == "touch_loslassen":
+                ziel[k] = _ganzzahl(v, "Touch loslassen", 1, 39)
+            elif k == "drehknopf_schritt":
+                ziel[k] = _ganzzahl(v, "Drehknopf-Schritt", 1, 10)
+            elif k in ("drehknopf_umkehren", "kopfhoerer_erkennung"):
+                ziel[k] = _wahrheit(v, k)
+            elif k == "klinke_eingesteckt_bei":
+                if v not in ("hoch", "tief"):
+                    raise ValueError("Klinke: 'hoch' oder 'tief' erwartet")
+                ziel[k] = v
+            elif k == "felder":
+                if not isinstance(v, dict) or set(v) - set(FELDER):
+                    raise ValueError("Felder: zurueck, play, vor, schlaf erwartet")
+                felder = dict(ziel["felder"])
+                for name, nr in v.items():
+                    felder[name] = _ganzzahl(nr, f"Feld {name}", 0, 3)
+                if sorted(felder.values()) != [0, 1, 2, 3]:
+                    raise ValueError("Felder: jede Elektrode E0 bis E3 genau einmal vergeben")
+                ziel["felder"] = felder
+            else:
+                raise ValueError(f"bedienung: unbekannter Wert '{k}'")
+    b = erg["bedienung"]
+    if b["touch_loslassen"] >= b["touch_schwelle"]:
+        b["touch_loslassen"] = max(1, b["touch_schwelle"] // 2)
+
+    unbekannt = set(neu) - {"lautstaerke", "ruhezeit", "auto_aus", "bedienung"}
     if unbekannt:
         raise ValueError("Unbekannte Einstellung: " + ", ".join(sorted(unbekannt)))
     return erg

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Peppa Box – Eltern-Seite: Zustand ansehen, Lautstärke und Zeiten einstellen, Musik/Box neu starten,
-ausschalten, Software-Update von GitHub.
+ausschalten, Software-Update von GitHub, Bedienelemente live prüfen und einstellen, Ansagen anhören.
 
 Laeuft als eigener Dienst peppa-web (nicht im Player), damit Updates und Neustarts des Players
 die Seite nicht mitreissen. Port 8080, zusaetzlich Port 80, wenn erlaubt (systemd gibt das Recht).
@@ -24,13 +24,18 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import akku
+import automatik
 import einstellungen
 import lautstaerke
+import toene
 
 ORDNER = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(ORDNER)
 WEB = os.path.join(ORDNER, "web")
 STATUS_DATEI = einstellungen.lauf_pfad("status")           # schreibt der Player jede Sekunde
+BEDIENUNG_DATEI = einstellungen.lauf_pfad("bedienung")     # Bedienelemente live (Player, bis 5 × je Sekunde)
+EINRICHTUNG = {"software/dienst_einrichten.sh", "software/lautsprecher_einrichten.sh",
+               "software/bedienung_einrichten.sh", "software/peppa_ausgang.sh"}
 KONFIG = os.path.expanduser("~/.config/peppa-box")
 VORHER_DATEI = os.path.join(KONFIG, "vorherige_version.txt")
 TROCKEN = os.environ.get("PEPPA_WEB_TROCKEN") == "1"
@@ -99,6 +104,26 @@ def player_zustand():
     return z
 
 
+def bedienung_live():
+    """Bedienelemente (Touch, Drehknopf, Ein-Taste, Kopfhörer), vom Player geschrieben."""
+    try:
+        with open(BEDIENUNG_DATEI) as f:
+            b = json.load(f)
+    except (OSError, ValueError):
+        return {"laeuft": False}
+    b["laeuft"] = time.time() - b.get("zeit", 0) < 5
+    return b
+
+
+def akku_zustand(p):
+    """Akku bevorzugt vom Player (liest alle 15 s, ohne der Ein-Taste an SCL in die Quere zu kommen).
+    Läuft der Player nicht, liest die Seite selbst."""
+    a = p.get("akku") if p.get("laeuft") else None
+    if isinstance(a, dict) and not a.get("fehler"):
+        return a
+    return akku.lesen()
+
+
 def wlan():
     erg = {"name": None, "dbm": None}
     for zeile in (lies("/proc/net/wireless", "") or "").splitlines()[2:]:
@@ -133,7 +158,7 @@ def stromversorgung():
 
 def dienste():
     erg = {}
-    for name in ("peppa-player", "raspotify"):
+    for name in ("peppa-player", "raspotify", "peppa-stille"):
         _, aus = befehl([SYSTEMCTL, "is-active", name], zeit=5)
         erg[name] = aus.splitlines()[0] if aus else "unbekannt"
     return erg
@@ -191,15 +216,16 @@ def zustand():
     cfg, jetzt = einstellungen.laden(), time.time()
     temp = lies("/sys/class/thermal/thermal_zone0/temp")
     platte = shutil.disk_usage("/")
+    p = player_zustand()
     mem = {}
     for zeile in (lies("/proc/meminfo", "") or "").splitlines():
         k, _, v = zeile.partition(":")
         mem[k] = int(v.split()[0]) if v.split() else 0
     return {
         "rechner": socket.gethostname(),
-        "player": player_zustand(),
+        "player": p,
         "dienste": dienste(),
-        "akku": akku.lesen(),
+        "akku": akku_zustand(p),
         "wlan": wlan(),
         "temperatur": round(int(temp) / 1000, 1) if temp else None,
         "speicher_frei_gb": round(platte.free / 1e9, 1),
@@ -283,8 +309,7 @@ def nach_versionswechsel(geaendert, text):
     meldung = text + " Musik startet neu."
     if code != 0:
         meldung += " Neustart des Players fehlgeschlagen: " + aus
-    einrichtung = {"software/dienst_einrichten.sh", "software/lautsprecher_einrichten.sh"}
-    if einrichtung & set(geaendert.split()):
+    if EINRICHTUNG & set(geaendert.split()):
         meldung += (" Hinweis: Die Einrichtung hat sich geändert. Einmal am Pi "
                     "'sh ~/peppa-box/software/dienst_einrichten.sh' ausführen.")
     selbst_neu_starten()
@@ -352,13 +377,7 @@ def einstellungen_speichern(daten):
 
 def timer_abbrechen_intern():
     """Timer löschen. War er schon beim Ausblenden, die Lautstärke wieder auf den alten Wert."""
-    t = einstellungen.lauf_lesen("timer")
-    if not t:
-        return False
-    einstellungen.lauf_loeschen("timer")
-    if t.get("vorher") is not None:
-        lautstaerke.setzen(lautstaerke.aktive_ausgabe(), t["vorher"])
-    return True
+    return automatik.timer_abbrechen(lautstaerke, einstellungen)
 
 
 def timer_starten(daten):
@@ -366,8 +385,7 @@ def timer_starten(daten):
         minuten = _prozent(daten.get("minuten"), "Minuten", 5, 180)
     except ValueError as e:
         return {"ok": False, "meldung": str(e)}
-    timer_abbrechen_intern()
-    einstellungen.lauf_schreiben("timer", {"ende": time.time() + minuten * 60, "minuten": minuten, "vorher": None})
+    automatik.timer_starten(minuten, lautstaerke, einstellungen)
     return {"ok": True, "meldung": f"Die Musik endet in {minuten} Minuten (die letzten Sekunden werden leiser)."}
 
 
@@ -390,6 +408,19 @@ def ruhe_wieder(daten=None):
     return {"ok": True, "meldung": "Ruhezeit gilt wieder."}
 
 
+def ansagen_liste():
+    return {"ok": True, "ansagen": [{"name": n, "text": t, "quelle": toene.quelle_ohne_erzeugen(n)}
+                                    for n, t in toene.ANSAGEN.items()]}
+
+
+def ansage_spielen(daten):
+    name = daten.get("name")
+    if name not in toene.ANSAGEN:
+        return {"ok": False, "meldung": "Unbekannte Ansage."}
+    ok = toene.spielen(name, warten=False, log=log)
+    return {"ok": ok, "meldung": f"„{toene.ANSAGEN[name]}“" if ok else "Ansage ließ sich nicht abspielen (siehe Meldungen)."}
+
+
 AKTIONEN = {"/api/update/pruefen": update_pruefen, "/api/update/starten": update_starten,
             "/api/update/zurueck": zurueck, "/api/musik-neustart": musik_neu,
             "/api/neustart": box_neu, "/api/ausschalten": ausschalten}
@@ -397,7 +428,8 @@ AKTIONEN = {"/api/update/pruefen": update_pruefen, "/api/update/starten": update
 # laufenden Update ausgeführt werden (z. B. Lautstärke ändern).
 SCHNELL = {"/api/lautstaerke": lautstaerke_setzen, "/api/einstellungen": einstellungen_speichern,
            "/api/timer/starten": timer_starten, "/api/timer/abbrechen": timer_abbrechen,
-           "/api/ruhezeit/aussetzen": ruhe_aussetzen, "/api/ruhezeit/wieder": ruhe_wieder}
+           "/api/ruhezeit/aussetzen": ruhe_aussetzen, "/api/ruhezeit/wieder": ruhe_wieder,
+           "/api/ansage": ansage_spielen}
 
 
 # ---------------------------------------------------------------- Webserver
@@ -421,7 +453,15 @@ class Handler(BaseHTTPRequestHandler):
             einstellungen.lauf_beruehren("seite")        # Eltern-Seite ist offen: Auto-Aus wartet
         if pfad == "/api/karte":
             z = player_zustand()
-            return self._antwort(200, {k: z.get(k) for k in ("karte", "link", "laeuft", "spotify_bereit")})
+            erg = {k: z.get(k) for k in ("karte", "link", "laeuft", "spotify_bereit", "ausgang", "leser")}
+            erg["bedienung"] = bedienung_live()
+            return self._antwort(200, erg)
+        if pfad == "/api/bedienung":                    # Prüfansicht offen: Player liest Rohwerte des Touch-Chips
+            einstellungen.lauf_beruehren("seite")
+            einstellungen.lauf_beruehren("seite-bedienung")
+            return self._antwort(200, bedienung_live())
+        if pfad == "/api/ansagen":
+            return self._antwort(200, ansagen_liste())
         if pfad == "/api/zustand":
             return self._antwort(200, zustand())
         if pfad == "/api/einstellungen":

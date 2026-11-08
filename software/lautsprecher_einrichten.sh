@@ -9,8 +9,10 @@
 #      Knacken beim Ein-/Ausschalten: stumm -> Stille startet -> 0,5 s spaeter SD frei;
 #      beim Stoppen erst stumm, dann Stille aus.
 #   4. Raspotify gibt ueber "lautsprecher" aus und darf den Mischer mitbenutzen (kein eigenes IPC)
-# Die Karte wird gesucht (Name mit "hifiberry" in /proc/asound/cards), nicht angenommen.
-# Kopfhoerer-Umschaltung (Pin 37) kommt spaeter; bis dahin ist die Pi-Klinke stumm.
+#   5. Kopfhoerer: eigener Mischer "kopfhoerer" auf der Pi-Klinke (Karte "Headphones"), damit Spotify
+#      und Ansagen gleichzeitig spielen koennen. Umgeschaltet wird vom Player (Klinke an P26) ueber
+#      /usr/local/sbin/peppa-ausgang; steht Raspotify schon auf "kopfhoerer", bleibt das so.
+# Die Karten werden gesucht (Name mit "hifiberry" bzw. "Headphones" in /proc/asound/cards), nicht angenommen.
 set -e
 CFG="${PEPPA_CONFIG_TXT:-/boot/firmware/config.txt}"
 ASOUND="${PEPPA_ASOUND:-/etc/asound.conf}"
@@ -53,6 +55,7 @@ if [ -z "$KARTE" ]; then
     exit 0
 fi
 echo "Verstaerker-Karte: $KARTE"
+KH_KARTE="$(sed -n 's/^ *[0-9][0-9]* \[\(Headphones\) *\]:.*/\1/p' "$KARTEN" | head -n 1)"
 
 # --- 2. /etc/asound.conf (eigener Block zwischen Markierungen)
 ANFANG="# >>> peppa-box lautsprecher"
@@ -90,8 +93,32 @@ pcm.lautsprecher {
         card $KARTE
     }
 }
-$ENDE
 EOF
+if [ -n "$KH_KARTE" ]; then
+    cat >> "$TMP" <<EOF
+# Kopfhoerer (Pi-Klinke): Spotify und Ansagen mischen; Lautstaerke ueber den Regler PCM der Karte
+pcm.peppa_kh_dmix {
+    type dmix
+    ipc_key 5151
+    ipc_perm 0666
+    slave {
+        pcm "hw:CARD=$KH_KARTE,DEV=0"
+        rate 44100
+        channels 2
+        format S16_LE
+        period_size 1024
+        buffer_size 8192
+    }
+}
+pcm.kopfhoerer {
+    type plug
+    slave.pcm "peppa_kh_dmix"
+}
+EOF
+else
+    echo "Kopfhoerer-Karte (Headphones) nicht gefunden: dtparam=audio=on in config.txt? Kopfhoerer-Ausgang fehlt."
+fi
+echo "$ENDE" >> "$TMP"
 ASOUND_NEU=0
 if [ -f "$ASOUND" ] && cmp -s "$TMP" "$ASOUND"; then
     rm -f "$TMP"
@@ -139,8 +166,8 @@ fi
 
 # --- 4. Raspotify auf den Lautsprecher, Mischer mitbenutzen
 if sudo test -f "$RASPOTIFY"; then   # Datei/Ordner nur mit sudo lesbar
-    if sudo grep -q '^LIBRESPOT_DEVICE="lautsprecher"$' "$RASPOTIFY"; then
-        :
+    if sudo grep -q '^LIBRESPOT_DEVICE="\(lautsprecher\|kopfhoerer\)"$' "$RASPOTIFY"; then
+        :                                    # kopfhoerer: vom Player umgeschaltet, so lassen
     elif sudo grep -q '^LIBRESPOT_DEVICE=' "$RASPOTIFY"; then
         sudo sed -i 's|^LIBRESPOT_DEVICE=.*|LIBRESPOT_DEVICE="lautsprecher"|' "$RASPOTIFY"
         echo "Raspotify: Ausgabe auf Lautsprecher umgestellt."

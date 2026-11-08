@@ -104,10 +104,30 @@ class FakeSpotify:
             return {"geraet": "D", "spielt": True, "titel": "t1", "position": 4711}
         laeuft = self.spielend and self.uhr.t >= self.start_t
         pos = self.pos_basis + (int((self.uhr.t - self.start_t) * 1000) if laeuft else 0)
-        return {"geraet": "D", "spielt": laeuft, "titel": "t1", "position": pos}
+        return {"geraet": "D", "spielt": laeuft, "titel": f"t{getattr(self, 'titel_nr', 1)}", "position": pos}
 
     def token_verwerfen(self):
         self.token_verworfen += 1
+
+    def naechster(self, dev):
+        st, d = self._befehl("naechster")
+        if st < 300:
+            self.titel_nr = getattr(self, "titel_nr", 1) + 1
+            self.pos_basis, self.start_t = 0, self.uhr.t
+        return st, d
+
+    def vorheriger(self, dev):
+        st, d = self._befehl("vorheriger")
+        if st < 300:
+            self.titel_nr = max(1, getattr(self, "titel_nr", 1) - 1)
+            self.pos_basis, self.start_t = 0, self.uhr.t
+        return st, d
+
+    def springen(self, dev, pos):
+        st, d = self._befehl("springen", pos)
+        if st < 300:
+            self.pos_basis, self.start_t = pos, self.uhr.t
+        return st, d
 
 
 class FakeDienste:
@@ -411,6 +431,169 @@ class Automatik(Basis):
         self.st.karte_auf("spotify:playlist:A")
         self.lauf(30)                                   # darf nicht abstürzen
         self.assertTrue(self.sp.spielend)
+
+
+class Tasten(Basis):
+    def test_play_pause_und_weiter_karte_bleibt(self):
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(10)
+        self.assertEqual(self.st.taste_play(), "pause")
+        self.lauf(2)
+        self.assertFalse(self.sp.spielend)
+        self.assertEqual(self.st.taste_play(), "weiter")
+        self.lauf(10)
+        self.assertTrue(self.spielt("spotify:playlist:A"))
+        self.assertEqual(self.starts()[-1], ("weiter", None))          # fortsetzen, nicht neu starten
+
+    def test_karte_weg_nach_tasten_pause_aendert_nichts(self):
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(10)
+        self.st.taste_play()
+        self.lauf(2)
+        n = len(self.sp.befehle)
+        self.st.karte_weg()
+        self.lauf(3)
+        self.assertEqual(len(self.sp.befehle), n)
+        self.assertEqual(self.st.taste_play(), "keine_karte")
+        self.st.karte_auf("spotify:playlist:A")                         # wieder auflegen: weiter
+        self.lauf(10)
+        self.assertTrue(self.spielt("spotify:playlist:A"))
+
+    def test_play_nach_timer_pause_spielt_weiter(self):
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(10)
+        self.st.extern_pausiert()
+        self.sp.pause("D")
+        self.assertEqual(self.st.taste_play(), "weiter")
+        self.lauf(10)
+        self.assertTrue(self.spielt("spotify:playlist:A"))
+
+    def test_vor_zurueck_nur_wenn_musik_laeuft(self):
+        self.assertFalse(self.st.taste_springen(+1))                    # keine Karte
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(10)
+        self.assertTrue(self.st.taste_springen(+1))
+        self.assertTrue(self.st.taste_springen(+1))
+        self.assertTrue(self.st.taste_springen(-1))
+        self.lauf(3)
+        self.assertEqual([b[0] for b in self.sp.befehle if b[0] in ("naechster", "vorheriger")],
+                         ["naechster"])                                 # +1 +1 -1 = einmal vor
+        self.st.taste_play()
+        self.lauf(2)
+        self.assertFalse(self.st.taste_springen(+1))                    # Pause: nichts
+        self.assertEqual(self.di.neustarts, [])
+
+    def test_viele_spruenge_begrenzt(self):
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(10)
+        for _ in range(20):
+            self.st.taste_springen(+1)
+        self.lauf(10)
+        self.assertEqual(sum(1 for b in self.sp.befehle if b[0] == "naechster"), 5)
+
+    def test_spulen_ab_aktueller_stelle(self):
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(10)
+        self.st.taste_spulen(15000)
+        self.st.taste_spulen(15000)
+        self.lauf(1)
+        sprung = [b for b in self.sp.befehle if b[0] == "springen"]
+        self.assertEqual(len(sprung), 1)
+        self.assertTrue(37000 <= sprung[0][1] <= 40000, sprung)         # ca. 8 s gespielt + 30 s
+        self.st.taste_spulen(-120000)
+        self.lauf(1)
+        self.assertEqual(self.sp.befehle[-1], ("springen", 0))          # nicht vor den Anfang
+
+    def test_sprung_waehrend_pruefung_kein_fehlalarm(self):
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(2.5)                                                  # Prüfung läuft gerade
+        self.st.taste_spulen(-60000)
+        self.lauf(15)
+        self.assertEqual(self.di.neustarts, [])
+        self.assertEqual(self.st.ist, ("spielt", "spotify:playlist:A"))
+
+    def test_vor_mehrmals_waehrend_pruefung_kein_neustart(self):
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(1.5)
+        for _ in range(4):                                              # Kind tippt alle 2 s auf "vor"
+            self.st.taste_springen(+1)
+            self.lauf(2)
+        self.lauf(15)
+        self.assertEqual(self.di.neustarts, [])
+        self.assertEqual(len(self.starts()), 1)                         # nie "frisch abspielen"
+        self.assertEqual(self.st.ist, ("spielt", "spotify:playlist:A"))
+
+    def test_vorgemerkter_sprung_verfaellt_bei_timer_pause(self):
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(10)
+        self.st.letzter_befehl = self.uhr.t                             # Befehlsabstand läuft noch
+        self.st.taste_springen(+1)
+        self.st.extern_pausiert()                                       # Schlummer-Timer pausiert
+        self.sp.pause("D")
+        self.lauf(3)
+        self.assertNotIn("naechster", [b[0] for b in self.sp.befehle])
+
+    def test_sprung_fehler_429_und_401(self):
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(10)
+        self.sp.antwort_429 = 1
+        self.st.taste_springen(+1)
+        self.lauf(1)
+        self.assertEqual(self.st.sprung, 0)                             # verworfen, kein Dauerfeuer
+        self.assertGreater(self.st.naechster_versuch, self.uhr.t)
+        self.lauf(5)
+        self.assertEqual(sum(1 for b in self.sp.befehle if b[0] == "naechster"), 1)
+
+    def test_ausgang_wechsel_spielt_an_derselben_stelle_weiter(self):
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(10)
+        gemacht = []
+
+        def ausfuehren(ziel):
+            gemacht.append(ziel)
+            self.di.neu_starten("raspotify")                            # Helfer startet Raspotify neu
+            return True
+        self.st.ausgang_umstellen("kopfhoerer", ausfuehren)
+        self.lauf(15)
+        self.assertEqual(gemacht, ["kopfhoerer"])
+        self.assertEqual(self.starts()[-1], ("uebertragen", None))      # gleiche Stelle
+        self.assertTrue(self.spielt("spotify:playlist:A"))
+        self.assertNotIn("abgestürzt", " ".join(self.meldungen))
+        self.assertEqual(self.di.neustarts, ["raspotify"])              # nur der eigene Neustart
+
+    def test_ausgang_wechsel_ohne_musik_startet_nichts(self):
+        self.st.ausgang_umstellen("kopfhoerer", lambda z: self.di.neu_starten("raspotify") or True)
+        self.lauf(10)
+        self.assertEqual(self.starts(), [])
+
+    def test_ausgang_wechsel_fehlgeschlagen_bleibt_ruhig(self):
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(10)
+        n = len(self.starts())
+        self.st.ausgang_umstellen("kopfhoerer", lambda z: False)
+        self.lauf(10)
+        self.assertEqual(len(self.starts()), n)
+        self.assertTrue(self.spielt("spotify:playlist:A"))
+
+    def test_wartezeit(self):
+        self.assertIsNone(self.st.wartezeit())
+        self.sp.modus = "weg"
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(10)
+        self.assertGreaterEqual(self.st.wartezeit(), 9)
+        self.assertEqual(self.st.problem_art, "geraet")
+        self.sp.modus = "gut"
+        self.lauf(15)
+        self.assertIsNone(self.st.wartezeit())
+        self.assertIsNone(self.st.problem_art)
+
+    def test_pausieren(self):
+        self.assertFalse(self.st.pausieren())
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(10)
+        self.assertTrue(self.st.pausieren())
+        self.lauf(2)
+        self.assertFalse(self.sp.spielend)
 
 
 class Gegenprobe(unittest.TestCase):

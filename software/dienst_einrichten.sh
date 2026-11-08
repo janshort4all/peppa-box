@@ -3,8 +3,12 @@
 #   peppa-player  Karten lesen, Spotify steuern
 #   peppa-web     Eltern-Seite (Zustand, Neustart, Ausschalten, Update), Port 80 und 8080
 # Dazu: sudo-Freigabe nur fuer die Befehle, die die Eltern-Seite braucht (/etc/sudoers.d/peppa-box),
-# und die Gruppen fuer Akku (i2c), Protokoll (adm), Stromversorgung (video) und Lautstaerke (audio).
-# Ausserdem den Lautsprecher (lautsprecher_einrichten.sh) und: Raspotify startet erst mit Netz.
+# und die Gruppen fuer Akku/Touch (i2c), Protokoll (adm), Stromversorgung (video), Lautstaerke (audio),
+# Ein-Taste/Klinke/Verstaerker (gpio), Kartenleser (spi) und Drehknopf (input).
+# Ausserdem den Lautsprecher (lautsprecher_einrichten.sh), die Bedienelemente in config.txt
+# (bedienung_einrichten.sh), den Helfer fuer die Kopfhoerer-Umschaltung (/usr/local/sbin/peppa-ausgang),
+# den Hardware-Waechter des Pi (startet bei einem Systemhaenger neu), die Sprachausgabe fuer Ansagen
+# ohne eigene Aufnahme (pico2wave) und: Raspotify startet erst mit Netz.
 # Und: WLAN-Stromsparen aus (sonst nach einer Weile nicht mehr erreichbar).
 # Aufruf (als normaler Benutzer, nicht als root):  sh ~/peppa-box/software/dienst_einrichten.sh
 # Kann beliebig oft wiederholt werden.
@@ -32,6 +36,8 @@ ExecStart=/usr/bin/python3 $ORDNER/peppa_player.py
 Environment=PYTHONUNBUFFERED=1
 Restart=always
 RestartSec=3
+# beim Ausschalten nicht 90 s warten, falls der Player haengt
+TimeoutStopSec=10
 # Waechter: meldet sich der Player 30 s nicht (haengende Schleife), startet systemd ihn neu
 WatchdogSec=30
 NotifyAccess=main
@@ -124,11 +130,16 @@ RestartSec=2
 WantedBy=multi-user.target
 EOF
 
+# --- Helfer fuer die Kopfhoerer-Umschaltung: root-eigene Kopie (die Datei im Repository darf der
+#     Benutzer aendern, die Kopie nicht; sudo erlaubt nur die Kopie mit genau diesen Argumenten)
+HELFER=/usr/local/sbin/peppa-ausgang
+sudo install -m 0755 -o root -g root "$ORDNER/peppa_ausgang.sh" "$HELFER"
+
 # --- sudo-Freigabe: genau diese Befehle, sonst nichts
 TMP="$(mktemp)"
 cat > "$TMP" <<EOF
 # Peppa Box: Befehle fuer Eltern-Seite (peppa-web) und Selbstreparatur des Players. Erzeugt von dienst_einrichten.sh.
-$BENUTZER ALL=(root) NOPASSWD: $SYSTEMCTL poweroff, $SYSTEMCTL reboot, $SYSTEMCTL restart peppa-player, $SYSTEMCTL restart raspotify, $SYSTEMCTL restart peppa-stille
+$BENUTZER ALL=(root) NOPASSWD: $SYSTEMCTL poweroff, $SYSTEMCTL reboot, $SYSTEMCTL restart peppa-player, $SYSTEMCTL restart raspotify, $SYSTEMCTL restart peppa-stille, $HELFER zeigen, $HELFER lautsprecher, $HELFER kopfhoerer
 EOF
 if sudo visudo -cf "$TMP" > /dev/null; then
     sudo install -m 0440 -o root -g root "$TMP" /etc/sudoers.d/peppa-box
@@ -138,7 +149,7 @@ fi
 rm -f "$TMP"
 
 # --- Gruppen (nur die, die es auf dem System gibt)
-for G in i2c adm video audio; do
+for G in i2c adm video audio gpio spi input; do
     if getent group "$G" > /dev/null; then sudo usermod -aG "$G" "$BENUTZER"; fi
 done
 
@@ -167,8 +178,32 @@ EOF
     echo "Raspotify wartet beim Start auf das Netz (wirkt ab dem naechsten Einschalten)."
 fi
 
-# --- Lautsprecher (I2S, Software-Lautstaerke, Raspotify-Ausgabe)
+# --- Hardware-Waechter des Pi: haengt das ganze System (Kernel, systemd) laenger als 15 s, startet der
+#     Pi neu (bcm2835: hoechstens 15 s). Wirkt ab dem naechsten Einschalten.
+sudo mkdir -p /etc/systemd/system.conf.d
+if [ ! -f /etc/systemd/system.conf.d/peppa-watchdog.conf ]; then
+    printf '%s\n' "# Peppa Box (erzeugt von dienst_einrichten.sh): Hardware-Waechter" "[Manager]" "RuntimeWatchdogSec=15" \
+        | sudo tee /etc/systemd/system.conf.d/peppa-watchdog.conf > /dev/null
+    echo "Hardware-Waechter eingerichtet (wirkt ab dem naechsten Einschalten)."
+fi
+
+# --- Sprachausgabe fuer Ansagen ohne eigene Aufnahme (pico2wave, deutsch). Ohne Internet oder bei
+#     Fehlern geht es ohne weiter: Dann spielt die Box kurze Toene statt Sprache.
+if ! command -v pico2wave > /dev/null && ! command -v espeak-ng > /dev/null; then
+    echo "Installiere Sprachausgabe (libttspico-utils) ..."
+    if ! sudo apt-get install -y --no-install-recommends libttspico-utils > /dev/null 2>&1; then
+        sudo apt-get update > /dev/null 2>&1 || true
+        sudo apt-get install -y --no-install-recommends libttspico-utils > /dev/null 2>&1 \
+            || sudo apt-get install -y --no-install-recommends espeak-ng > /dev/null 2>&1 \
+            || echo "Sprachausgabe nicht installiert (Ansagen ohne Aufnahme werden als Toene gespielt)."
+    fi
+fi
+
+# --- Lautsprecher (I2S, Software-Lautstaerke, Raspotify-Ausgabe) und Kopfhoerer-Mischer
 sh "$ORDNER/lautsprecher_einrichten.sh" || echo "Lautsprecher-Einrichtung mit Fehler beendet (siehe oben)."
+
+# --- Bedienelemente (Drehknopf, Pull-ups) in config.txt
+sh "$ORDNER/bedienung_einrichten.sh" || echo "Bedienung-Einrichtung mit Fehler beendet (siehe oben)."
 
 sudo systemctl daemon-reload
 sudo systemctl enable peppa-player peppa-web

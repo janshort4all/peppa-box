@@ -77,5 +77,88 @@ def auswerten(bus, shunt):
             "prozent": None if richtung == "laedt" else prozent(spannung),
             "shunt_mv": round(shunt_mv, 2), "richtung": richtung}
 
+
+def ansage_name(info):
+    """Welche Ansage den Akkustand beschreibt (Mond-Feld 5 s halten, Ein-Taste kurz drücken)."""
+    if not info or info.get("fehler"):
+        return "akku_unbekannt"
+    if info.get("richtung") == "laedt":
+        return "akku_laedt"
+    if info.get("richtung") == "voll":
+        return "akku_voll"
+    p = info.get("prozent")
+    if p is None:
+        return "akku_unbekannt"
+    return f"akku_{min(100, max(10, int(p / 10 + 0.5) * 10))}"
+
+
+class Akkuwache:
+    """Liest den Akku alle ABSTAND_S Sekunden (im Faden der Bedienung, damit sich I2C-Zugriffe und
+    die Ein-Taste an SCL nicht in die Quere kommen).
+      - Akkubetrieb und höchstens WARNEN_PROZENT: einmal „Mein Akku ist fast leer“ (wieder scharf
+        nach dem Laden)
+      - Akkubetrieb und AUS_SPANNUNG oder weniger bei AUS_MESSUNGEN Messungen in Folge: Ansage und
+        sauber ausschalten, bevor das Akku-Board hart abschaltet (schützt die SD-Karte)
+      - merkt den letzten Prozentwert ohne Netzteil (die Eltern-Seite zeigt ihn beim Laden an)
+    Schwellen festgelegt, nicht gemessen (Kennlinie oben: 3,50 V ≈ 15 %, 3,30 V ≈ 5 %)."""
+    ABSTAND_S = 15
+    WARNEN_PROZENT = 15
+    AUS_SPANNUNG = 3.30
+    AUS_MESSUNGEN = 3
+
+    def __init__(self, lesen=lesen, ansage=None, ausschalten=None, log=print):
+        self.lesen, self.ansage, self.ausschalten, self.log = lesen, ansage, ausschalten, log
+        self.wert = None
+        self.prozent_ohne_netzteil = None
+        self.zeit = None
+        self._naechste = 0.0
+        self._gewarnt = False
+        self._kritisch = 0
+        self._aus = False
+
+    def tick(self, t):
+        if t < self._naechste:
+            return
+        self._naechste = t + self.ABSTAND_S
+        try:
+            w = self.lesen()
+        except Exception as e:
+            w = {"fehler": repr(e)}
+        self.verarbeiten(w, t)
+
+    def verarbeiten(self, w, t):
+        self.zeit = t
+        if w.get("fehler"):
+            if self.wert is None or self.wert.get("fehler"):
+                self.wert = w                       # sonst den letzten guten Wert behalten
+            return
+        self.wert = w
+        richtung = w.get("richtung")
+        if richtung in ("laedt", "voll"):
+            self._gewarnt, self._kritisch = False, 0
+            return
+        if w.get("prozent") is not None:
+            self.prozent_ohne_netzteil = w["prozent"]
+        if w.get("prozent") is not None and w["prozent"] <= self.WARNEN_PROZENT and not self._gewarnt:
+            self._gewarnt = True
+            self.log(f"Akku schwach ({w['spannung']:.2f} V, ca. {w['prozent']} %).")
+            if self.ansage:
+                self.ansage("akku_schwach")
+        if w.get("spannung", 9) <= self.AUS_SPANNUNG:
+            self._kritisch += 1
+            if self._kritisch >= self.AUS_MESSUNGEN and not self._aus and self.ausschalten:
+                self._aus = True
+                self.log(f"Akku leer ({w['spannung']:.2f} V): Box wird sicher ausgeschaltet.")
+                self.ausschalten("Akku leer", "akku_leer")
+        else:
+            self._kritisch = 0
+
+    @property
+    def status(self):
+        if self.wert is None:
+            return None
+        return dict(self.wert, prozent_ohne_netzteil=self.prozent_ohne_netzteil)
+
+
 if __name__ == "__main__":
     print(lesen())

@@ -19,6 +19,7 @@ testen lässt (test_automatik.py).
 """
 import shutil
 import subprocess
+import threading
 import time
 
 FADE_S = 20             # so lange wird beim Schlummer-Timer ausgeblendet
@@ -26,6 +27,28 @@ ABFRAGE_S = 10          # Spotify fragen und Grenzen prüfen
 SEITE_AKTIV_S = 120     # so lange zählt eine geöffnete Eltern-Seite als Aktivität
 TIMER_GNADE_S = 60      # so lange nach Ablauf wird die Pause bei Fehlern wiederholt
 SYSTEMCTL = shutil.which("systemctl") or "/usr/bin/systemctl"
+TIMER_SPERRE = threading.RLock()  # Mond-Feld (Faden der Bedienung) und Ausblenden (Hauptfaden) nie gleichzeitig
+
+
+def timer_abbrechen(laut, einst):
+    """Schlummer-Timer löschen. War er schon beim Ausblenden, die Lautstärke wieder auf den alten Wert.
+    Gibt True zurück, wenn ein Timer lief. (Eltern-Seite und Mond-Feld nutzen dieselbe Funktion.)"""
+    with TIMER_SPERRE:
+        t = einst.lauf_lesen("timer")
+        if not t:
+            return False
+        einst.lauf_loeschen("timer")
+        if t.get("vorher") is not None:
+            laut.setzen(laut.aktive_ausgabe(), t["vorher"])
+        return True
+
+
+def timer_starten(minuten, laut, einst, jetzt=None):
+    """Neuer Schlummer-Timer (ersetzt einen laufenden)."""
+    with TIMER_SPERRE:
+        timer_abbrechen(laut, einst)
+        einst.lauf_schreiben("timer", {"ende": (time.time() if jetzt is None else jetzt) + minuten * 60,
+                                       "minuten": minuten, "vorher": None})
 
 
 def _poweroff():
@@ -98,6 +121,10 @@ class Automatik:
     # ------------------------------------------------------------ Schlummer-Timer
 
     def _timer(self, dev, aus, jetzt):
+        with TIMER_SPERRE:
+            self._timer_gesperrt(dev, aus, jetzt)
+
+    def _timer_gesperrt(self, dev, aus, jetzt):
         t = self.einst.lauf_lesen("timer")
         if not t:
             return

@@ -97,7 +97,7 @@ In einem neuen Chat die Zip anhängen und sagen: „Entpacke nach /home/claude/m
 | `v4/usbc_schnitt.py` | Schnitte durch den Halter der USB-C-Platine, Ansicht der Öffnung (`out/usbc_schnitt.png`) |
 | `v4/modifier.py` | Modifier-Körper „ohne Fuzzy Skin“ |
 | `v4/gitter/` | Logo-Vorlage (`peppa_box_logo.png`), Vektorisierung (`logo.py`), Bild zum Gitter (`render_gitter.py` → `out/gitter_ansicht.png`) |
-| `plan/gen_plan4.py` | erzeugt `verdrahtungsplan.html` |
+| `plan/gen_plan5.py` | erzeugt `verdrahtungsplan.html` (nach Baugruppen, Aufdrucke des Aufsatzes) |
 | `plan/einkaufsliste.html` | Einkaufsliste (Daten stehen im Skriptteil) |
 | `v4/out/` | aktuelle STL-Dateien, Bilder, PARAMETER.md, PRUEFBERICHT.md |
 
@@ -691,4 +691,12 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 - **Geprüft im Modell:** Stapel beginnt bei y 55,5, Trennwand der Kammer bei y 48 → der ganze Aufsatz liegt hinter der Kammer und ist bei abgenommenem Deckel von oben erreichbar. Die Säulen der beiden Kartenfach-Schrauben sind vom Deckelrahmen frei (0 mm³) → Rahmen kann vor dem Kartenfach montiert werden.
 - **Reihenfolge:** (1) Korpus leer: USB-C-Platine, Drehgeber und Klinke (vorher löten, auch die beiden Drucktaster-Beinchen des Drehgebers als Reserve), Riemen-Gegenplatte, Watte + Lautsprecher von vorn, Lautsprecherkabel durch die Trennwand. (2) Deckel-Einheit auf dem Tisch: Kupferband, Kappe Ein-Taste (vor dem Rahmen, Kragen liegt unter dem Deckel), Deckelrahmen (6), Kartenfach (2 von unten), RC522 einschieben, MPR121, Taster, 3 WAGO; Kabelstrang zum Boden gebündelt, Enden beschriftet. (3) Boden auf dem Tisch: Stapel, Jumper, WAGO + Elko, MAX, Steckkabel, Niederhalter; Test. (4) Korpus kopfüber, USB-C und Klinke einstecken, Boden einsetzen, 6 Schrauben. (5) Von oben: Lautsprecher, Drehgeber, Klinken-Öffner anklemmen; Deckel-Strang anklemmen, Zugentlastung; Test mit danebenliegendem Deckel. (6) Deckel einsetzen, 2 Schrauben hinten. (7) Hörprobe, dann Gitter, Buchstaben, Knopf.
 - **Wartung:** Deckel ab (2 Schrauben) reicht für alles außer Akku, SD-Karte und Stapel. Kabel der Deckel-Einheit so lang, dass der Deckel umgedreht neben der Box liegen kann (vorher mit Schnur abmessen); Reserve rechts hinten auf dem Boden ablegen, nicht über der Mitte (zwischen Klemmen und Kartenfach nur 4,8 mm).
-- **Noch offen vor dem Schließen:** 4 × M2,5 für den Stapel (Länge), Muttern Niederhalter, Montageband, Watte. Verdrahtungsplan nennt noch Pi-Pins und RC522 RST an Pin 22 (gilt: Klemme I) → auf Aufsatz-Bezeichnungen umstellen.
+- **Noch offen vor dem Schließen:** 4 × M2,5 für den Stapel (Länge), Muttern Niederhalter, Montageband, Watte. Verdrahtungsplan erledigt (Nachtrag 08.11. (2)).
+
+## Nachtrag 08.11.2026 (2) – Verdrahtungsplan neu (Baugruppen, Aufdrucke)
+
+- **Aufdrucke des Aufsatzes** (BerryBase RPI-BKFHAT, abgelesen am Produktfoto): Gruppe 1–8: 1 3.3V, 2 SDA1, 3 SCL1, 4 GND, 5 GND, 6 RX0, 7 TX0, 8 +5V. Gruppe A–H: A 3.3V, B MOSI, C MISO, D SCLK, E CE0, F CE1, G GND, H +5V. Gruppe I–P: I 3.3V, J PWM0, K PWM1, L PCMfs, M PCMi, N PCMo, O GND, P +5V. 40er-Leiste: Aufdruck wie Pi-Header mit P-Nummern (P04 … P27, SDA1, SCL1, TX0, RX0, MOSI …). Allgemeine GPIOs (P05, P17, P26, P27 …) gibt es nur auf der gelben Leiste.
+- Im Boden ist der Aufsatz gegenüber dem Produktfoto um 180° gedreht (Leiste vorne); passt zur Angabe „P26: obere Beschriftungsreihe, 2. von links“.
+- **Belegung (verbindlich):** Deckel-Strang D1 WAGO 3,3 V ← A · D2 WAGO GND B ← G · D3 WAGO SCL ← 3 · D4 RC522 SDA → E · D5 SCK → D · D6 MOSI → B · D7 MISO → C · D8 RST → I · D9 MPR121 SDA → 2 · D10 MPR121 INT → P05. Boden: B1 WAGO 5 V ← 8 · B2 WAGO GND A ← 4 · B3–B6 MAX BCLK/LRC/DIN/SD → P18/P19/P21/P16. Korpus: K1/K2 Drehgeber A/B → P17/P27 · K3 Drehgeber C → WAGO GND A · K4 Lautsprecher → MAX · K5 Klinke C → P26 · K6 Goobay → Pi-Klinke · K7 USB-C → Akku-Board. Jumper: 2, 3, 4, 8, A, B, C, D, E, G, I.
+- Ein-Taste: Beinchen unten rechts + unten links (Jan gemessen 08.11.: Durchgang nur gedrückt). Drehgeber-Taster als Reserve angelötet; später z. B. Klemme 5 (GND) + P06.
+- Plan: `plan/gen_plan5.py` → `plan/verdrahtungsplan.html`, veröffentlicht unter dem bisherigen Link (Artefakt Verdrahtungsplan). `gen_plan4.py` entfernt.

@@ -77,6 +77,8 @@ Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine St�
 6. Korpus-Prototyp: Boden einsetzen, Schrauben. Kammerdecke ist seit 04.11. ein Satteldach im Korpus (einteilig, Entscheidung Jan) – nach dem Druck außen auf ca. 95–125 mm Druckhöhe auf Linien ansehen.
 7. Gitter mit Logo: im Modell (Stand 06.11.: Variante A, Logo groß in der Mitte, aufgeklebte Buchstaben, geglättetes Feld). Offen: G-Code C13 auswerten (Fäden), Einstellungen festlegen, C14 drucken, dann Gitter und Buchstaben (G-Code vorher prüfen lassen); vor dem Kleben Probe hören.
 8. Optional: Lichtleiter für die Lade-LED, Ideen zur optischen Individualisierung (Seitenteile, Deckeleinlage, Magnete).
+9. **Sprachausgaben überarbeiten (Wunsch Jan 08.11.):** Alle Ansagen außer „bereit“ (Sprachausgabe pico2wave) klingen schrecklich. Ziel: alle Ansagen als eigene Aufnahmen in einheitlicher Stimme (wie „bereit“: ElevenLabs, Stimme „Helmut“), gleiche Lautheit. Texte in `software/ansagen/TEXTE.md`. Details folgen von Jan.
+10. Spotify-Anmeldung über die Eltern-Seite statt im Terminal (für künftiges Neuaufsetzen).
 
 ## Links (Artefakte, bleiben dauerhaft erhalten)
 

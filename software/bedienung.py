@@ -323,6 +323,73 @@ class Regler:
         return ziel
 
 
+# ====================================================================== Belegung für die Eltern-Seite
+
+def _s(sek):
+    """Sekunden deutsch: 0.7 -> '0,7 s', 2.0 -> '2 s'."""
+    return (f"{sek:g}".replace(".", ",")) + " s"
+
+
+def belegung(cfg=None):
+    """Was jedes Bedienelement kann, für die Eltern-Seite (Wunsch Jan 09.11.2026).
+
+    Gebaut aus denselben Konstanten, mit denen die Gesten oben ausgelöst werden, damit die Anzeige
+    nie von der Box abweicht. "doppelt" markiert Funktionen, die nur durch Halten erreichbar sind.
+    cfg: Einstellungen (für Schritt je Raste, Klick, Feld-Zuordnung); ohne cfg die Standardwerte.
+    """
+    b = (cfg or {}).get("bedienung", {})
+    felder = b.get("felder", {"zurueck": 0, "play": 1, "vor": 2, "schlaf": 3})
+    schritt = b.get("drehknopf_schritt", 2)
+    klick = b.get("klick", 30)
+    stufen = " → ".join(f"{m}" for m in TIMER_STUFEN) + " Min → aus"
+    spulen = f"{SPUL_MS // 1000} s je {_s(SPUL_TAKT_S)}"
+
+    def g(wie, was, doppelt=False):
+        return {"wie": wie, "was": was, "doppelt": doppelt}
+
+    def feld(f, symbol, name, gesten):
+        return {"id": f, "symbol": symbol, "name": name, "ort": f"Deckel, Touchfeld E{felder.get(f, '?')}",
+                "klick": bool(klick) and f in KLICK_FELDER, "gesten": gesten}
+
+    elemente = [
+        feld("zurueck", "⏮", "zurück", [
+            g("antippen", "vorheriger Titel"),
+            g(f"halten (ab {_s(LANG_SPRUNG_S)})", f"zurückspulen, {spulen}, solange gehalten", True)]),
+        feld("play", "⏯", "Play", [
+            g("antippen", "Pause / weiter (Karte bleibt liegen)"),
+            g(f"{_s(VON_VORN_S)} halten", "Karte von vorn (sonst immer an der gemerkten Stelle weiter)", True)]),
+        feld("vor", "⏭", "vor", [
+            g("antippen", "nächster Titel"),
+            g(f"halten (ab {_s(LANG_SPRUNG_S)})", f"vorspulen, {spulen}, solange gehalten", True)]),
+        feld("schlaf", "☾", "Mond", [
+            g("antippen", f"Schlummer-Timer weiterschalten: {stufen}, jeweils mit Ansage"),
+            g(f"{_s(AKKU_HALTEN_S)} halten", "Akkustand ansagen", True)]),
+        {"id": "drehknopf", "symbol": "◐", "name": "Drehknopf", "ort": "rechte Seite", "klick": False,
+         "gesten": [g("drehen", f"Lautstärke, {schritt} % je Raste; nie über die Höchstlautstärke "
+                                f"(Grenzen, Ruhezeit), nie unter {KNOPF_MIN} %")]},
+        {"id": "taste", "symbol": "⏻", "name": "Ein-Taste", "ort": "Deckel hinten rechts", "klick": False,
+         "gesten": [g("drücken, wenn aus", "einschalten"),
+                    g("kurz drücken", "Akkustand ansagen"),
+                    g(f"{_s(AUS_HALTEN_S)} halten", "„Tschüss“, Musik pausiert, beim Loslassen ausschalten", True)]},
+        {"id": "karte", "symbol": "▭", "name": "Karte", "ort": "Kartenschlitz", "klick": False,
+         "gesten": [g("einstecken", "Playlist der Karte startet an der gemerkten Stelle (zu Ende gehört: von vorn)"),
+                    g("herausnehmen", "Pause; Stelle wird gemerkt")]},
+        {"id": "klinke", "symbol": "⌇", "name": "Kopfhörer", "ort": "rechte Seite", "klick": False,
+         "gesten": [g("einstecken", "Ton über Kopfhörer, Lautsprecher stumm, eigene Höchstlautstärke"),
+                    g("herausziehen", "Ton wieder über den Lautsprecher")]},
+    ]
+    schutz = [
+        f"Berührungen unter {int(TIPP_MIN_S * 1000)} ms zählen nicht (kein Finger).",
+        "Mehrere Felder gleichzeitig (Hand auf dem Deckel) lösen nichts aus.",
+        f"Play und Mond länger als {_s(TIPP_MAX_S)} gehalten ohne eigene Funktion: nichts.",
+        f"Ein-Taste über {_s(TASTE_KLEMMT_S)} gedrückt oder schon beim Start gedrückt: schaltet nie aus.",
+        "In der Ruhezeit mit „keine Musik“ sagt Play nur die Ruhezeit an.",
+    ]
+    if klick:
+        schutz.append(f"Klick ({klick} %) bei zurück, Play und vor, nicht bei Mond und Ein-Taste.")
+    return {"elemente": elemente, "hinweise": schutz}
+
+
 # ====================================================================== Hardware-Abfrage
 
 class Hardware:

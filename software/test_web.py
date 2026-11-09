@@ -202,10 +202,40 @@ class Seite(unittest.TestCase):
     def test_tonausgabe_gilt_als_einrichtung(self):
         self.assertTrue({"software/ausgabe.py", "software/ereignis.py"} <= peppa_web.EINRICHTUNG)
 
+    def test_belegung_mit_doppelbelegung_und_einstellungen(self):
+        b = self.holen("/api/belegung")
+        el = {e["id"]: e for e in b["elemente"]}
+        self.assertEqual(list(el), ["zurueck", "play", "vor", "schlaf", "drehknopf", "taste", "karte", "klinke"])
+        doppelt = {i: [g["wie"] for g in e["gesten"] if g["doppelt"]] for i, e in el.items()}
+        self.assertEqual(doppelt["play"], ["2 s halten"])
+        self.assertEqual(doppelt["schlaf"], ["5 s halten"])
+        self.assertEqual(doppelt["taste"], ["2 s halten"])
+        self.assertEqual(doppelt["vor"], ["halten (ab 0,7 s)"])
+        self.assertEqual(doppelt["drehknopf"], [])
+        self.assertIn("15 → 30 → 45 → 60 Min → aus", el["schlaf"]["gesten"][0]["was"])
+        self.assertTrue(el["play"]["klick"] and not el["schlaf"]["klick"] and not el["taste"]["klick"])
+        self.assertEqual(el["play"]["ort"], "Deckel, Touchfeld E1")
+        self.assertIn("2 % je Raste", el["drehknopf"]["gesten"][0]["was"])
+        # Einstellungen wirken: Felder getauscht, Klick aus, 5 % je Raste
+        st, erg = self.senden("/api/einstellungen", {"bedienung": {"felder": {"play": 3, "schlaf": 1},
+                                                                   "klick": 0, "drehknopf_schritt": 5}})
+        self.assertTrue(erg["ok"], erg)
+        el = {e["id"]: e for e in self.holen("/api/belegung")["elemente"]}
+        self.assertEqual((el["play"]["ort"], el["schlaf"]["ort"]), ("Deckel, Touchfeld E3", "Deckel, Touchfeld E1"))
+        self.assertFalse(any(e["klick"] for e in el.values()))
+        self.assertIn("5 % je Raste", el["drehknopf"]["gesten"][0]["was"])
+
+    def test_belegung_folgt_den_zeiten_der_gesten(self):
+        import bedienung
+        with mock.patch.object(bedienung, "VON_VORN_S", 3.0), mock.patch.object(bedienung, "LANG_SPRUNG_S", 0.5):
+            el = {e["id"]: e for e in bedienung.belegung()["elemente"]}
+        self.assertEqual(el["play"]["gesten"][1]["wie"], "3 s halten")
+        self.assertEqual(el["zurueck"]["gesten"][1]["wie"], "halten (ab 0,5 s)")
+
     def test_seite_enthaelt_bedienung(self):
         with urllib.request.urlopen(self.url + "/", timeout=5) as r:
             html = r.read().decode()
-        for teil in ("id=\"bfelder\"", "bedienungSpeichern", "ansagenLaden", "/api/bedienung", "/api/diagnose"):
+        for teil in ("id=\"bfelder\"", "bedienungSpeichern", "ansagenLaden", "/api/bedienung", "/api/belegung", "belegdetails", "/api/diagnose"):
             self.assertIn(teil, html)
 
 

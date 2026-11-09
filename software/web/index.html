@@ -100,6 +100,16 @@ input.schalter:checked::after { transform:translateX(20px); }
 .ansage:first-child { border-top:0; }
 .ansage button { width:auto; min-height:38px; padding:6px 12px; margin:0; flex:none; }
 .ansage .q { font-size:12px; color:var(--leise); }
+.beleg { padding:10px 0; border-top:1px solid var(--rand); }
+.beleg:first-child { border-top:0; }
+.beleg .kopf { display:flex; align-items:baseline; gap:8px; }
+.beleg .kopf .sym { font-size:20px; width:1.4em; text-align:center; flex:none; }
+.beleg .kopf b { font-size:16px; }
+.beleg .ort { font-size:12px; color:var(--leise); margin:2px 0 0 calc(1.4em + 8px); }
+.beleg .geste { display:grid; grid-template-columns:7.5em 1fr; gap:8px; font-size:14px; margin:4px 0 0 calc(1.4em + 8px); }
+.beleg .geste .wie { color:var(--leise); }
+.beleg .geste.doppelt .wie { color:var(--orange); font-weight:600; }
+.marke { white-space:nowrap; font-size:11px; font-weight:600; color:var(--orange); border:1px solid var(--orange); border-radius:8px; padding:0 6px; }
 </style></head>
 <body><main>
 <div id="banner" class="versteckt">Keine Verbindung zur Box</div>
@@ -199,6 +209,11 @@ input.schalter:checked::after { transform:translateX(20px); }
     <div><div class="leise">Touch-Chip</div><div class="wert" id="btouch">–</div></div>
   </div>
   <div id="bhinweis"></div>
+  <details id="belegdetails" style="margin-top:8px"><summary>Was die Tasten können</summary>
+    <div class="leise klein" style="margin-top:6px">Orange = nur durch Halten erreichbar (Doppelbelegung). Die Zeiten kommen direkt von der Box.</div>
+    <div id="belegliste">wird geladen …</div>
+    <div id="beleghinweise" class="leise klein" style="margin-top:8px"></div>
+  </details>
   <details id="bdetails" style="margin-top:8px"><summary>Prüfen und einstellen</summary>
     <div class="leise klein" style="margin-top:6px">Abstand zur Grundlinie je Feld (Strich = Schwelle). Berühren muss deutlich über den Strich gehen, ohne Berührung deutlich darunter bleiben.</div>
     <div id="bdeltas"></div>
@@ -710,6 +725,22 @@ async function bedienungSpeichern() {
 $('bdetails').addEventListener('input', () => { geaendert.bedienung = true; }, true);
 $('bdetails').addEventListener('change', () => { geaendert.bedienung = true; }, true);
 $('bdetails').addEventListener('toggle', () => { if ($('bdetails').open) { einstellungenLaden(); bedienungLive(); } });
+
+async function belegungLaden() {
+  try {
+    const b = await holen('/api/belegung');
+    $('belegliste').innerHTML = b.elemente.map(e => {
+      const n = e.gesten.filter(x => x.doppelt).length;
+      return `<div class="beleg"><div class="kopf"><span class="sym">${e.symbol}</span><b>${esc(e.name)}</b>` +
+        (n ? `<span class="marke">${e.gesten.length} Funktionen</span>` : '') + '</div>' +
+        `<div class="ort">${esc(e.ort)}${e.klick ? ' · klickt' : ''}</div>` +
+        e.gesten.map(x => `<div class="geste${x.doppelt ? ' doppelt' : ''}"><span class="wie">${esc(x.wie)}</span><span>${esc(x.was)}</span></div>`).join('') +
+        '</div>';
+    }).join('');
+    $('beleghinweise').innerHTML = '<b>Schutz gegen Fehlbedienung</b><br>' + b.hinweise.map(esc).join('<br>');
+  } catch (e) { $('belegliste').textContent = 'Keine Verbindung zur Box.'; }
+}
+$('belegdetails').addEventListener('toggle', () => { if ($('belegdetails').open) belegungLaden(); });
 
 const QUELLE = {aufnahme: 'Aufnahme', sprache: 'Sprachausgabe', ton: 'nur Töne'};
 async function ansagenLaden() {

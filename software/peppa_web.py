@@ -26,6 +26,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import akku
 import automatik
+import bedienung
 import einstellungen
 import klang
 import lautstaerke
@@ -565,6 +566,12 @@ class Handler(BaseHTTPRequestHandler):
             einstellungen.lauf_beruehren("seite")
             einstellungen.lauf_beruehren("seite-bedienung")
             return self._antwort(200, bedienung_live())
+        if pfad == "/api/belegung":                     # was die Tasten können (inkl. Halten)
+            try:
+                cfg = einstellungen.laden()
+            except Exception:
+                cfg = None
+            return self._antwort(200, bedienung.belegung(cfg))
         if pfad == "/api/ansagen":
             return self._antwort(200, ansagen_liste())
         if pfad == "/api/zustand":

@@ -943,3 +943,11 @@ Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) l�
 - **Wunsch Jan:** Equalizer auf der Eltern-Seite grafisch, wie man ihn heute kennt.
 - **Umgesetzt (`web/index.html`, nur Seite, Schnittstelle `/api/klang` unverändert):** 10 Bänder als Punkte auf senkrechten Schienen, weiche Kurve durch alle Punkte (Fläche zur 0-dB-Linie getönt), dB-Raster −24 … +6 in 6-dB-Schritten, Frequenzen und Werte darunter. Bedienung: Punkt mit Finger/Maus ziehen (ganze Spalte greift, Seite scrollt dabei nicht), Wert-Blase beim Ziehen, **doppelt tippen = 0 dB**, Tastatur (Pfeile ±1, Bild ±3, Pos1/Ende, 0). Änderungen gehen nach 150 ms Ruhe an die Box (wie bisher). Vorlagen-Knöpfe unter der Grafik, die passende Vorlage ist orange markiert. Hell und dunkel geprüft (Chrome, 390 px, Ziehen und Tasten).
 - **Am Pi:** nur Update über die Eltern-Seite, Seite neu laden.
+
+## Nachtrag 09.11.2026 (16) – Eltern-Seite: Was die Tasten können
+
+- **Wunsch Jan:** Auf der Eltern-Seite sehen, welche Funktionen jede Taste hat, auch die Doppelbelegungen durch Halten.
+- **Umgesetzt:** Eltern-Seite → Bedienung → **„Was die Tasten können“** (aufklappbar). Je Bedienelement (zurück, Play, vor, Mond, Drehknopf, Ein-Taste, Karte, Kopfhörer): Ort, ob es klickt, und jede Geste mit Wirkung. Halte-Funktionen orange, Elemente mit Doppelbelegung tragen das Zeichen „2 Funktionen“ bzw. „3 Funktionen“ (Ein-Taste). Darunter die Regeln gegen Fehlbedienung (70 ms, mehrere Felder, klemmende Ein-Taste, Ruhezeit „keine Musik“).
+- **Quelle:** Neu `bedienung.belegung(cfg)`, abrufbar unter `GET /api/belegung`. Gebaut aus denselben Konstanten, die die Gesten auslösen (`LANG_SPRUNG_S`, `VON_VORN_S`, `AKKU_HALTEN_S`, `AUS_HALTEN_S`, `TIMER_STUFEN`, `KNOPF_MIN` …) und aus den Einstellungen (Touchfeld-Zuordnung, Schritt je Raste, Klick). Ändert sich eine Zeit im Code, stimmt die Anzeige automatisch.
+- Tests: 335 grün (neu: Belegung mit Doppelbelegungen, Einstellungen wirken, Zeiten folgen den Konstanten). Hell und dunkel in Chrome bei 390 px angesehen.
+- **Am Pi:** nur Update über die Eltern-Seite, Seite neu laden.

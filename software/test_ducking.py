@@ -73,6 +73,14 @@ class Mischer(unittest.TestCase):
         out = werte(self.strom(2.0))[0::2]
         self.assertEqual(out[-1], 10000)
 
+    def test_status_fuer_alle_lesbar(self):
+        os.umask(0o077)
+        try:
+            self.m.status_schreiben()
+        finally:
+            os.umask(0o022)
+        self.assertEqual(os.stat(self.m.status).st_mode & 0o777, 0o644)
+
     def test_abgelaufen_oder_doppelt_ignoriert(self):
         self.assertTrue(self.auftragen(b"\0" * 400))
         self.assertFalse(self.m.auftrag_pruefen())

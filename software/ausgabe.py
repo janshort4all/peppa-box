@@ -272,6 +272,7 @@ class Mischer:
             tmp = self.status + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump({"pid": os.getpid(), "t": self.uhr(), "quittung": self.quittung}, f)
+            os.chmod(tmp, 0o644)         # läuft unter Raspotify als root; der Player (anderer Benutzer) muss lesen
             os.replace(tmp, self.status)
             self._status_fehler = False
         except OSError as e:

@@ -927,6 +927,7 @@ Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) l�
 - **Bekannte Grenze (nicht gemessen):** Mit Kopfhörern **während Musik** kommt der Klick um den Puffer von aplay verzögert (vermutlich einige Zehntel Sekunden). Am Lautsprecher und ohne Musik sollte er praktisch sofort kommen. Am Pi hören; ist es störend, Puffer der Kopfhörer-Ausgabe verkleinern (Risiko Aussetzer am Pi 3A+).
 - Tests: 332 grün (neu `test_klick.py`, 22: welche Felder klicken, Mond/Ein-Taste nie, einmal je Berührung, Rauschen/mehrere Felder, Pegel 15 %, aus bei 0, Wege Lautsprecher/Kopfhörer/gemischt, Mischen ohne Absenken, Begrenzung, Einstellung).
 - **Am Pi:** Update über die Eltern-Seite, dann einmal `sh ~/peppa-box/software/dienst_einrichten.sh` (neue Tonausgabe für den Klick auf Kopfhörern während Musik; Lautsprecher klickt auch ohne). Probe von Hand: `python3 ~/peppa-box/software/toene.py klick`.
+- **Test am Pi (Jan, 22:41–22:45):** Erst kein Klick hörbar, obwohl der Player schon klicken wollte (`/dev/shm/peppa-box-klick-15.wav` vorhanden). `aplay` mit 15 % von Hand: hörbar, „laut genug“. Kurz danach klickt die Box beim Antippen hörbar; Ursache für den ersten Fehlschlag unbekannt (vermutlich von Musik überdeckt oder Player noch nicht neu gestartet). **Offen:** mit laufender Musik anhören, ggf. Pegel erhöhen; tritt es wieder auf, aplay-Fehler ins Protokoll schreiben.
 
 ## Nachtrag 09.11.2026 (14) – Meldung „Keine Verbindung zu Spotify“ blieb nach WLAN-Wechsel stehen
 

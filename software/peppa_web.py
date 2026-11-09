@@ -13,6 +13,7 @@ Start von Hand:     python3 ~/peppa-box/software/peppa_web.py
 Probelauf ohne Wirkung (sudo-Befehle werden nur angezeigt):  PEPPA_WEB_TROCKEN=1 python3 peppa_web.py
 """
 import datetime
+import glob
 import json
 import os
 import shutil
@@ -35,7 +36,10 @@ WEB = os.path.join(ORDNER, "web")
 STATUS_DATEI = einstellungen.lauf_pfad("status")           # schreibt der Player jede Sekunde
 BEDIENUNG_DATEI = einstellungen.lauf_pfad("bedienung")     # Bedienelemente live (Player, bis 5 × je Sekunde)
 EINRICHTUNG = {"software/dienst_einrichten.sh", "software/lautsprecher_einrichten.sh",
-               "software/bedienung_einrichten.sh", "software/peppa_ausgang.sh"}
+               "software/bedienung_einrichten.sh", "software/peppa_ausgang.sh",
+               "software/ausgabe.py", "software/ereignis.py"}     # die beiden laufen als installierte Kopie
+HELFER = "/usr/local/sbin/peppa-ausgang"
+DIENSTE = ("peppa-player", "peppa-web", "raspotify", "peppa-stille")
 KONFIG = os.path.expanduser("~/.config/peppa-box")
 VORHER_DATEI = os.path.join(KONFIG, "vorherige_version.txt")
 TROCKEN = os.environ.get("PEPPA_WEB_TROCKEN") == "1"
@@ -247,6 +251,74 @@ def meldungen():
     return {"ok": code == 0, "text": aus}
 
 
+def _journal(*extra, n):
+    args = ["journalctl", "--no-pager", "-o", "short-iso", "-n", str(n), *extra]
+    for d in DIENSTE:
+        args += ["-u", d]
+    return befehl(args, zeit=15)[1]
+
+
+def _ausgabe_jetzt():
+    """Welche Soundkarte gerade wirklich spielt (Kernel-Sicht)."""
+    zeilen = []
+    for pfad in sorted(glob.glob("/proc/asound/card*/pcm0p/sub0/status")):
+        karte = pfad.split("/")[3]
+        try:
+            with open(os.path.join("/proc/asound", karte, "id")) as f:
+                name = f.read().strip()
+            with open(pfad) as f:
+                inhalt = f.read().strip().splitlines()
+        except OSError:
+            continue
+        zeilen.append(f"{name}: " + (", ".join(z.strip() for z in inhalt[:2]) if inhalt else "?"))
+    return "\n".join(zeilen) or "(keine Angaben)"
+
+
+def diagnose():
+    """Alles, was für die Fehlersuche zählt, auf einer Seite (nur lesen, ändert nichts)."""
+    teile = []
+
+    def abschnitt(titel, holen):
+        try:
+            text = holen()
+        except Exception as e:                      # ein kaputter Abschnitt darf die Diagnose nicht verhindern
+            text = f"(Fehler: {e!r})"
+        teile.append(f"== {titel} ==\n{(text or '').strip() or '(leer)'}")
+
+    def vorheriger_lauf():
+        text = _journal("-b", "-1", n=200)
+        if any(t in text.lower() for t in ("-- no entries --", "no journal", "no persistent journal")):
+            return "(keins: das Protokoll überstand den Neustart nicht; mit dem neuen dienst_einrichten.sh schon)"
+        return text
+
+    def player():
+        z = player_zustand()
+        return json.dumps({k: z.get(k) for k in ("laeuft", "karte", "spotify_bereit", "problem", "ausgang",
+                                                 "raspotify", "leser")}, ensure_ascii=False, indent=1)
+
+    abschnitt("Version", lambda: " ".join(str(x) for x in version().values()))
+    abschnitt("Dienste", lambda: befehl([SYSTEMCTL, "show", "-p",
+                                         "Id,ActiveState,SubState,NRestarts,ActiveEnterTimestamp", *DIENSTE], zeit=10)[1])
+    abschnitt("Tonweg (Helfer)", lambda: mit_root(HELFER, "zeigen")[1]
+              + "\n(relais = Kopfhörer ohne Raspotify-Neustart)")
+    abschnitt("Player", player)
+    abschnitt("Soundkarten", lambda: _lesen("/proc/asound/cards"))
+    abschnitt("Ausgabe gerade (Kernel)", _ausgabe_jetzt)
+    abschnitt("Kopfhörer-Regler", lambda: befehl(["amixer", "-c", "Headphones", "sget", "PCM"], zeit=5)[1])
+    abschnitt("Verstärker SD (P16)", lambda: befehl(["pinctrl", "get", "16"], zeit=5)[1])
+    abschnitt("Protokoll seit dem Einschalten", lambda: _journal("-b", n=300))
+    abschnitt("Protokoll vom vorigen Lauf", vorheriger_lauf)
+    return {"ok": True, "text": "\n\n".join(teile)}
+
+
+def _lesen(pfad):
+    try:
+        with open(pfad) as f:
+            return f.read()
+    except OSError as e:
+        return repr(e)
+
+
 # ---------------------------------------------------------------- Aktionen
 
 def update_pruefen():
@@ -317,7 +389,11 @@ def nach_versionswechsel(geaendert, text):
 
 
 def musik_neu():
-    a = mit_root(SYSTEMCTL, "restart", "raspotify")
+    """Ton ganz neu: Raspotify anhalten, Mischer (peppa-stille) neu, Raspotify starten (Root-Helfer);
+    mit alter Einrichtung nur Raspotify. Danach den Player neu."""
+    a = mit_root(HELFER, "neustart")
+    if a[0] != 0:
+        a = mit_root(SYSTEMCTL, "restart", "raspotify")
     b = mit_root(SYSTEMCTL, "restart", "peppa-player")
     ok = a[0] == 0 and b[0] == 0
     return {"ok": ok, "meldung": "Musik startet neu (dauert einige Sekunden)." if ok
@@ -468,6 +544,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._antwort(200, einstellungen_lesen())
         if pfad == "/api/meldungen":
             return self._antwort(200, meldungen())
+        if pfad == "/api/diagnose":
+            return self._antwort(200, diagnose())
         name = "index.html" if pfad in ("/", "/index.html") else pfad.lstrip("/")
         datei = os.path.join(WEB, name)
         endung = os.path.splitext(name)[1]

@@ -247,6 +247,9 @@ input.schalter:checked::after { transform:translateX(20px); }
 <section class="box">
   <details id="mdetails"><summary>Letzte Meldungen der Box</summary>
     <pre id="mtext">wird geladen …</pre></details>
+  <details id="ddetails"><summary>Diagnose (für die Fehlersuche)</summary>
+    <div class="leise klein" style="margin-top:6px">Zustand von Ton, Diensten und Spotify und das Protokoll, auch vom vorigen Lauf. Nach einem Fehler öffnen und Screenshots machen.</div>
+    <pre id="dtext">wird geladen …</pre></details>
 </section>
 <div class="leise" id="probelauf" style="text-align:center"></div>
 </main>
@@ -441,6 +444,13 @@ async function ausfuehren(was, pfad, ziel) {
   } else setTimeout(zustand, 4000);
 }
 
+$('ddetails').addEventListener('toggle', async () => {
+  if (!$('ddetails').open) return;
+  $('dtext').textContent = 'wird geladen …';
+  try { const d = await holen('/api/diagnose'); $('dtext').textContent = d.text || '(keine Angaben)'; }
+  catch (e) { $('dtext').textContent = 'Keine Verbindung zur Box.'; }
+});
+
 $('mdetails').addEventListener('toggle', async () => {
   if (!$('mdetails').open) return;
   try { const m = await holen('/api/meldungen'); $('mtext').textContent = m.text || '(keine Meldungen)'; const k = $('mtext'); k.scrollTop = k.scrollHeight; }
@@ -610,7 +620,8 @@ function bedienungAnzeigen(b) {
     $('f-' + f).className = 'feld' + (!t.ok ? ' aus' : t.beruehrt.includes(f) ? ' an' : '');
     if (zu) $('fn-' + f).textContent = 'E' + zu[f];
   });
-  setze('btouch', t.ok ? 'bereit' : 'Fehler', t.ok ? 'gut' : 'rot');
+  setze('btouch', t.ok ? 'bereit' + (t.zu_kurz ? `<br><small>${t.zu_kurz}× Rauschen ignoriert</small>` : '') : 'Fehler',
+        t.ok ? 'gut' : 'rot');
   const d = b.drehknopf;
   if (!d.art) setze('bdreh', 'nicht gefunden', 'rot');
   else setze('bdreh', `${d.schritte} <small>Rasten<br>${d.letzter ? 'zuletzt ' + (d.letzter > 0 ? '+1' : '−1') : ''}${d.art === 'kernel' ? '' : ' · ohne Kernel-Treiber'}</small>`, d.art === 'kernel' ? 'gut' : 'warn');

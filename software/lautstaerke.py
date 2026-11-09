@@ -104,4 +104,9 @@ def setzen(ausgang, prozent):
     if not a:
         return False
     prozent = max(0, min(100, int(round(prozent))))
+    if ausgang == "kopfhoerer" and prozent > 0:
+        # Der Regler PCM der Pi-Klinke hat auch einen Ein/Aus-Schalter; steht der auf aus, bliebe es
+        # trotz Lautstärke still. Darum mit einschalten (ohne Schalter: Rückfall auf nur Lautstärke).
+        if _amixer("-M", "-c", a["karte"], "sset", a["regler"], f"{prozent}%", "unmute") is not None:
+            return True
     return _amixer("-M", "-c", a["karte"], "sset", a["regler"], f"{prozent}%") is not None

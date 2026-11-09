@@ -250,7 +250,8 @@ class Faeden(unittest.TestCase):
         pl = peppa_player.Player.__new__(peppa_player.Player)
         pl.jetzt, pl.log = time.monotonic, lambda t: None
         ok = mock.Mock(lebt=lambda: True)
-        pl.st = pl.regler = pl.ansager = ok
+        pl.st = pl.regler = pl.ansager = pl.rueck = ok
+        pl.sp = peppa_player.spotify
         pl.hw = mock.Mock(lebt=lambda: True, lebenszeichen=time.monotonic() - 40)
         pl.drehgeber = mock.Mock(lebenszeichen=time.monotonic())
         pl._dreh_faden = mock.Mock(is_alive=lambda: True)
@@ -263,6 +264,8 @@ class Faeden(unittest.TestCase):
         pl.jetzt, pl.log = time.monotonic, lambda t: None
         pl.st = mock.Mock(lebt=lambda: False)
         pl.regler = pl.ansager = mock.Mock(lebt=lambda: True)
+        pl.rueck = mock.Mock(lebt=lambda: False)
+        pl.sp = peppa_player.spotify
         pl.hw = mock.Mock(lebt=lambda: True, lebenszeichen=time.monotonic())
         pl.drehgeber = mock.Mock(lebenszeichen=time.monotonic())
         pl._dreh_faden = None
@@ -270,6 +273,17 @@ class Faeden(unittest.TestCase):
         pl._faeden_pruefen()
         pl.st.starten.assert_called_once()
         pl._dreh_starten.assert_called_once()
+        pl.rueck.starten.assert_called_once()                  # Empfang der Rückmeldung auch
+
+    def test_lokaler_beleg_erst_tonfluss_dann_rechenzeit(self):
+        rueck = mock.Mock()
+        cpu = mock.Mock(return_value=True)
+        messen = peppa_player.lokaler_beleg(rueck, cpu)
+        rueck.lokal.return_value = False                       # Ausgabe aktiv, kein Ton: zählt
+        self.assertIs(messen(), False)
+        cpu.assert_not_called()
+        rueck.lokal.return_value = None                        # alte Einrichtung: Rechenzeit
+        self.assertIs(messen(), True)
 
 
 if __name__ == "__main__":

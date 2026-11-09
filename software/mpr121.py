@@ -1,8 +1,13 @@
 """Touch-Chip MPR121 (Adafruit 1982, Adresse 0x5A) für die vier Kupferfelder im Deckel.
 
 Einstellungen nach Datenblatt / Application Note AN3944 und der Adafruit-Bibliothek:
-  Soft-Reset, Filter (MHD/NHD/NCL/FDL), Entprellen 1 Probe, Auto-Konfiguration für 3,3 V
-  (USL 200, TL 180, LSL 130), Grundlinie beim Start aus den ersten Messwerten (CL = 10).
+  Soft-Reset, Filter (MHD/NHD/NCL/FDL), Auto-Konfiguration für 3,3 V (USL 200, TL 180, LSL 130),
+  Grundlinie beim Start aus den ersten Messwerten (CL = 10).
+  Gegen Rauschen (Befund 09.11.2026: Abstand schwankt ohne Berührung um bis zu ±14, Schwelle 8,
+  das Play-Feld meldete ständig Phantom-Berührungen) stärker gemittelt als die Grundeinstellung:
+  erster Filter 18 statt 6 Proben, zweiter Filter 10 statt 4 Proben alle 2 ms, Berühren und
+  Loslassen je 2 Proben entprellt. Ein Messwert mittelt damit über ca. 20 ms; ein Finger bleibt
+  deutlich länger. Bei 4 Elektroden und höchstens 4 µs Ladezeit dauert eine Messrunde < 0,3 ms.
   Nur die benutzten Elektroden E0 … E3 laufen (schneller, weniger Störungen durch offene Eingänge).
 Berührt heißt: Messwert liegt um `schwelle` unter der Grundlinie, losgelassen bei `loslassen`.
 Durch 4 mm PETG ist das Signal schwach; die Eltern-Seite zeigt den Abstand (delta) live an, damit
@@ -22,6 +27,13 @@ SCHWELLEN = 0x41
 ENTPRELLEN, CDC, CDT, ECR = 0x5B, 0x5C, 0x5D, 0x5E
 AUTO0, USL, LSL, TL = 0x7B, 0x7D, 0x7E, 0x7F
 RESET = 0x80
+# Bitfelder siehe Datenblatt: ENTPRELLEN DR[6:4] DT[2:0]; CDC FFI[7:6] (00=6, 01=10, 10=18, 11=34)
+# und Ladestrom[5:0]; CDT Ladezeit[7:5], SFI[4:3] (00=4, 01=6, 10=10, 11=18), ESI[2:0] (000=1 ms,
+# 001=2 ms); AUTO0 FFI[7:6] (muss gleich FFI in CDC sein), RETRY[5:4], BVA[3:2], ARE, ACE.
+ENTPRELLEN_WERT = 0x22
+CDC_WERT = 0x90             # FFI 18, 16 µA
+CDT_WERT = 0x31             # 0,5 µs, SFI 10, ESI 2 ms
+AUTO0_WERT = 0x8B           # FFI 18, BVA 10, ARE, ACE
 OVCF = 0x8000
 
 
@@ -53,10 +65,10 @@ class MPR121:
                           (MHDF, 0x01), (NHDF, 0x05), (NCLF, 0x01), (FDLF, 0x00),
                           (NHDT, 0x00), (NCLT, 0x00), (FDLT, 0x00)):
             self._w(reg, wert)
-        self._w(ENTPRELLEN, 0x11)                   # Berühren und Loslassen je 1 Probe entprellen
-        self._w(CDC, 0x10)                          # 16 µA, 6 Proben erster Filter
-        self._w(CDT, 0x20)                          # 0,5 µs, 4 Proben zweiter Filter, alle 1 ms
-        self._w(AUTO0, 0x0B)                        # Auto-Konfiguration an, bei Abweichung erneut
+        self._w(ENTPRELLEN, ENTPRELLEN_WERT)        # Berühren und Loslassen je 2 Proben entprellen
+        self._w(CDC, CDC_WERT)                      # erster Filter 18 Proben, 16 µA
+        self._w(CDT, CDT_WERT)                      # 0,5 µs, zweiter Filter 10 Proben, alle 2 ms
+        self._w(AUTO0, AUTO0_WERT)                  # Auto-Konfiguration an (FFI wie in CDC), bei Abweichung erneut
         self._w(USL, 200)
         self._w(TL, 180)
         self._w(LSL, 130)

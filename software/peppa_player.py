@@ -39,6 +39,7 @@ import drehgeber
 import einstellungen
 import i2c
 import lautstaerke
+import rueckmeldung
 import spotify
 import toene
 from steuerung import LibrespotLast, Steuerung
@@ -127,6 +128,15 @@ def leser_einrichten():
     return leser
 
 
+def lokaler_beleg(rueck, cpu):
+    """Spielt Raspotify wirklich? Zuerst der Tonfluss aus ausgabe.py; ohne die Ausgabe (alte
+    Einrichtung) die Rechenzeit von librespot wie bisher."""
+    def messen():
+        wert = rueck.lokal()
+        return wert if wert is not None else cpu()
+    return messen
+
+
 def akku_lesen_gesperrt():
     with i2c.SPERRE:                            # nie gleichzeitig mit dem Touch-Chip
         return akku.lesen()
@@ -144,13 +154,16 @@ class Player:
         self.jetzt, self.schlaf, self.log = jetzt, schlaf, log
         self.zustand = {"karte": None, "link": None, "spotify_bereit": False, "problem": None, "leser": None}
         self.ansager = ansager or toene.Ansager(log=log)
-        self.st = Steuerung(sp, geraet=GERAET, log=log, lokal=LibrespotLast() if sp is spotify else None)
+        # Rückmeldung der Tonausgabe (ausgabe.py) und der librespot-Ereignisse (ereignis.py)
+        self.rueck = rueckmeldung.Rueckmeldung(log=log)
+        self.st = Steuerung(sp, geraet=GERAET, log=log,
+                            lokal=lokaler_beleg(self.rueck, LibrespotLast()) if sp is spotify else None)
         self.auto = automatik.Automatik(SpotifyFuerAutomatik(self.st, sp), lautstaerke, einstellungen, log=log,
                                         ausschalten=lambda: self.herunterfahren("Auto-Aus", None))
         self.regler = bedienung.Regler(lautstaerke, einstellungen, log=log)
         self.akkuwache = akku.Akkuwache(lesen=akku_lesen_gesperrt, ansage=self.ansager.sagen,
                                         ausschalten=self.herunterfahren, log=log)
-        self.ausgang = ausgang.Ausgang(self.st, lautstaerke, einstellungen, log=log)
+        self.ausgang = ausgang.Ausgang(self.st, lautstaerke, einstellungen, rueck=self.rueck, log=log)
         self.bed = bedienung.Bedienung(self.st, self.auto, self.regler, einstellungen, sagen=self.ansager.sagen,
                                        akku_info=lambda: self.akkuwache.status,
                                        herunterfahren=self.herunterfahren, karte=self.karte_info,
@@ -186,7 +199,9 @@ class Player:
     # ------------------------------------------------------------ Start
 
     def starten(self):
-        self.ausgang.start()                    # welchen Ausgang nutzt Raspotify? (vor der Startlautstärke)
+        if self.sp is spotify:
+            self.rueck.starten()                # vor allem anderen: Meldungen von Raspotify nicht verpassen
+        self.ausgang.start()                    # Umschalten eingerichtet? Beginnt mit dem Lautsprecher
         try:
             self.auto.beim_start()              # Startlautstärke, bevor irgendetwas spielt
         except Exception as e:
@@ -207,6 +222,8 @@ class Player:
                                     ("Bedienung", self.hw.lebt, self.hw.starten),
                                     ("Lautstärke", self.regler.lebt, self.regler.starten),
                                     ("Ansagen", self.ansager.lebt, self.ansager.starten),
+                                    ("Rückmeldung", lambda: self.sp is not spotify or self.rueck.lebt(),
+                                     self.rueck.starten),
                                     ("Drehknopf", lambda: self._dreh_faden is not None and self._dreh_faden.is_alive(),
                                      self._dreh_starten)):
             if not lebt():
@@ -393,6 +410,7 @@ class Player:
         self.zustand["karte"] = self.aktuell
         self.zustand["akku"] = self.akkuwache.status
         self.zustand["ausgang"] = self.ausgang.status
+        self.zustand["raspotify"] = self.rueck.status
         self.zustand["ansage"] = self.ansager.zuletzt
         self.zustand["faehrt_runter"] = self.faehrt_runter
         status_schreiben(self.zustand)

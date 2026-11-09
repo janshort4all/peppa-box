@@ -312,6 +312,51 @@ class Reparatur(Basis):
         self.assertEqual(self.di.neustarts[:2], ["peppa-stille", "raspotify"])
         self.assertTrue(self.spielt("spotify:playlist:A"))
 
+    def test_neustart_abstand_waechst(self):
+        # 09.11.2026: viele Raspotify-Neustarts kurz hintereinander -> Spotify antwortete minutenlang 502
+        zeiten = []
+        alt = self.di.neu_starten
+
+        def merken(name):
+            if name == "raspotify":
+                zeiten.append(self.uhr.t)
+            return alt(name)
+        self.di.neu_starten = merken
+        self.sp.heilt_bei_neustart = False
+        self.sp.modus = "502"
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(2400)
+        abstaende = [b - a for a, b in zip(zeiten, zeiten[1:])]
+        self.assertGreaterEqual(len(zeiten), 4)
+        self.assertGreaterEqual(abstaende[0], 120)
+        self.assertGreaterEqual(abstaende[1], 300)
+        self.assertGreaterEqual(abstaende[2], 600)
+        self.assertTrue(all(a >= 900 for a in abstaende[3:]))
+        self.sp.modus = "gut"                            # läuft wieder: Zähler zurück
+        self.lauf(400)                                   # Wiederholung höchstens alle 5 min
+        self.assertTrue(self.spielt("spotify:playlist:A"))
+        self.assertEqual(self.st.neustarts, 0)
+
+    def test_ton_neustart_ueber_helfer(self):
+        aufrufe = []
+        self.di.ton_neu = lambda: (aufrufe.append("ton") or self.di.neu_starten("raspotify") and (True, "ok"))
+        self.sp.modus = "zombie"
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(60)
+        self.assertEqual(aufrufe, ["ton"])
+        self.assertNotIn("peppa-stille", self.di.neustarts)       # macht der Helfer selbst
+        self.assertTrue(any("Ton neu gestartet" in m for m in self.meldungen))
+        self.assertTrue(self.spielt("spotify:playlist:A"))
+
+    def test_alter_helfer_ohne_ton_neustart(self):
+        self.di.ton_neu = lambda: (None, "Aufruf: peppa-ausgang zeigen|lautsprecher|kopfhoerer")
+        self.sp.modus = "zombie"
+        self.di.stille_aktiv = False
+        self.st.karte_auf("spotify:playlist:A")
+        self.lauf(60)
+        self.assertEqual(self.di.neustarts[:2], ["peppa-stille", "raspotify"])   # wie früher
+        self.assertTrue(self.spielt("spotify:playlist:A"))
+
     def test_kein_neustart_dauerfeuer_wenn_nichts_hilft(self):
         self.sp.heilt_bei_neustart = False
         self.sp.modus = "502"
@@ -544,36 +589,22 @@ class Tasten(Basis):
         self.lauf(5)
         self.assertEqual(sum(1 for b in self.sp.befehle if b[0] == "naechster"), 1)
 
-    def test_ausgang_wechsel_spielt_an_derselben_stelle_weiter(self):
+    def test_reparatur_auf_anforderung_spielt_an_derselben_stelle_weiter(self):
+        # z. B. die Tonausgabe folgt dem Kopfhörer-Wechsel nicht (ausgang.py)
         self.st.karte_auf("spotify:playlist:A")
         self.lauf(10)
-        gemacht = []
-
-        def ausfuehren(ziel):
-            gemacht.append(ziel)
-            self.di.neu_starten("raspotify")                            # Helfer startet Raspotify neu
-            return True
-        self.st.ausgang_umstellen("kopfhoerer", ausfuehren)
+        self.st.reparatur_anfordern("Tonausgabe folgt dem Ausgang nicht")
         self.lauf(15)
-        self.assertEqual(gemacht, ["kopfhoerer"])
+        self.assertEqual(self.di.neustarts, ["raspotify"])
         self.assertEqual(self.starts()[-1], ("uebertragen", None))      # gleiche Stelle
         self.assertTrue(self.spielt("spotify:playlist:A"))
         self.assertNotIn("abgestürzt", " ".join(self.meldungen))
-        self.assertEqual(self.di.neustarts, ["raspotify"])              # nur der eigene Neustart
 
-    def test_ausgang_wechsel_ohne_musik_startet_nichts(self):
-        self.st.ausgang_umstellen("kopfhoerer", lambda z: self.di.neu_starten("raspotify") or True)
+    def test_reparatur_ohne_musik_startet_nichts(self):
+        self.st.reparatur_anfordern("Test")
         self.lauf(10)
+        self.assertEqual(self.di.neustarts, ["raspotify"])
         self.assertEqual(self.starts(), [])
-
-    def test_ausgang_wechsel_fehlgeschlagen_bleibt_ruhig(self):
-        self.st.karte_auf("spotify:playlist:A")
-        self.lauf(10)
-        n = len(self.starts())
-        self.st.ausgang_umstellen("kopfhoerer", lambda z: False)
-        self.lauf(10)
-        self.assertEqual(len(self.starts()), n)
-        self.assertTrue(self.spielt("spotify:playlist:A"))
 
     def test_wartezeit(self):
         self.assertIsNone(self.st.wartezeit())

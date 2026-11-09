@@ -6,9 +6,13 @@
 # und die Gruppen fuer Akku/Touch (i2c), Protokoll (adm), Stromversorgung (video), Lautstaerke (audio),
 # Ein-Taste/Klinke/Verstaerker (gpio), Kartenleser (spi) und Drehknopf (input).
 # Ausserdem den Lautsprecher (lautsprecher_einrichten.sh), die Bedienelemente in config.txt
-# (bedienung_einrichten.sh), den Helfer fuer die Kopfhoerer-Umschaltung (/usr/local/sbin/peppa-ausgang),
-# den Hardware-Waechter des Pi (startet bei einem Systemhaenger neu), die Sprachausgabe fuer Ansagen
-# ohne eigene Aufnahme (pico2wave) und: Raspotify startet erst mit Netz.
+# (bedienung_einrichten.sh), den Ton-Helfer (/usr/local/sbin/peppa-ausgang: zeigen, Ton-Neustart),
+# die Tonausgabe fuer Raspotify (/usr/local/lib/peppa-box/ausgabe: Kopfhoerer ohne Raspotify-Neustart)
+# und das Ereignis-Programm (/usr/local/lib/peppa-box/ereignis), ein Protokoll, das Neustarts
+# uebersteht, den Hardware-Waechter des Pi (startet bei einem Systemhaenger neu), die Sprachausgabe
+# fuer Ansagen ohne eigene Aufnahme (pico2wave) und: Raspotify startet erst mit Netz.
+# Notfall-Rueckweg (Ton wieder direkt ueber ALSA, ohne Kopfhoerer-Umschaltung):
+#   PEPPA_ALSA_DIREKT=1 sh ~/peppa-box/software/dienst_einrichten.sh
 # Und: WLAN-Stromsparen aus (sonst nach einer Weile nicht mehr erreichbar).
 # Aufruf (als normaler Benutzer, nicht als root):  sh ~/peppa-box/software/dienst_einrichten.sh
 # Kann beliebig oft wiederholt werden.
@@ -135,11 +139,17 @@ EOF
 HELFER=/usr/local/sbin/peppa-ausgang
 sudo install -m 0755 -o root -g root "$ORDNER/peppa_ausgang.sh" "$HELFER"
 
+# --- Tonausgabe und Ereignis-Programm fuer Raspotify: root-eigene Kopien ausserhalb von /home
+#     (Raspotify darf /home nicht lesen). lautsprecher_einrichten.sh traegt sie in Raspotify ein.
+sudo install -d -m 0755 -o root -g root /usr/local/lib/peppa-box
+sudo install -m 0755 -o root -g root "$ORDNER/ausgabe.py" /usr/local/lib/peppa-box/ausgabe
+sudo install -m 0755 -o root -g root "$ORDNER/ereignis.py" /usr/local/lib/peppa-box/ereignis
+
 # --- sudo-Freigabe: genau diese Befehle, sonst nichts
 TMP="$(mktemp)"
 cat > "$TMP" <<EOF
 # Peppa Box: Befehle fuer Eltern-Seite (peppa-web) und Selbstreparatur des Players. Erzeugt von dienst_einrichten.sh.
-$BENUTZER ALL=(root) NOPASSWD: $SYSTEMCTL poweroff, $SYSTEMCTL reboot, $SYSTEMCTL restart peppa-player, $SYSTEMCTL restart raspotify, $SYSTEMCTL restart peppa-stille, $HELFER zeigen, $HELFER lautsprecher, $HELFER kopfhoerer
+$BENUTZER ALL=(root) NOPASSWD: $SYSTEMCTL poweroff, $SYSTEMCTL reboot, $SYSTEMCTL restart peppa-player, $SYSTEMCTL restart raspotify, $SYSTEMCTL restart peppa-stille, $HELFER zeigen, $HELFER neustart, $HELFER lautsprecher, $HELFER kopfhoerer
 EOF
 if sudo visudo -cf "$TMP" > /dev/null; then
     sudo install -m 0440 -o root -g root "$TMP" /etc/sudoers.d/peppa-box
@@ -176,6 +186,21 @@ EOF
         sudo systemctl enable NetworkManager-wait-online.service > /dev/null 2>&1 || true
     fi
     echo "Raspotify wartet beim Start auf das Netz (wirkt ab dem naechsten Einschalten)."
+fi
+
+# --- Protokoll ueber Neustarts hinweg behalten (vorher nur im Arbeitsspeicher: nach einem Neustart
+#     war die Ursache eines Fehlers weg, Befund 09.11.2026). Hoechstens 100 MB, schont die SD-Karte
+#     (journald schreibt gesammelt). Die Eltern-Seite zeigt unter "Diagnose" auch den vorigen Lauf.
+sudo mkdir -p /etc/systemd/journald.conf.d
+if [ ! -f /etc/systemd/journald.conf.d/peppa-box.conf ]; then
+    printf '%s\n' "# Peppa Box (erzeugt von dienst_einrichten.sh): Protokoll dauerhaft" "[Journal]" \
+        "Storage=persistent" "SystemMaxUse=100M" \
+        | sudo tee /etc/systemd/journald.conf.d/peppa-box.conf > /dev/null
+    sudo mkdir -p /var/log/journal
+    sudo systemd-tmpfiles --create --prefix /var/log/journal > /dev/null 2>&1 || true
+    sudo systemctl restart systemd-journald || true
+    sudo journalctl --flush > /dev/null 2>&1 || true
+    echo "Protokoll bleibt jetzt auch nach einem Neustart erhalten."
 fi
 
 # --- Hardware-Waechter des Pi: haengt das ganze System (Kernel, systemd) laenger als 15 s, startet der

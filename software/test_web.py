@@ -136,10 +136,51 @@ class Seite(unittest.TestCase):
             peppa_web.akku_zustand({"laeuft": False})
             lesen.assert_called_once()
 
+    def test_diagnose_nur_lesen_mit_allen_abschnitten(self):
+        self.player_status(problem=None, raspotify={"relais": True, "fliesst": True})
+        aufrufe = []
+
+        def befehl(args, zeit=15, cwd=None):
+            aufrufe.append(args)
+            if args[0] == "journalctl" and "-1" in args:
+                return 0, "-- No entries --"
+            return 0, f"Ausgabe von {args[0]}"
+        with mock.patch.object(peppa_web, "befehl", befehl):
+            d = self.holen("/api/diagnose")
+        self.assertTrue(d["ok"])
+        for teil in ("== Dienste ==", "== Tonweg (Helfer) ==", "== Player ==", '"fliesst": true',
+                     "== Ausgabe gerade (Kernel) ==", "== Kopfhörer-Regler ==", "== Verstärker SD (P16) ==",
+                     "== Protokoll seit dem Einschalten ==", "überstand den Neustart nicht"):
+            self.assertIn(teil, d["text"])
+        verboten = {"restart", "stop", "start", "reboot", "poweroff", "sset", "set"}
+        for args in aufrufe:                                     # nur lesen
+            self.assertFalse(verboten & set(args), args)
+        journale = [a for a in aufrufe if a[0] == "journalctl"]
+        self.assertTrue(all("raspotify" in a and "peppa-stille" in a for a in journale))
+
+    def test_musik_neu_mit_ton_neustart_und_rueckfall(self):
+        aufrufe = []
+
+        def root(*args):
+            aufrufe.append(args)
+            return (1, "sudo: a password is required") if args[-1] == "neustart" and self.alt else (0, "")
+        with mock.patch.object(peppa_web, "mit_root", root):
+            self.alt = False
+            self.assertTrue(peppa_web.musik_neu()["ok"])
+            self.assertEqual(aufrufe, [(peppa_web.HELFER, "neustart"), (peppa_web.SYSTEMCTL, "restart", "peppa-player")])
+            aufrufe.clear()
+            self.alt = True                                      # alter Helfer: wie früher nur Raspotify
+            self.assertTrue(peppa_web.musik_neu()["ok"])
+            self.assertEqual(aufrufe[1:], [(peppa_web.SYSTEMCTL, "restart", "raspotify"),
+                                           (peppa_web.SYSTEMCTL, "restart", "peppa-player")])
+
+    def test_tonausgabe_gilt_als_einrichtung(self):
+        self.assertTrue({"software/ausgabe.py", "software/ereignis.py"} <= peppa_web.EINRICHTUNG)
+
     def test_seite_enthaelt_bedienung(self):
         with urllib.request.urlopen(self.url + "/", timeout=5) as r:
             html = r.read().decode()
-        for teil in ("id=\"bfelder\"", "bedienungSpeichern", "ansagenLaden", "/api/bedienung"):
+        for teil in ("id=\"bfelder\"", "bedienungSpeichern", "ansagenLaden", "/api/bedienung", "/api/diagnose"):
             self.assertIn(teil, html)
 
 

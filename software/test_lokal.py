@@ -59,6 +59,20 @@ class MitLokalemBeleg(Basis):
         self.lauf(12)
         self.assertNotEqual(self.st.ist, ("spielt", "spotify:album:A"))
 
+    def test_web_api_stumm_aber_ton_fliesst(self):
+        """Die Web-API antwortet auf die Abfrage nicht (z. B. 502), die Tonausgabe meldet aber Ton:
+        dann läuft es (nicht 'Prüfung ohne Antwort', kein Neustart)."""
+        class ApiStumm(FakeSpotify):
+            def zustand(self):
+                raise OSError("502")
+        self.neu(ApiStumm, lambda: True)
+        self.st.karte_auf("spotify:album:A")
+        self.lauf(30)
+        self.assertEqual(self.st.ist, ("spielt", "spotify:album:A"))
+        self.assertFalse(any("ohne Antwort" in m for m in self.meldungen))
+        self.assertEqual(len(self.starts()), 1)
+        self.assertEqual(self.di.neustarts, [])
+
     def test_messfuehler_mit_fehler_stoert_nicht(self):
         def kaputt():
             raise RuntimeError("proc weg")

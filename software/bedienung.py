@@ -11,7 +11,8 @@ Belegung (Verdrahtungsplan 08.11.2026; welche Elektrode welches Feld ist, steht 
               kurz drücken: Akkustand ansagen
               2 s halten: „Tschüss“, Musik pausiert, beim Loslassen ausschalten
               (erst beim Loslassen, sonst weckte die noch gedrückte Taste den Pi sofort wieder)
-Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) lösen nichts aus;
+Schutz gegen Fehlbedienung: Berührungen unter 70 ms lösen nichts aus (Rauschen, kein Finger; das
+Protokoll zählt sie zusammengefasst); mehrere Felder gleichzeitig (Hand auf dem Deckel) lösen nichts aus;
 ein Feld, das über 60 s „berührt“ meldet, wird neu kalibriert; eine Ein-Taste, die schon beim Start
 gedrückt ist oder über 15 s gedrückt bleibt, schaltet nie aus.
 
@@ -36,6 +37,8 @@ LANG_SPRUNG_S = 0.7       # vor/zurück so lange halten = spulen
 SPUL_MS = 15000
 SPUL_TAKT_S = 0.8
 TIPP_MAX_S = 1.5          # länger gehalten = kein Antippen (Play, Mond)
+TIPP_MIN_S = 0.07         # kürzer = kein Finger, sondern Rauschen (Phantom-Berührung, Befund 09.11.2026)
+KURZ_MELDEN_S = 60.0      # ignorierte Phantom-Berührungen höchstens so oft zusammengefasst melden
 AKKU_HALTEN_S = 5.0
 AUS_HALTEN_S = 2.0
 TASTE_MIN_S = 0.05
@@ -66,6 +69,9 @@ class Bedienung:
         self.jetzt, self.uhr, self.log, self.timer, self.laut = jetzt, uhr, log, timer, laut
         self.gesten = {}                 # Feld -> {"start", "lang", "naechster"}
         self.mehrfach = False
+        self.kurz = {}                   # Feld -> Anzahl ignorierter Phantom-Berührungen seit der letzten Meldung
+        self.kurz_gesamt = 0
+        self._kurz_gemeldet = None
         self._angesagt = {}
         # Ein-Taste
         self.taste_gesperrt = None       # None = noch kein Wert; True = beim Start gedrückt, erst loslassen
@@ -115,12 +121,31 @@ class Bedienung:
         if self.mehrfach or g["lang"]:
             return
         dauer = t - g["start"]
+        if dauer < TIPP_MIN_S:
+            self._kurz(f, t)
+            return
         if f == "play" and dauer < TIPP_MAX_S:
             self._play()
         elif f in ("vor", "zurueck") and dauer < LANG_SPRUNG_S:
             self.st.taste_springen(+1 if f == "vor" else -1)
         elif f == "schlaf" and dauer < TIPP_MAX_S:
             self._timer_weiter()
+
+    def _kurz(self, f, t):
+        """Zu kurze Berührung: nichts auslösen, aber zählen (zeigt, ob ein Feld rauscht)."""
+        self.kurz[f] = self.kurz.get(f, 0) + 1
+        self.kurz_gesamt += 1
+        if self._kurz_gemeldet is None:
+            self._kurz_gemeldet = t - KURZ_MELDEN_S          # erste gleich melden
+        self.kurz_melden(t)
+
+    def kurz_melden(self, t, immer=False):
+        if not self.kurz or (not immer and t - self._kurz_gemeldet < KURZ_MELDEN_S):
+            return
+        teile = ", ".join(f"{k} {n}×" for k, n in sorted(self.kurz.items()))
+        self.log(f"Touch: zu kurze Berührungen ignoriert ({teile}) – Rauschen, kein Finger.")
+        self.kurz.clear()
+        self._kurz_gemeldet = t
 
     def _play(self):
         if self.auto.sperrt():
@@ -205,6 +230,7 @@ class Bedienung:
     # ------------------------------------------------------------ Zeitabhängiges (jeder Durchlauf)
 
     def tick(self, t):
+        self.kurz_melden(t)
         if self.mehrfach:
             return
         for f, g in self.gesten.items():
@@ -516,11 +542,16 @@ class Hardware:
 
     # ------------------------------------------------------------ Eltern-Seite (live)
 
+    def _zu_kurz(self):
+        n = getattr(self.bed, "kurz_gesamt", 0)
+        return n if isinstance(n, int) else 0
+
     def live(self):
         d = self.drehgeber
         return {
             "touch": {"ok": self.mpr is not None, "fehler": self.touch_fehler, "beruehrt": sorted(self.beruehrt),
-                      "maske": self.maske, "int": self.int_tief, "roh": self.roh},
+                      "maske": self.maske, "int": self.int_tief, "roh": self.roh,
+                      "zu_kurz": self._zu_kurz()},
             "taste": {"gedrueckt": bool(self.taste), "bekannt": self.gpio is not None},
             "drehknopf": {"art": d.art if d else None, "schritte": d.schritte if d else 0,
                           "letzter": d.letzter if d else 0},

@@ -8,10 +8,15 @@
 #      der Verstaerker wach bleibt (sonst knackt es bei jedem Abspielbeginn). Reihenfolge gegen das
 #      Knacken beim Ein-/Ausschalten: stumm -> Stille startet -> 0,5 s spaeter SD hoch (3,3 V, nicht offen: Befund 08.11.);
 #      beim Stoppen erst stumm, dann Stille aus.
-#   4. Raspotify gibt ueber "lautsprecher" aus und darf den Mischer mitbenutzen (kein eigenes IPC)
+#   4. Raspotify gibt den Ton ueber die Tonausgabe der Box aus (/usr/local/lib/peppa-box/ausgabe =
+#      ausgabe.py, librespot --backend subprocess): die spielt auf "lautsprecher" oder "kopfhoerer",
+#      je nach Vorgabe des Players, und wechselt ohne Raspotify-Neustart (seit 09.11.2026).
+#      Ereignisse von librespot gehen an den Player (/usr/local/lib/peppa-box/ereignis).
+#      Ist die Tonausgabe nicht installiert oder PEPPA_ALSA_DIREKT=1 gesetzt (Notfall-Rueckweg):
+#      direkt ueber ALSA auf "lautsprecher", dann ohne Kopfhoerer-Umschaltung.
+#      Raspotify darf den Mischer mitbenutzen (kein eigenes IPC).
 #   5. Kopfhoerer: eigener Mischer "kopfhoerer" auf der Pi-Klinke (Karte "Headphones"), damit Spotify
-#      und Ansagen gleichzeitig spielen koennen. Umgeschaltet wird vom Player (Klinke an P26) ueber
-#      /usr/local/sbin/peppa-ausgang; steht Raspotify schon auf "kopfhoerer", bleibt das so.
+#      und Ansagen gleichzeitig spielen koennen.
 # Die Karten werden gesucht (Name mit "hifiberry" bzw. "Headphones" in /proc/asound/cards), nicht angenommen.
 set -e
 CFG="${PEPPA_CONFIG_TXT:-/boot/firmware/config.txt}"
@@ -19,6 +24,8 @@ ASOUND="${PEPPA_ASOUND:-/etc/asound.conf}"
 RASPOTIFY="${PEPPA_RASPOTIFY:-/etc/raspotify/conf}"
 KARTEN="${PEPPA_KARTEN:-/proc/asound/cards}"
 SYSTEMD="${PEPPA_SYSTEMD:-/etc/systemd/system}"
+RELAIS="${PEPPA_RELAIS:-/usr/local/lib/peppa-box/ausgabe}"
+EREIGNIS="${PEPPA_EREIGNIS:-/usr/local/lib/peppa-box/ereignis}"
 BENUTZER="$(id -un)"
 NEUSTART=0
 SD_START="gpio=16=op,dl"        # beim Einschalten stumm; peppa-stille setzt SD danach hoch
@@ -178,16 +185,52 @@ else
     echo "Dienst peppa-stille eingerichtet."
 fi
 
-# --- 4. Raspotify auf den Lautsprecher, Mischer mitbenutzen
-if sudo test -f "$RASPOTIFY"; then   # Datei/Ordner nur mit sudo lesbar
-    if sudo grep -q '^LIBRESPOT_DEVICE="\(lautsprecher\|kopfhoerer\)"$' "$RASPOTIFY"; then
-        :                                    # kopfhoerer: vom Player umgeschaltet, so lassen
-    elif sudo grep -q '^LIBRESPOT_DEVICE=' "$RASPOTIFY"; then
-        sudo sed -i 's|^LIBRESPOT_DEVICE=.*|LIBRESPOT_DEVICE="lautsprecher"|' "$RASPOTIFY"
-        echo "Raspotify: Ausgabe auf Lautsprecher umgestellt."
+# --- 4. Raspotify: Ton ueber die Tonausgabe der Box, Ereignisse an den Player, Mischer mitbenutzen
+raspotify_setzen() {   # $1 = Name, $2 = Wert; vorhandene Zeile ersetzen, sonst anhaengen (Kommentare bleiben)
+    if sudo grep -q "^$1=" "$RASPOTIFY"; then
+        sudo sed -i "s|^$1=.*|$1=\"$2\"|" "$RASPOTIFY"
     else
-        echo 'LIBRESPOT_DEVICE="lautsprecher"' | sudo tee -a "$RASPOTIFY" > /dev/null
-        echo "Raspotify: Ausgabe auf Lautsprecher eingetragen."
+        echo "$1=\"$2\"" | sudo tee -a "$RASPOTIFY" > /dev/null
+    fi
+}
+relais_pruefen() {   # 1 s Stille durch die Tonausgabe, mit denselben Schutzregeln wie der Raspotify-Dienst
+    if [ -n "$PEPPA_RELAIS_PRUEFUNG" ]; then sh -c "$PEPPA_RELAIS_PRUEFUNG"; return; fi   # nur Tests
+    if [ -n "$PEPPA_TROCKEN" ]; then return 0; fi
+    if ! command -v systemd-run > /dev/null; then
+        head -c 176400 /dev/zero | sudo "$RELAIS" > /dev/null
+        return
+    fi
+    sudo systemd-run --quiet --wait --pipe --collect \
+        -p ProtectSystem=strict -p ProtectHome=true -p PrivateTmp=true -p PrivateUsers=true \
+        -p ProtectProc=invisible -p ProcSubset=pid -p NoNewPrivileges=true -p MemoryDenyWriteExecute=true \
+        -p LockPersonality=true -p RestrictRealtime=true -p RestrictNamespaces=true \
+        -p "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK" -p SystemCallArchitectures=native \
+        -p SystemCallFilter=@system-service -p "SystemCallFilter=~@privileged @resources" \
+        -p SystemCallErrorNumber=EPERM -p DevicePolicy=strict -p "DeviceAllow=char-alsa rw" \
+        -p "DeviceAllow=/dev/null rw" -p SupplementaryGroups=audio -p CapabilityBoundingSet= \
+        /bin/sh -c "head -c 176400 /dev/zero | $RELAIS" > /dev/null
+}
+if sudo test -f "$RASPOTIFY"; then   # Datei/Ordner nur mit sudo lesbar
+    RELAIS_OK=0
+    if [ -z "$PEPPA_ALSA_DIREKT" ] && [ -x "$RELAIS" ]; then
+        if relais_pruefen; then
+            RELAIS_OK=1
+        else
+            echo "WARNUNG: Probe der Tonausgabe ($RELAIS) fehlgeschlagen (Meldungen oben)."
+            echo "         Raspotify spielt deshalb weiter direkt ueber ALSA, ohne Kopfhoerer-Umschaltung."
+        fi
+    fi
+    if [ "$RELAIS_OK" = 1 ]; then
+        raspotify_setzen LIBRESPOT_BACKEND subprocess
+        raspotify_setzen LIBRESPOT_DEVICE "$RELAIS"
+        echo "Raspotify: Ton ueber die Tonausgabe der Box (Kopfhoerer ohne Neustart)."
+    else
+        raspotify_setzen LIBRESPOT_BACKEND alsa
+        raspotify_setzen LIBRESPOT_DEVICE lautsprecher
+        echo "Raspotify: Ton direkt ueber ALSA auf den Lautsprecher (ohne Kopfhoerer-Umschaltung)."
+    fi
+    if [ -x "$EREIGNIS" ]; then
+        raspotify_setzen LIBRESPOT_ONEVENT "$EREIGNIS"
     fi
 else
     echo "Raspotify-Einstellungen ($RASPOTIFY) nicht gefunden, Ausgabe nicht umgestellt."

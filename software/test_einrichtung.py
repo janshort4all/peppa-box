@@ -110,7 +110,9 @@ class Syntax(unittest.TestCase):
     def test_dienst_einrichten_kennt_helfer_und_gruppen(self):
         with open(os.path.join(HIER, "dienst_einrichten.sh")) as f:
             s = f.read()
-        for teil in ("$HELFER zeigen, $HELFER lautsprecher, $HELFER kopfhoerer", "gpio spi input",
+        for teil in ("$HELFER zeigen, $HELFER neustart, $HELFER lautsprecher, $HELFER kopfhoerer",
+                     "/usr/local/lib/peppa-box/ausgabe", "/usr/local/lib/peppa-box/ereignis",
+                     "Storage=persistent", "gpio spi input",
                      "bedienung_einrichten.sh", "RuntimeWatchdogSec=15", "libttspico-utils", "TimeoutStopSec="):
             self.assertIn(teil, s)
 

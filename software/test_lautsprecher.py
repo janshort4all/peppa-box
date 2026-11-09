@@ -217,7 +217,7 @@ class Einrichtungsskript(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
         self.assertEqual(self.lesen(self.cfg), "dtparam=audio=on\n[pi5]\nfoo=1\n")
 
-    def test_kopfhoerer_mischer_und_umgeschaltet_bleibt(self):
+    def test_kopfhoerer_mischer_und_alter_kopfhoerer_ausgang_zurueck(self):
         self.schreiben(self.cfg, CONFIG_TXT)
         self.schreiben(self.rasp, RASPOTIFY.replace('"plughw:CARD=Headphones,DEV=0"', '"kopfhoerer"'))
         self.schreiben(self.cards, KARTEN_MIT)
@@ -228,7 +228,57 @@ class Einrichtungsskript(unittest.TestCase):
         self.assertIn('pcm "hw:CARD=Headphones,DEV=0"', a)
         self.assertIn("ipc_key 5151", a)
         self.assertLess(a.index("pcm.kopfhoerer"), a.index("# <<< peppa-box lautsprecher"))
-        self.assertIn('LIBRESPOT_DEVICE="kopfhoerer"', self.lesen(self.rasp))       # vom Player umgeschaltet
+        rasp = self.lesen(self.rasp)
+        self.assertIn('LIBRESPOT_DEVICE="lautsprecher"', rasp)     # ohne Tonausgabe nie auf den Kopfhörern
+        self.assertIn('LIBRESPOT_BACKEND="alsa"', rasp)
+
+    def tonausgabe_anlegen(self):
+        for name in ("ausgabe", "ereignis"):
+            self.skript(self.tmp.name, name, "exit 0")
+        self.env.update(PEPPA_RELAIS=os.path.join(self.tmp.name, "ausgabe"),
+                        PEPPA_EREIGNIS=os.path.join(self.tmp.name, "ereignis"))
+
+    def test_mit_tonausgabe_und_ereignissen(self):
+        self.tonausgabe_anlegen()
+        self.schreiben(self.cfg, CONFIG_TXT)
+        self.schreiben(self.rasp, RASPOTIFY + '#LIBRESPOT_ONEVENT=\nLIBRESPOT_BACKEND="alsa"\n')
+        self.schreiben(self.cards, KARTEN_MIT)
+        r = self.lauf()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        rasp = self.lesen(self.rasp)
+        self.assertIn('\nLIBRESPOT_BACKEND="subprocess"\n', rasp)
+        self.assertIn(f'\nLIBRESPOT_DEVICE="{self.tmp.name}/ausgabe"\n', rasp)
+        self.assertIn(f'\nLIBRESPOT_ONEVENT="{self.tmp.name}/ereignis"\n', rasp)
+        self.assertIn("#LIBRESPOT_ONEVENT=\n", rasp)                       # Kommentar bleibt
+        self.assertEqual(rasp.count("LIBRESPOT_BACKEND="), 1)
+        self.assertEqual(rasp.count("\nLIBRESPOT_DEVICE="), 1)
+        r = self.lauf()                                                    # wiederholbar, ändert nichts
+        self.assertEqual(self.lesen(self.rasp), rasp)
+
+    def test_probe_der_tonausgabe_scheitert_alsa_direkt(self):
+        self.tonausgabe_anlegen()
+        self.schreiben(self.cfg, CONFIG_TXT)
+        self.schreiben(self.rasp, RASPOTIFY)
+        self.schreiben(self.cards, KARTEN_MIT)
+        self.env["PEPPA_RELAIS_PRUEFUNG"] = "exit 1"
+        r = self.lauf()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("Probe der Tonausgabe", r.stdout)
+        rasp = self.lesen(self.rasp)
+        self.assertIn('LIBRESPOT_BACKEND="alsa"', rasp)
+        self.assertIn('\nLIBRESPOT_DEVICE="lautsprecher"\n', rasp)
+
+    def test_notfall_rueckweg_alsa_direkt(self):
+        self.tonausgabe_anlegen()
+        self.schreiben(self.cfg, CONFIG_TXT)
+        self.schreiben(self.rasp, RASPOTIFY)
+        self.schreiben(self.cards, KARTEN_MIT)
+        self.env["PEPPA_ALSA_DIREKT"] = "1"
+        r = self.lauf()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        rasp = self.lesen(self.rasp)
+        self.assertIn('LIBRESPOT_BACKEND="alsa"', rasp)
+        self.assertIn('\nLIBRESPOT_DEVICE="lautsprecher"\n', rasp)
 
     def test_ohne_kopfhoerer_karte_nur_lautsprecher(self):
         self.schreiben(self.cfg, CONFIG_TXT)

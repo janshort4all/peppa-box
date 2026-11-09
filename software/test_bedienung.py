@@ -156,6 +156,28 @@ class Felder(Basis):
         self.tippen("play", dauer=2.0)
         self.assertEqual(self.st.aufrufe, [])
 
+    def test_phantom_beruehrung_loest_nichts_aus(self):
+        # Befund 09.11.2026: Play-Feld meldete ohne Finger ständig kurze Berührungen
+        log = []
+        self.b.log = log.append
+        for feld in ("play", "vor", "zurueck", "schlaf", "play"):
+            self.tippen(feld, dauer=0.04)
+            self.uhr.t += 1
+        self.assertEqual(self.st.aufrufe, [])
+        self.assertEqual(self.gesagt, [])
+        self.assertEqual(self.b.kurz_gesamt, 5)
+        self.assertEqual(len([z for z in log if "zu kurze" in z]), 1)     # nur einmal je Minute gemeldet
+        self.lauf(61)
+        self.assertEqual(len([z for z in log if "zu kurze" in z]), 2)     # Rest zusammengefasst
+        self.assertIn("play 1×", log[-1])
+        self.lauf(120)
+        self.assertEqual(len([z for z in log if "zu kurze" in z]), 2)     # nichts Neues, keine Meldung
+
+    def test_echtes_antippen_ab_70_ms(self):
+        self.tippen("play", dauer=0.08)
+        self.tippen("vor", dauer=0.08)
+        self.assertEqual(self.st.aufrufe, [("play",), ("springen", 1)])
+
     def test_vor_zurueck_antippen(self):
         self.tippen("vor")
         self.tippen("zurueck")

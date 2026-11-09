@@ -135,8 +135,13 @@ class MPR121Test(unittest.TestCase):
         self.assertEqual(self.bus.schreibe[-1], (mpr121.ECR, 0x84))          # nur E0..E3, CL=10
         self.assertEqual((w[mpr121.SCHWELLEN], w[mpr121.SCHWELLEN + 1]), (7, 3))
         self.assertEqual((w[mpr121.SCHWELLEN + 22], w[mpr121.SCHWELLEN + 23]), (7, 3))
-        self.assertEqual((w[mpr121.AUTO0], w[mpr121.USL], w[mpr121.TL], w[mpr121.LSL]), (0x0B, 200, 180, 130))
-        self.assertEqual(w[mpr121.ENTPRELLEN], 0x11)
+        self.assertEqual((w[mpr121.AUTO0], w[mpr121.USL], w[mpr121.TL], w[mpr121.LSL]), (0x8B, 200, 180, 130))
+        self.assertEqual(w[mpr121.ENTPRELLEN], 0x22)
+        # stärker gemittelt (Phantom-Berührungen 09.11.): FFI 18, SFI 10, ESI 2 ms
+        self.assertEqual((w[mpr121.CDC], w[mpr121.CDT]), (0x90, 0x31))
+        self.assertEqual(w[mpr121.CDC] >> 6, w[mpr121.AUTO0] >> 6)       # FFI muss übereinstimmen
+        self.assertEqual((w[mpr121.CDT] >> 3) & 3, 2)                    # SFI = 10 Proben
+        self.assertEqual(w[mpr121.CDT] & 7, 1)                           # ESI = 2 ms
 
     def test_kein_mpr121(self):
         self.bus.reg[mpr121.CDT] = 0x00

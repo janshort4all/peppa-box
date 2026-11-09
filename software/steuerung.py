@@ -17,17 +17,23 @@ Abgefangen wird
                            die vor "bereit" aufgelegt wird, startet, sobald die Box bereit ist.
   Raspotify abgestürzt     Neustart wird am Startzeitpunkt des Dienstes erkannt; lag eine Karte
   während Musik läuft      und lief Musik, geht es an derselben Stelle weiter.
-  Ton-Mischer weg          Läuft peppa-stille nicht, wird es vor Raspotify neu gestartet.
+  Ton-Mischer weg          Reparatur = Ton-Neustart über den Root-Helfer: Raspotify anhalten,
+                           peppa-stille (Mischer, Verstärker) neu, Raspotify starten. Ohne neuen
+                           Helfer wie früher: peppa-stille nur, wenn es nicht läuft, dann Raspotify.
+  Lokaler Beleg            Die Tonausgabe meldet, ob wirklich Ton fließt (rueckmeldung.py); das
+                           zählt bei der Prüfung mehr als die Web-API (die irrt sich manchmal).
   401 / 429 / Netz weg     Token erneuern / Wartezeit von Spotify einhalten / mit wachsendem
                            Abstand wiederholen (nie Dauerfeuer).
   Pause durch Automatik    (Schlummer-Timer, Ruhezeit) gilt als gewollt: keine "Reparatur".
   Tasten im Deckel         Play = Pause/Weiter bei liegender Karte (Karte weg nach Tasten-Pause
                            ändert nichts), vor/zurück = Titel springen, Halten = spulen. Befehle
                            werden zusammengefasst und nur gesendet, solange Musik zur Karte läuft.
-  Kopfhörer ein/aus        Raspotify wird mit dem anderen Ausgang neu gestartet (ausfuehren() vom
-                           Player); lief Musik, geht es an derselben Stelle weiter.
+  Kopfhörer ein/aus        betrifft die Steuerung nicht mehr: die Tonausgabe (ausgabe.py) wechselt
+                           den Ausgang ohne Neustart (seit 09.11.2026). Nur wenn sie hängt, fordert
+                           ausgang.py eine Reparatur an (reparatur_anfordern).
 
-Grenzen: Raspotify-Neustarts höchstens alle NEUSTART_ABSTAND Sekunden. Ist die Spotify-Anmeldung
+Grenzen: Raspotify-Neustarts höchstens alle NEUSTART_ABSTAND Sekunden; hilft das nicht, wächst der
+Abstand bis 15 min (NEUSTART_ABSTAENDE). Ist die Spotify-Anmeldung
 abgelaufen, hilft nur spotify_login.py; das steht dann im Zustand für die Eltern-Seite.
 
 Alles Äußere (Spotify, Dienste, Uhr) wird übergeben, damit sich die Abläufe mit simulierter Zeit
@@ -49,12 +55,15 @@ GERAET_FEHLT_NEUSTART = 45     # Karte wartet, Gerät fehlt so lange -> Raspotif
 LEERLAUF_FEHLT_NEUSTART = 180  # ohne Karte: Gerät fehlt so lange -> Raspotify neu starten
 LEERLAUF_PRUEFUNG = 60     # im Leerlauf so oft nach dem Gerät sehen
 NEUSTART_ABSTAND = 120     # höchstens ein Raspotify-Neustart je ... Sekunden
+# Bleibt Musik trotz Neustart aus, wächst der Abstand: Viele Neustarts kurz hintereinander machen es
+# schlimmer (09.11.2026: danach antwortete Spotify minutenlang mit 502, auch nach weiteren Neustarts).
+NEUSTART_ABSTAENDE = (NEUSTART_ABSTAND, 300, 600, 900)
 NACH_NEUSTART = 6          # s nach einem Neustart, bevor nach dem Gerät gefragt wird
 WACHE_ABSTAND = 5          # s: Startzeit von Raspotify vergleichen (Absturz erkennen, nur lokal)
 WARTEN = [2, 5, 15, 30, 60, 120, 300]   # Abstände bei wiederholten Fehlern
-NACH_UMSTELLUNG = 3        # s nach dem Ausgangswechsel, bevor nach dem Gerät gefragt wird
 SPRUNG_MAX = 5             # so viele Titelsprünge werden höchstens vorgemerkt
 SYSTEMCTL = shutil.which("systemctl") or "/usr/bin/systemctl"
+HELFER = "/usr/local/sbin/peppa-ausgang"
 LOKAL_MIN_PROZENT = 2.0     # librespot rechnet mindestens so viel (% eines Kerns) -> dekodiert gerade Musik
 
 
@@ -122,6 +131,16 @@ class Dienste:
         code, aus = self._lauf(["sudo", "-n", SYSTEMCTL, "restart", name], zeit=60)
         return code == 0, aus
 
+    def ton_neu(self):
+        """Raspotify anhalten, peppa-stille neu, Raspotify starten (Root-Helfer). (ok, Text); ok None =
+        Helfer kann das noch nicht (alte Einrichtung)."""
+        code, aus = self._lauf(["sudo", "-n", HELFER, "neustart"], zeit=90)
+        if code == 0:
+            return True, aus
+        if "Aufruf:" in aus or "password" in aus.lower() or "not allowed" in aus.lower() or "Errno 2" in aus:
+            return None, aus
+        return False, aus
+
     def aktiv(self, name):
         """True/False; None, wenn es den Dienst nicht gibt."""
         code, aus = self._lauf([SYSTEMCTL, "show", "-p", "LoadState,ActiveState", name], zeit=10)
@@ -163,6 +182,7 @@ class Steuerung:
         self.letzter_start = -1e9
         self.fehler = 0             # Fehlschläge für den aktuellen Wunsch
         self.letzter_neustart = -1e9
+        self.neustarts = 0          # Neustarts seit der letzten nachweislich laufenden Musik
         self.neustart_wartet_bis = 0.0
         self.pruef = None           # dict während der Prüfung
         self.naechste_leerlauf = 0.0
@@ -177,7 +197,7 @@ class Steuerung:
         self.wunsch_zeit = None     # seit wann der aktuelle "spielen"-Wunsch besteht
         self.sprung = 0             # vorgemerkte Titelsprünge (+ vor, - zurück)
         self.spul_ms = 0            # vorgemerktes Spulen
-        self.umstellung = None      # (ziel, ausfuehren): Ausgang wechseln
+        self.reparatur = None       # Grund, wenn ein anderer Teil (Ausgang) Raspotify neu haben will
 
     # ------------------------------------------------------------ vom Kartenleser / der Automatik
 
@@ -234,11 +254,11 @@ class Steuerung:
             self._sperre.notify_all()
             return True
 
-    def ausgang_umstellen(self, ziel, ausfuehren):
-        """Kopfhörer ein/aus: ausfuehren(ziel) stellt Raspotify um (Neustart) und gibt True/False
-        zurück. Läuft im Faden der Steuerung, damit nie zwei Neustarts gleichzeitig laufen."""
+    def reparatur_anfordern(self, grund):
+        """Raspotify (mit Mischer) neu starten lassen, z. B. wenn die Tonausgabe hängt. Läuft im Faden
+        der Steuerung (nie zwei Neustarts gleichzeitig); lief Musik, geht es an derselben Stelle weiter."""
         with self._sperre:
-            self.umstellung = (ziel, ausfuehren)
+            self.reparatur = grund
             self._sperre.notify_all()
 
     def wartezeit(self):
@@ -304,8 +324,8 @@ class Steuerung:
     def tick(self):
         jetzt = self.jetzt()
         self._wache(jetzt)
-        if self.umstellung is not None:
-            self._umstellen(jetzt)
+        if self.reparatur is not None:
+            self._reparieren(jetzt)
             return
         if jetzt < self.naechster_versuch or jetzt < self.neustart_wartet_bis:
             return
@@ -551,9 +571,11 @@ class Steuerung:
         probe = None
         if z is not None:
             gut = (not z.get("leer")) and z.get("geraet") == self.dev and z.get("spielt")
-            # lokal: Spotify kennt die Box und einen Titel, und librespot dekodiert wirklich
+            # lokal: Spotify kennt die Box und einen Titel, und librespot gibt wirklich Ton aus
             lokal_gut = bool(lokal) and not z.get("leer") and z.get("geraet") == self.dev
             probe = (gut, z.get("titel"), z.get("position", 0), jetzt, lokal_gut)
+        elif lokal:                                     # Web-API stumm, aber Ton fließt nachweislich
+            probe = (False, "(lokal)", 0, jetzt, True)
         p["proben"].append(probe)
         if self._laeuft_sicher(p["proben"]):
             if not p["proben"][-1][0]:
@@ -562,6 +584,7 @@ class Steuerung:
                 if p["nr"] == self.wunsch_nr:
                     self.ist = ("spielt", p["uri"])
             self.phase, self.pruef = "frei", None
+            self.neustarts = 0
             if self.fehler:
                 self.log("  Musik läuft wieder.")
             self._erledigt(p["nr"])
@@ -658,48 +681,41 @@ class Steuerung:
             self.pruef.update(proben=[], anzahl=0, naechste=jetzt + PRUEF_ERSTE)   # Prüfung neu
         return True
 
-    # ------------------------------------------------------------ Ausgang wechseln (Kopfhörer)
+    # ------------------------------------------------------------ Reparatur auf Anforderung
 
-    def _umstellen(self, jetzt):
+    def _reparieren(self, jetzt):
         with self._sperre:
-            ziel, ausfuehren = self.umstellung
-            self.umstellung = None
+            grund, self.reparatur = self.reparatur, None
             lief = self._laeuft()
-        try:
-            ok = ausfuehren(ziel)
-        except Exception as e:
-            self.log(f"Ausgang wechseln fehlgeschlagen: {e!r}")
-            ok = False
-        if not ok:
+        if not self._raspotify_neu(jetzt, grund, abstand=False):
             return
-        self.raspotify_start = self.dienste.startzeit("raspotify")   # eigener Neustart, kein "Absturz"
-        self.dev, self.dev_zeit, self.dev_fehlt_seit = None, -1e9, None
-        with self._sperre:
-            if lief:                                    # weiter an derselben Stelle
-                self.ist = ("pause", self.wunsch[1])
-                self.nach_neustart_uebertragen = True
-                if self.erledigt_nr == self.wunsch_nr:
-                    self.erledigt_nr = self.wunsch_nr - 1
-                self.wunsch_zeit = jetzt
-                self.fehler = 0
-            elif self.ist and self.ist[0] in ("spielt", "startet"):
-                self.ist = ("pause", self.ist[1])
-            self.phase, self.pruef = "frei", None
-            self.sprung = self.spul_ms = 0
-        self.naechster_versuch = self.neustart_wartet_bis = jetzt + NACH_UMSTELLUNG
-        self.log(f"Ausgang: {ziel}" + (", Musik geht gleich weiter." if lief else "."))
+        if lief:                                        # weiter an derselben Stelle
+            with self._sperre:
+                if self.wunsch and self.wunsch[0] == "spielen":
+                    self.ist = ("pause", self.wunsch[1])
+                    self.nach_neustart_uebertragen = True
+                    if self.erledigt_nr == self.wunsch_nr:
+                        self.erledigt_nr = self.wunsch_nr - 1
+                    self.fehler = 0
+            self.log("  Musik zur liegenden Karte geht gleich weiter.")
 
     # ------------------------------------------------------------ Neustart
 
-    def _raspotify_neu(self, jetzt, grund):
-        if jetzt - self.letzter_neustart < NEUSTART_ABSTAND:
+    def _raspotify_neu(self, jetzt, grund, abstand=True):
+        noetig = NEUSTART_ABSTAENDE[min(max(self.neustarts - 1, 0), len(NEUSTART_ABSTAENDE) - 1)]
+        if abstand and jetzt - self.letzter_neustart < noetig:
             return False
         self.letzter_neustart = jetzt
-        if self.dienste.aktiv("peppa-stille") is False:  # ohne Mischer kann Raspotify nichts ausgeben
-            ok, aus = self.dienste.neu_starten("peppa-stille")
-            self.log(f"Ton-Mischer (peppa-stille) lief nicht, neu gestartet: {'ok' if ok else aus}")
-        ok, aus = self.dienste.neu_starten("raspotify")
-        self._melden(f"Raspotify neu gestartet ({grund}): {'ok' if ok else aus}")
+        self.neustarts += 1
+        ok, aus = self._ton_neu()
+        if ok is None:                                  # alte Einrichtung: wie früher
+            if self.dienste.aktiv("peppa-stille") is False:  # ohne Mischer kann Raspotify nichts ausgeben
+                ok, aus = self.dienste.neu_starten("peppa-stille")
+                self.log(f"Ton-Mischer (peppa-stille) lief nicht, neu gestartet: {'ok' if ok else aus}")
+            ok, aus = self.dienste.neu_starten("raspotify")
+            self._melden(f"Raspotify neu gestartet ({grund}): {'ok' if ok else aus}")
+        else:
+            self._melden(f"Ton neu gestartet: Raspotify und Mischer ({grund}): {'ok' if ok else aus}")
         self.raspotify_start = self.dienste.startzeit("raspotify")   # eigener Neustart, keine "Absturz"-Meldung
         self.dev, self.dev_zeit = None, -1e9
         self.dev_fehlt_seit = None
@@ -709,6 +725,15 @@ class Steuerung:
         self.neustart_wartet_bis = jetzt + NACH_NEUSTART
         self.naechster_versuch = jetzt + NACH_NEUSTART
         return True
+
+    def _ton_neu(self):
+        ton_neu = getattr(self.dienste, "ton_neu", None)
+        if ton_neu is None:
+            return None, ""
+        try:
+            return ton_neu()
+        except Exception as e:
+            return None, repr(e)
 
     def _ok(self):
         self.problem = None

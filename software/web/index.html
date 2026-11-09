@@ -37,6 +37,22 @@ button.haupt { background:var(--orange); color:#fff; }
 button.gefahr { background:var(--rot-hell); color:var(--rot); }
 button:disabled { opacity:.5; cursor:default; }
 .reihe { display:flex; gap:10px; } .reihe button { flex:1; }
+/* Equalizer (grafisch) */
+.eq { margin-top:12px; background:var(--karte); border:1px solid var(--rand); border-radius:16px; padding:10px 6px 6px; }
+.eq svg { display:block; width:100%; height:auto; touch-action:none; user-select:none; -webkit-user-select:none; }
+.eq .raster { stroke:var(--rand); stroke-width:1; }
+.eq .null { stroke:var(--leise); stroke-width:1; stroke-dasharray:3 4; opacity:.7; }
+.eq .achse { fill:var(--leise); font:11px system-ui, sans-serif; }
+.eq .schiene { stroke:var(--rand); stroke-width:4; stroke-linecap:round; }
+.eq .flaeche { fill:var(--orange); opacity:.16; }
+.eq .kurve { fill:none; stroke:var(--orange); stroke-width:2.5; stroke-linejoin:round; stroke-linecap:round; }
+.eq .punkt { fill:var(--karte); stroke:var(--orange); stroke-width:3; transition:r .12s; }
+.eq .band { cursor:ns-resize; outline:none; }
+.eq .band:focus-visible .punkt, .eq .band.aktiv .punkt { r:12; fill:var(--orange); }
+.eq .wertchen { fill:var(--text); font:600 11px system-ui, sans-serif; text-anchor:middle; }
+.eq .blase rect { fill:var(--text); } .eq .blase text { fill:var(--karte); font:600 12px system-ui, sans-serif; text-anchor:middle; }
+#kvorlagen button { flex:1 1 40%; padding:8px 10px; min-height:40px; font-size:14px; margin-top:8px; }
+#kvorlagen button.an { background:var(--orange); color:#fff; }
 ul.neu { margin:10px 0 0; padding-left:20px; } ul.neu li { margin:3px 0; }
 details summary { cursor:pointer; color:var(--leise); font-size:14px; padding:4px 0; }
 ol { padding-left:20px; margin:8px 0 0; } ol li { margin:4px 0; }
@@ -113,8 +129,9 @@ input.schalter:checked::after { transform:translateX(20px); }
   <div id="lergebnis"></div>
   <details id="kdetails" style="margin-top:8px"><summary>Klang (Equalizer)</summary>
     <div class="leise klein" style="margin-top:6px">Wirkt sofort, am besten bei laufender Musik einstellen. Gilt für den Lautsprecher, nicht für Kopfhörer. Kleine Lautsprecher klingen meist besser mit weniger Bass.</div>
-    <div class="reihe" style="margin-top:8px; flex-wrap:wrap" id="kvorlagen"></div>
     <div id="kbaender"></div>
+    <div class="leise klein" id="khilfe" style="margin-top:6px"></div>
+    <div class="reihe" style="margin-top:2px; flex-wrap:wrap" id="kvorlagen"></div>
     <div id="kergebnis"></div>
   </details>
   <details id="gdetails" style="margin-top:8px"><summary>Grenzen und Startlautstärke</summary>
@@ -710,34 +727,137 @@ $('adetails').addEventListener('toggle', () => { if ($('adetails').open) ansagen
 const VORLAGE_NAMEN = {neutral: 'Neutral', klein: 'Kleiner Lautsprecher', sprache: 'Hörspiel', weich: 'Weicher'};
 let klang = null, klangTimer = null;
 function dbText(v) { return (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v) + '\u00a0dB'; }
+// Grafischer Equalizer: 10 Bänder als Punkte auf einer Kurve, senkrecht ziehen (Finger oder Maus),
+// Pfeiltasten am gewählten Punkt, doppelt tippen = 0 dB.
+const EQ = {B: 360, H: 238, L: 34, R: 10, O: 24, U: 40};       // Größe und Ränder (SVG-Einheiten)
+function eqX(i) { const w = EQ.B - EQ.L - EQ.R; return EQ.L + w * (i + 0.5) / klang.namen.length; }
+function eqY(db) { return EQ.O + (EQ.H - EQ.O - EQ.U) * (klang.max - db) / (klang.max - klang.min); }
+function eqDb(y) {
+  const v = klang.max - (y - EQ.O) / (EQ.H - EQ.O - EQ.U) * (klang.max - klang.min);
+  return Math.max(klang.min, Math.min(klang.max, Math.round(v)));
+}
+function eqKurve(p) {                                            // weiche Kurve durch alle Punkte (Catmull-Rom)
+  const q = [[EQ.L, p[0][1]], ...p, [EQ.B - EQ.R, p[p.length - 1][1]]];
+  let d = `M${q[0][0]},${q[0][1]}`;
+  for (let i = 0; i < q.length - 1; i++) {
+    const a = q[Math.max(0, i - 1)], b = q[i], c = q[i + 1], e = q[Math.min(q.length - 1, i + 2)];
+    d += ` C${b[0] + (c[0] - a[0]) / 6},${b[1] + (c[1] - a[1]) / 6} ${c[0] - (e[0] - b[0]) / 6},${c[1] - (e[1] - b[1]) / 6} ${c[0]},${c[1]}`;
+  }
+  return d;
+}
+function eqKurz(n) { return n.replace(' kHz', 'k').replace(' Hz', ''); }
+function eqZeichnen() {
+  const svg = $('ksvg'); if (!svg) return;
+  const p = klang.baender.map((v, i) => [eqX(i), eqY(v)]);
+  const k = eqKurve(p), y0 = eqY(0);
+  svg.querySelector('.kurve').setAttribute('d', k);
+  svg.querySelector('.flaeche').setAttribute('d', `${k} L${EQ.B - EQ.R},${y0} L${EQ.L},${y0} Z`);
+  klang.baender.forEach((v, i) => {
+    const g = $('kband-' + i);
+    g.querySelector('.punkt').setAttribute('cy', p[i][1]);
+    g.setAttribute('aria-valuenow', v); g.setAttribute('aria-valuetext', dbText(v));
+    $('kw-' + i).textContent = (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v);
+  });
+  const b = $('kblase');
+  if (eqZiehen === null) { b.style.display = 'none'; }
+  else {
+    const i = eqZiehen, x = Math.max(EQ.L + 26, Math.min(EQ.B - EQ.R - 26, p[i][0])), y = Math.max(EQ.O + 2, p[i][1] - 36);
+    b.style.display = '';
+    b.querySelector('rect').setAttribute('x', x - 26); b.querySelector('rect').setAttribute('y', y);
+    b.querySelector('text').setAttribute('x', x); b.querySelector('text').setAttribute('y', y + 16);
+    b.querySelector('text').textContent = dbText(klang.baender[i]);
+  }
+  document.querySelectorAll('#kvorlagen button').forEach(btn => {
+    const v = klang.vorlagen[btn.dataset.v];
+    btn.classList.toggle('an', !!v && v.every((x, i) => x === klang.baender[i]));
+  });
+}
+let eqZiehen = null;
+function eqPunkt(ev) {                                           // Zeigerposition in SVG-Einheiten
+  const svg = $('ksvg'), r = svg.getBoundingClientRect();
+  return [(ev.clientX - r.left) * EQ.B / r.width, (ev.clientY - r.top) * EQ.H / r.height];
+}
+function eqSetzen(i, v) {
+  if (klang.baender[i] === v) return;
+  klang.baender[i] = v;
+  eqZeichnen();
+  clearTimeout(klangTimer);
+  klangTimer = setTimeout(async () => {
+    const erg = await sicher('/api/klang', {baender: klang.baender});
+    if (!erg.ok) hinweis('kergebnis', erg);
+  }, 150);
+}
+function eqEinrichten() {
+  const svg = $('ksvg'), n = klang.namen.length, w = (EQ.B - EQ.L - EQ.R) / n;
+  let letzterTipp = {i: -1, t: 0};
+  svg.addEventListener('pointerdown', ev => {
+    const [x, y] = eqPunkt(ev);
+    const i = Math.max(0, Math.min(n - 1, Math.floor((x - EQ.L) / w)));
+    if (x < EQ.L - 6 || y > EQ.H - EQ.U + 14) return;
+    ev.preventDefault();
+    const jetzt = Date.now();
+    if (letzterTipp.i === i && jetzt - letzterTipp.t < 350) { eqSetzen(i, 0); letzterTipp = {i: -1, t: 0}; return; }
+    letzterTipp = {i, t: jetzt};
+    eqZiehen = i; svg.setPointerCapture(ev.pointerId);
+    $('kband-' + i).classList.add('aktiv'); $('kband-' + i).focus({preventScroll: true});
+    eqSetzen(i, eqDb(y)); eqZeichnen();
+  });
+  svg.addEventListener('pointermove', ev => { if (eqZiehen !== null) eqSetzen(eqZiehen, eqDb(eqPunkt(ev)[1])); });
+  const los = () => {
+    if (eqZiehen === null) return;
+    $('kband-' + eqZiehen).classList.remove('aktiv'); eqZiehen = null; eqZeichnen();
+  };
+  svg.addEventListener('pointerup', los); svg.addEventListener('pointercancel', los);
+  svg.querySelectorAll('.band').forEach((g, i) => g.addEventListener('keydown', ev => {
+    const s = {ArrowUp: 1, ArrowRight: 1, PageUp: 3, ArrowDown: -1, ArrowLeft: -1, PageDown: -3}[ev.key];
+    if (ev.key === 'Home') { ev.preventDefault(); return eqSetzen(i, klang.max); }
+    if (ev.key === 'End') { ev.preventDefault(); return eqSetzen(i, klang.min); }
+    if (ev.key === '0') { ev.preventDefault(); return eqSetzen(i, 0); }
+    if (!s) return;
+    ev.preventDefault();
+    eqSetzen(i, Math.max(klang.min, Math.min(klang.max, klang.baender[i] + s)));
+  }));
+}
 function klangZeigen() {
   if (!klang.da) {
     $('kbaender').innerHTML = '<div class="hinweis fehler">Equalizer noch nicht eingerichtet: einmal am Pi '
       + "'sh ~/peppa-box/software/dienst_einrichten.sh' ausführen.</div>";
-    $('kvorlagen').innerHTML = '';
+    $('kvorlagen').innerHTML = ''; $('khilfe').textContent = '';
     return;
   }
   $('kergebnis').innerHTML = klang.fehler ? '<div class="hinweis fehler">Equalizer ging nicht, Musik lief ohne ihn weiter: '
     + esc(klang.fehler) + '. Beim nächsten Musikstart wird er wieder versucht.</div>' : '';
   $('kvorlagen').innerHTML = Object.keys(klang.vorlagen).map(n =>
-    `<button onclick="klangVorlage('${n}')">${esc(VORLAGE_NAMEN[n] || n)}</button>`).join('');
-  $('kbaender').innerHTML = klang.namen.map((n, i) =>
-    `<div class="grenze"><div class="kopf"><span>${esc(n)}</span><b id="kw-${i}">${dbText(klang.baender[i])}</b></div>
-     <input type="range" id="kb-${i}" min="${klang.min}" max="${klang.max}" step="1" value="${klang.baender[i]}"
-       aria-label="${esc(n)}" oninput="klangGeaendert(${i}, +this.value)"></div>`).join('');
+    `<button data-v="${esc(n)}" onclick="klangVorlage('${n}')">${esc(VORLAGE_NAMEN[n] || n)}</button>`).join('');
+  $('khilfe').textContent = 'Punkte nach oben oder unten ziehen. Doppelt tippen = 0 dB.';
+  const raster = [];
+  for (let db = klang.max; db >= klang.min; db -= 6) {
+    const y = eqY(db);
+    raster.push(`<line class="${db === 0 ? 'null' : 'raster'}" x1="${EQ.L}" x2="${EQ.B - EQ.R}" y1="${y}" y2="${y}"/>`,
+      `<text class="achse" x="${EQ.L - 6}" y="${y + 4}" text-anchor="end">${db > 0 ? '+' : db < 0 ? '−' : ''}${Math.abs(db)}</text>`);
+  }
+  const yU = EQ.H - EQ.U;
+  const baender = klang.namen.map((n, i) => {
+    const x = eqX(i);
+    return `<g class="band" id="kband-${i}" tabindex="0" role="slider" aria-label="${esc(n)}"
+        aria-valuemin="${klang.min}" aria-valuemax="${klang.max}">
+      <line class="schiene" x1="${x}" x2="${x}" y1="${eqY(klang.max)}" y2="${eqY(klang.min)}"/>
+      <circle class="punkt" cx="${x}" cy="${eqY(0)}" r="9"/>
+      <text class="wertchen" id="kw-${i}" x="${x}" y="${yU + 18}"></text>
+      <text class="achse" x="${x}" y="${yU + 34}" text-anchor="middle">${esc(eqKurz(n))}</text></g>`;
+  }).join('');
+  $('kbaender').innerHTML = `<div class="eq"><svg id="ksvg" viewBox="0 0 ${EQ.B} ${EQ.H}" aria-label="Equalizer">
+    ${raster.join('')}
+    <text class="achse" x="${EQ.L - 6}" y="11" text-anchor="end">dB</text>
+    <path class="flaeche"/><path class="kurve"/>${baender}
+    <g class="blase" id="kblase" style="display:none"><rect width="52" height="22" rx="7"/><text></text></g>
+  </svg></div>`;
+  eqEinrichten();
+  eqZeichnen();
 }
 async function klangLaden() {
   try { klang = await holen('/api/klang'); klangZeigen(); }
   catch (e) { $('kbaender').textContent = 'Keine Verbindung zur Box.'; }
-}
-function klangGeaendert(i, v) {
-  klang.baender[i] = v;
-  $('kw-' + i).textContent = dbText(v);
-  clearTimeout(klangTimer);
-  klangTimer = setTimeout(async () => {
-    const erg = await sicher('/api/klang', {baender: klang.baender});
-    if (!erg.ok) hinweis('kergebnis', erg);
-  }, 250);
 }
 async function klangVorlage(name) {
   const erg = await sicher('/api/klang', {vorlage: name});

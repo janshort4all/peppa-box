@@ -937,3 +937,9 @@ Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) l�
 - **Danach (22:39):** „Spotify kennt die Box gerade nicht (Gerät 'Peppa Box' fehlt)“. Erwartbar, solange librespot nach dem IP-Wechsel noch nicht neu bei Spotify angemeldet ist. Vorhandene Selbstheilung: Raspotify-Neustart nach 45 s (Karte wartet) bzw. 180 s (Leerlauf). **22:40: Box hat sich von selbst erholt** (Meldung um 22:39, ca. 1 min). Ob librespot sich selbst neu angemeldet hat oder die Selbstheilung Raspotify neu gestartet hat, ist ohne Protokoll offen (`journalctl -u raspotify -u peppa-player --since 22:35`). Kein Handlungsbedarf, solange es so schnell geht.
 - **Änderung 22:45 (Wunsch Jan: mindestens doppelt so laut):** Standard `bedienung.klick` **30 %** statt 15 % (+6 dB, Spitze ≈ −12 dBFS). Der Klick läuft über denselben Lautstärkeregler wie die Musik (softvol „Lautsprecher“), folgt also dem Drehknopf. Steht in `einstellungen.json` schon ein gespeicherter Wert, gilt dieser – dann auf der Eltern-Seite hochstellen.
 - **Abgenommen (Jan, 22:48):** Klick mit 30 % passt. Erledigt.
+
+## Nachtrag 09.11.2026 (15) – Equalizer grafisch
+
+- **Wunsch Jan:** Equalizer auf der Eltern-Seite grafisch, wie man ihn heute kennt.
+- **Umgesetzt (`web/index.html`, nur Seite, Schnittstelle `/api/klang` unverändert):** 10 Bänder als Punkte auf senkrechten Schienen, weiche Kurve durch alle Punkte (Fläche zur 0-dB-Linie getönt), dB-Raster −24 … +6 in 6-dB-Schritten, Frequenzen und Werte darunter. Bedienung: Punkt mit Finger/Maus ziehen (ganze Spalte greift, Seite scrollt dabei nicht), Wert-Blase beim Ziehen, **doppelt tippen = 0 dB**, Tastatur (Pfeile ±1, Bild ±3, Pos1/Ende, 0). Änderungen gehen nach 150 ms Ruhe an die Box (wie bisher). Vorlagen-Knöpfe unter der Grafik, die passende Vorlage ist orange markiert. Hell und dunkel geprüft (Chrome, 390 px, Ziehen und Tasten).
+- **Am Pi:** nur Update über die Eltern-Seite, Seite neu laden.

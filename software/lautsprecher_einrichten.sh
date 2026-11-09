@@ -83,6 +83,14 @@ wie_raspotify() {
         /bin/sh -c "$1" > /dev/null
 }
 
+# 1 s Stille als Datei fuer die Proben: Raspotify (und damit die Probe) darf /dev/zero nicht oeffnen
+# (DevicePolicy=strict, erlaubt sind nur Soundgeraete und /dev/null; Befund 09.11.2026)
+STILLE=/run/peppa-box-stille.raw
+if [ -z "$PEPPA_TROCKEN" ]; then
+    head -c 176400 /dev/zero | sudo tee "$STILLE" > /dev/null
+    sudo chmod 0644 "$STILLE"
+fi
+
 # --- Equalizer (Klang, Eltern-Seite): alsaequal + LADSPA-Modul Eq10 (Pakete libasound2-plugin-equal, caps).
 #     Nur einbauen, wenn er unter den Schutzregeln von Raspotify nachweislich laeuft; sonst ohne.
 EQ=0
@@ -104,7 +112,7 @@ elif [ -z "$PEPPA_TROCKEN" ]; then
         } > "$PROBE/alsa.conf"
         chmod 0755 "$PROBE"; chmod 0644 "$PROBE/alsa.conf"
         sudo cp "$PROBE/alsa.conf" /run/peppa-box-klang-probe.conf
-        if wie_raspotify "ALSA_CONFIG_PATH=/run/peppa-box-klang-probe.conf timeout 10 aplay -q -D plug:peppa_probe -t raw -f S16_LE -r 44100 -c 2 -d 1 /dev/zero"; then
+        if wie_raspotify "ALSA_CONFIG_PATH=/run/peppa-box-klang-probe.conf timeout 10 aplay -q -D plug:peppa_probe -t raw -f S16_LE -r 44100 -c 2 $STILLE"; then
             EQ=1
         else
             echo "WARNUNG: Equalizer laeuft unter den Schutzregeln von Raspotify nicht – Lautsprecher ohne Equalizer."
@@ -270,7 +278,7 @@ raspotify_setzen() {   # $1 = Name, $2 = Wert; vorhandene Zeile ersetzen, sonst 
 relais_pruefen() {   # 1 s Stille durch die Tonausgabe, mit denselben Schutzregeln wie der Raspotify-Dienst
     if [ -n "$PEPPA_RELAIS_PRUEFUNG" ]; then sh -c "$PEPPA_RELAIS_PRUEFUNG"; return; fi   # nur Tests
     if [ -n "$PEPPA_TROCKEN" ]; then return 0; fi
-    wie_raspotify "head -c 176400 /dev/zero | $RELAIS"
+    wie_raspotify "$RELAIS < $STILLE"
 }
 if sudo test -f "$RASPOTIFY"; then   # Datei/Ordner nur mit sudo lesbar
     RELAIS_OK=0
@@ -297,6 +305,7 @@ if sudo test -f "$RASPOTIFY"; then   # Datei/Ordner nur mit sudo lesbar
 else
     echo "Raspotify-Einstellungen ($RASPOTIFY) nicht gefunden, Ausgabe nicht umgestellt."
 fi
+[ -n "$PEPPA_TROCKEN" ] || sudo rm -f "$STILLE"
 sudo mkdir -p "$SYSTEMD/raspotify.service.d"
 TMP="$(mktemp)"
 printf '%s\n' "# Peppa Box: Raspotify teilt sich den Mischer (dmix) mit peppa-stille" "[Service]" "PrivateIPC=no" > "$TMP"

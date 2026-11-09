@@ -281,11 +281,12 @@ class Einrichtungsskript(unittest.TestCase):
                       '    ttable.0.0 0.5', a)
         self.assertIn('pcm.lautsprecher {\n    type softvol\n    slave.pcm "peppa_mono_plug"', a)
         # zweiter Weg mit Equalizer, gleicher Lautstärkeregler
-        self.assertIn('pcm.lautsprecher_klang {\n    type softvol\n    slave.pcm "peppa_mono_klang_plug"\n'
+        self.assertIn('pcm.lautsprecher_klang {\n    type softvol\n    slave.pcm "peppa_klang_plug"\n'
                       '    control {\n        name "Lautsprecher"', a)
-        self.assertIn('pcm.peppa_mono_klang {\n    type route\n    slave.pcm "peppa_klang_plug"', a)
-        self.assertIn("ttable.0.0 0.25", a)
-        self.assertIn('pcm.peppa_klang {\n    type equal\n    slave.pcm "peppa_plug"', a)
+        # am Pi geprüft (09.11.): Equalizer -> plug mit Mono-Mischung -> Mischer; kein route im Equalizer-Weg
+        self.assertIn('pcm.peppa_klang {\n    type equal\n    slave.pcm "peppa_klang_mix"', a)
+        self.assertIn('pcm.peppa_klang_mix {\n    type plug\n    slave.pcm "peppa_dmix"\n    ttable.0.0 0.25', a)
+        self.assertNotIn("peppa_mono_klang", a)
         self.assertIn('ctl.peppa_klang {\n    type equal\n    controls "/dev/shm/peppa-box-klang.bin"', a)
         dienst = self.lesen(os.path.join(self.systemd, "peppa-stille.service"))
         self.assertIn("[ -f /dev/shm/peppa-box-klang.bin ] ||", dienst)

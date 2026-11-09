@@ -158,38 +158,34 @@ EOF
 if [ "$EQ" = 1 ]; then
     cat >> "$TMP" <<EOF
 # Klang: zweiter Weg zum Lautsprecher mit Equalizer (10 Baender, Eltern-Seite, klang.py). Nur die
-# Tonausgabe nutzt ihn und spielt ohne ihn weiter, wenn er nicht geht. Mischung 0,25 statt 0,5:
-# 6 dB Reserve, der Equalizer hebt in Mittelstellung ca. 3 dB. Werte im Arbeitsspeicher (peppa-stille
+# Tonausgabe nutzt ihn und spielt ohne ihn weiter, wenn er nicht geht. Mono-Mischung im plug HINTER
+# dem Equalizer (am Pi gemessen 09.11.: mit route davor oder dahinter bricht alsa-lib ab, so nicht).
+# Mischung 0,25 statt 0,5: 6 dB Reserve, der Equalizer hebt in Mittelstellung ca. 3 dB. Werte im Arbeitsspeicher (peppa-stille
 # legt die Datei an, fuer alle beschreibbar: Raspotify laeuft als root ohne Rechte).
-pcm.peppa_mono_klang {
-    type route
-    slave.pcm "peppa_klang_plug"
-    slave.channels 2
-    ttable.0.0 0.25
-    ttable.1.0 0.25
-    ttable.0.1 0.25
-    ttable.1.1 0.25
-}
-pcm.peppa_mono_klang_plug {
-    type plug
-    slave.pcm "peppa_mono_klang"
-}
 pcm.peppa_klang_plug {
     type plug
     slave.pcm "peppa_klang"
 }
 pcm.peppa_klang {
     type equal
-    slave.pcm "peppa_plug"
+    slave.pcm "peppa_klang_mix"
     controls "$KLANG_DATEI"
 }
 ctl.peppa_klang {
     type equal
     controls "$KLANG_DATEI"
 }
+pcm.peppa_klang_mix {
+    type plug
+    slave.pcm "peppa_dmix"
+    ttable.0.0 0.25
+    ttable.1.0 0.25
+    ttable.0.1 0.25
+    ttable.1.1 0.25
+}
 pcm.lautsprecher_klang {
     type softvol
-    slave.pcm "peppa_mono_klang_plug"
+    slave.pcm "peppa_klang_plug"
     control {
         name "Lautsprecher"
         card $KARTE

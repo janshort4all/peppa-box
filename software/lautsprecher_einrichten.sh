@@ -92,7 +92,9 @@ if [ -z "$PEPPA_TROCKEN" ]; then
 fi
 
 # --- Equalizer (Klang, Eltern-Seite): alsaequal + LADSPA-Modul Eq10 (Pakete libasound2-plugin-equal, caps).
-#     Nur einbauen, wenn er unter den Schutzregeln von Raspotify nachweislich laeuft; sonst ohne.
+#     Eigener Weg "lautsprecher_klang" NEBEN dem normalen "lautsprecher": nur die Tonausgabe spielt ueber
+#     ihn und faellt sofort auf "lautsprecher" zurueck, wenn er nicht geht (09.11.2026: ein Fehler im
+#     Equalizer im normalen Weg schaltete die ganze Musik ab).
 EQ=0
 if [ -n "$PEPPA_EQ" ]; then                  # nur Tests: 1 = vorhanden, 0 = nicht
     EQ="$PEPPA_EQ"
@@ -104,21 +106,8 @@ elif [ -z "$PEPPA_TROCKEN" ]; then
                  sudo apt-get install -y --no-install-recommends libasound2-plugin-equal > /dev/null 2>&1; } \
             || echo "Equalizer nicht installiert (Klang-Einstellung fehlt dann)."
     fi
-    if ls /usr/lib/*/alsa-lib/libasound_module_pcm_equal.so > /dev/null 2>&1; then
-        PROBE="$(mktemp -d)"
-        { cat /usr/share/alsa/alsa.conf
-          echo 'pcm.peppa_probe_null { type null }'
-          echo 'pcm.peppa_probe { type equal slave.pcm "peppa_probe_null" controls "/dev/shm/peppa-box-klang-probe.bin" }'
-        } > "$PROBE/alsa.conf"
-        chmod 0755 "$PROBE"; chmod 0644 "$PROBE/alsa.conf"
-        sudo cp "$PROBE/alsa.conf" /run/peppa-box-klang-probe.conf
-        if wie_raspotify "ALSA_CONFIG_PATH=/run/peppa-box-klang-probe.conf timeout 10 aplay -q -D plug:peppa_probe -t raw -f S16_LE -r 44100 -c 2 $STILLE"; then
-            EQ=1
-        else
-            echo "WARNUNG: Equalizer laeuft unter den Schutzregeln von Raspotify nicht – Lautsprecher ohne Equalizer."
-        fi
-        sudo rm -f /run/peppa-box-klang-probe.conf /dev/shm/peppa-box-klang-probe.bin
-        rm -rf "$PROBE"
+    if ls /usr/lib/*/alsa-lib/libasound_module_pcm_equal.so > /dev/null 2>&1 && [ -f /usr/lib/ladspa/caps.so ]; then
+        EQ=1
     fi
 fi
 KLANG_DATEI=/dev/shm/peppa-box-klang.bin
@@ -151,22 +140,15 @@ pcm.peppa_plug {
     type plug
     slave.pcm "peppa_dmix"
 }
-EOF
-if [ "$EQ" = 1 ]; then
-    MONO_ZIEL="peppa_klang_plug"; MONO_ANTEIL="0.25"     # 6 dB Reserve: Equalizer hebt in Mittelstellung ca. 3 dB
-else
-    MONO_ZIEL="peppa_plug"; MONO_ANTEIL="0.5"
-fi
-cat >> "$TMP" <<EOF
 # SD liegt fest auf 3,3 V = Verstaerker spielt den linken Kanal. Darum hier L+R gemischt auf beide Kanaele.
 pcm.peppa_mono {
     type route
-    slave.pcm "$MONO_ZIEL"
+    slave.pcm "peppa_plug"
     slave.channels 2
-    ttable.0.0 $MONO_ANTEIL
-    ttable.1.0 $MONO_ANTEIL
-    ttable.0.1 $MONO_ANTEIL
-    ttable.1.1 $MONO_ANTEIL
+    ttable.0.0 0.5
+    ttable.1.0 0.5
+    ttable.0.1 0.5
+    ttable.1.1 0.5
 }
 pcm.peppa_mono_plug {
     type plug
@@ -175,7 +157,23 @@ pcm.peppa_mono_plug {
 EOF
 if [ "$EQ" = 1 ]; then
     cat >> "$TMP" <<EOF
-# Klang: Equalizer 10 Baender (Eltern-Seite, klang.py); Werte im Arbeitsspeicher, Raspotify darf lesen
+# Klang: zweiter Weg zum Lautsprecher mit Equalizer (10 Baender, Eltern-Seite, klang.py). Nur die
+# Tonausgabe nutzt ihn und spielt ohne ihn weiter, wenn er nicht geht. Mischung 0,25 statt 0,5:
+# 6 dB Reserve, der Equalizer hebt in Mittelstellung ca. 3 dB. Werte im Arbeitsspeicher (peppa-stille
+# legt die Datei an, fuer alle beschreibbar: Raspotify laeuft als root ohne Rechte).
+pcm.peppa_mono_klang {
+    type route
+    slave.pcm "peppa_klang_plug"
+    slave.channels 2
+    ttable.0.0 0.25
+    ttable.1.0 0.25
+    ttable.0.1 0.25
+    ttable.1.1 0.25
+}
+pcm.peppa_mono_klang_plug {
+    type plug
+    slave.pcm "peppa_mono_klang"
+}
 pcm.peppa_klang_plug {
     type plug
     slave.pcm "peppa_klang"
@@ -188,6 +186,14 @@ pcm.peppa_klang {
 ctl.peppa_klang {
     type equal
     controls "$KLANG_DATEI"
+}
+pcm.lautsprecher_klang {
+    type softvol
+    slave.pcm "peppa_mono_klang_plug"
+    control {
+        name "Lautsprecher"
+        card $KARTE
+    }
 }
 EOF
 fi
@@ -223,13 +229,18 @@ else
     ASOUND_NEU=1
     echo "$ASOUND: Mischer und Software-Lautstaerke eingetragen."
 fi
+if [ "$EQ" = 1 ] && [ -z "$PEPPA_TROCKEN" ]; then
+    # Equalizer-Werte: nur root legt die Datei an, immer fuer alle beschreibbar (sonst kein Equalizer)
+    sudo sh -c "[ -f $KLANG_DATEI ] || amixer -q -D peppa_klang controls > /dev/null 2>&1; chmod 0666 $KLANG_DATEI" \
+        || echo "Equalizer-Werte nicht angelegt (Equalizer bleibt aus, Musik laeuft ohne)."
+fi
 
-# --- Probe der ganzen Kette mit Equalizer (die Probe oben prueft ihn nur allein, gegen "null").
-#     Am Pi (09.11.) brach aplay in der Kette mit Mischer ab (snd_pcm_hw_param_get_min: Assertion
-#     !snd_interval_empty) -> kein Ton. Dann die Einrichtung ohne Equalizer wiederholen.
+# --- Probe des Equalizer-Wegs (lautsprecher_klang) in der echten Kette mit Mischer. Am Pi (09.11.)
+#     brach aplay dort ab (snd_pcm_hw_param_get_min: Assertion !snd_interval_empty). Dann ohne
+#     Equalizer einrichten; der normale Weg "lautsprecher" enthaelt ihn ohnehin nie.
 if [ "$EQ" = 1 ] && [ -z "$PEPPA_EQ" ] && [ -z "$PEPPA_TROCKEN" ]; then
-    if ! sudo timeout 10 aplay -q -D lautsprecher -t raw -f S16_LE -r 44100 -c 2 "$STILLE" > /dev/null 2>&1; then
-        echo "WARNUNG: Lautsprecher-Kette mit Equalizer spielt nicht – richte ohne Equalizer ein."
+    if ! sudo timeout 10 aplay -q -D lautsprecher_klang -t raw -f S16_LE -r 44100 -c 2 "$STILLE" > /dev/null 2>&1; then
+        echo "WARNUNG: Equalizer-Weg spielt in der Kette nicht – richte ohne Equalizer ein (Musik nicht betroffen)."
         PEPPA_EQ=0 exec sh "$0" "$@"
     fi
 fi
@@ -239,7 +250,7 @@ PINCTRL="$(command -v pinctrl || echo /usr/bin/pinctrl)"
 KLANG_START=""
 if [ "$EQ" = 1 ]; then   # Equalizer-Werte anlegen (root), dann fuer Player/Eltern-Seite beschreibbar
     AMIXER="$(command -v amixer || echo /usr/bin/amixer)"
-    KLANG_START="ExecStartPre=-/bin/sh -c '$AMIXER -q -D peppa_klang controls > /dev/null 2>&1; chmod 0666 $KLANG_DATEI'"
+    KLANG_START="ExecStartPre=-/bin/sh -c '[ -f $KLANG_DATEI ] || $AMIXER -q -D peppa_klang controls > /dev/null 2>&1; chmod 0666 $KLANG_DATEI'"
 fi
 APLAY="$(command -v aplay || echo /usr/bin/aplay)"
 TMP="$(mktemp)"
@@ -292,9 +303,17 @@ relais_pruefen() {   # 1 s Stille durch die Tonausgabe, mit denselben Schutzrege
 }
 if sudo test -f "$RASPOTIFY"; then   # Datei/Ordner nur mit sudo lesbar
     RELAIS_OK=0
+    RELAIS_VORHER=0
+    if sudo grep -q '^LIBRESPOT_BACKEND="\{0,1\}subprocess"\{0,1\}$' "$RASPOTIFY"; then RELAIS_VORHER=1; fi
     if [ -z "$PEPPA_ALSA_DIREKT" ] && [ -x "$RELAIS" ]; then
         if relais_pruefen; then
             RELAIS_OK=1
+        elif [ "$RELAIS_VORHER" = 1 ]; then
+            # nie einen laufenden Ton-Weg abschalten (09.11.2026): nur warnen
+            RELAIS_OK=1
+            echo "WARNUNG: Probe der Tonausgabe ($RELAIS) fehlgeschlagen (Meldungen oben)."
+            echo "         Raspotify bleibt trotzdem bei der Tonausgabe (lief schon). Bei Problemen:"
+            echo "         PEPPA_ALSA_DIREKT=1 sh ~/peppa-box/software/dienst_einrichten.sh"
         else
             echo "WARNUNG: Probe der Tonausgabe ($RELAIS) fehlgeschlagen (Meldungen oben)."
             echo "         Raspotify spielt deshalb weiter direkt ueber ALSA, ohne Kopfhoerer-Umschaltung."

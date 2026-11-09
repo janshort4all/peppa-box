@@ -1,7 +1,9 @@
 """Klang des Lautsprechers: Equalizer mit 10 Bändern (alsaequal mit dem LADSPA-Modul Eq10 aus caps).
 
-Der Equalizer sitzt in /etc/asound.conf im Weg zum Lautsprecher (lautsprecher_einrichten.sh) und
-wird über die ALSA-Steuerung "peppa_klang" eingestellt. Die Werte liegen in
+Der Equalizer sitzt in /etc/asound.conf in einem eigenen Weg "lautsprecher_klang" neben dem
+normalen "lautsprecher" (lautsprecher_einrichten.sh). Nur die Tonausgabe (ausgabe.py) spielt über ihn,
+und nur wenn der Player ihn freigibt; geht er nicht, spielt sie sofort ohne ihn weiter. Eingestellt
+wird er über die ALSA-Steuerung "peppa_klang". Die Werte liegen in
 /dev/shm/peppa-box-klang.bin (Arbeitsspeicher, Raspotify darf dort lesen); gespeichert werden sie in
 den Einstellungen ("klang"), der Player schreibt sie beim Start hinein, die Eltern-Seite bei jeder
 Änderung. Änderungen wirken sofort, auch während Musik läuft.
@@ -49,7 +51,19 @@ def _amixer(*args, eingabe=None):
     return r.stdout if r.returncode == 0 else None
 
 
+def _datei_ok():
+    """Die Datei legt nur peppa-stille (root) an, für alle beschreibbar. Fehlt sie, darf sie hier NICHT
+    entstehen: amixer legte sie sonst als Benutzer mit 0644 an, und Raspotify (root ohne Rechte)
+    könnte den Equalizer nicht öffnen – genau so ging am 09.11.2026 die Musik aus."""
+    try:
+        return (os.stat(DATEI).st_mode & 0o666) == 0o666
+    except OSError:
+        return False
+
+
 def eingerichtet():
+    if not _datei_ok():
+        return False
     aus = _amixer("controls")
     return bool(aus) and aus.count("Playback Volume") == len(BAENDER)
 
@@ -59,11 +73,7 @@ def anwenden(baender, log=print):
     if len(baender) != len(BAENDER):
         raise ValueError("10 Bänder erwartet")
     befehle = "".join(f"cset numid={i + 1} {wert(db)},{wert(db)}\n" for i, db in enumerate(baender))
-    ok = _amixer("-q", "-s", eingabe=befehle) is not None
-    try:
-        os.chmod(DATEI, 0o666)              # legt sie der Player an, muss Raspotify (root ohne Rechte) sie trotzdem öffnen können
-    except OSError:
-        pass
+    ok = _datei_ok() and _amixer("-q", "-s", eingabe=befehle) is not None
     if not ok:
         log("Klang: Equalizer nicht erreichbar (lautsprecher_einrichten.sh / dienst_einrichten.sh ausführen).")
     return ok

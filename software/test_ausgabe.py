@@ -60,10 +60,10 @@ class AusgabeProgramm(unittest.TestCase):
         self.addCleanup(self.empfang.close)
         self.nachrichten = []
 
-    def waehlen(self, ziel):
+    def waehlen(self, ziel, klang=False):
         tmp = self.wahl + ".tmp"
         with open(tmp, "w") as f:
-            json.dump({"ausgang": ziel}, f)
+            json.dump({"ausgang": ziel, "klang": klang}, f)
         os.replace(tmp, self.wahl)
 
     def starten(self, kaputt="", aplay=None, umgebung=None):
@@ -181,6 +181,44 @@ class AusgabeProgramm(unittest.TestCase):
         self.assertNotEqual(p.wait(timeout=5), 0)                           # librespot startet neu bzw. pausiert
         self.sammeln(0.2)
         self.assertGreaterEqual(len([n for n in self.nachrichten if n["art"] == "fehler"]), 3)
+
+    def test_mit_equalizer(self):
+        self.waehlen("lautsprecher", klang=True)
+        p = self.starten()
+        self.senden(p, 0.6)
+        self.waehlen("kopfhoerer", klang=True)                              # Kopfhörer ohne Equalizer
+        self.senden(p, 0.6)
+        p.stdin.close()
+        p.wait(timeout=5)
+        self.sammeln(0.2)
+        self.assertGreater(self.groesse("lautsprecher_klang"), 0)
+        self.assertGreater(self.groesse("kopfhoerer"), 0)
+        self.assertEqual(self.groesse("lautsprecher"), 0)
+        self.assertNotIn("fehler", self.arten())
+
+    def test_kaputter_equalizer_musik_laeuft_ohne_weiter(self):
+        # 09.11.2026: Equalizer ließ sich nicht öffnen -> keine Musik. Jetzt: sofort ohne Equalizer weiter
+        self.waehlen("lautsprecher", klang=True)
+        p = self.starten(kaputt="lautsprecher_klang")
+        self.senden(p, 1.5)
+        self.assertIsNone(p.poll())
+        p.stdin.close()
+        self.assertEqual(p.wait(timeout=5), 0)
+        self.sammeln(0.2)
+        fehler = [n for n in self.nachrichten if n["art"] == "fehler"]
+        self.assertEqual([(n["ziel"], n["rueckfall"]) for n in fehler], [("klang", "lautsprecher")])
+        self.assertGreater(self.groesse("lautsprecher"), 0)
+        self.waehlen("kopfhoerer", klang=True)                              # Kopfhörer bleiben möglich
+
+    def test_equalizer_an_und_aus_waehrend_musik(self):
+        self.waehlen("lautsprecher", klang=False)
+        p = self.starten()
+        self.senden(p, 0.6)
+        self.waehlen("lautsprecher", klang=True)
+        self.senden(p, 0.6)
+        p.stdin.close()
+        p.wait(timeout=5)
+        self.assertGreater(self.groesse("lautsprecher_klang"), 0)
 
     def test_ohne_vorgabe_lautsprecher(self):
         with open(self.wahl, "w") as f:

@@ -83,7 +83,7 @@ def verstaerker(an, log=print):
 
 class Ausgang:
     def __init__(self, st, laut, einst, rueck=None, helfer=None, verstaerker=verstaerker, jetzt=time.monotonic,
-                 uhr=time.time, log=print):
+                 uhr=time.time, log=print, klang_da=None):
         self.st, self.laut, self.einst, self.rueck = st, laut, einst, rueck
         self.helfer = helfer or Helfer()
         self.verstaerker, self.jetzt, self.uhr, self.log = verstaerker, jetzt, uhr, log
@@ -99,6 +99,8 @@ class Ausgang:
         self.fehler = None               # Klartext für die Eltern-Seite
         self._relais_fehler = None       # vom Empfangsfaden gemeldet, hier im Takt behandelt
         self._sd_tief = 0
+        self.klang_da = klang_da or (lambda: False)
+        self.klang = False               # Equalizer für die Tonausgabe freigegeben
         if rueck is not None:
             rueck.bei_fehler = self.relais_fehler
 
@@ -119,10 +121,15 @@ class Ausgang:
                 ok, text = self.helfer.umstellen("lautsprecher")
                 self.log("Raspotify zurück auf den Lautsprecher: " + ("ok" if ok else text))
         self.aktuell = "lautsprecher"
+        try:
+            self.klang = self.weg == "relais" and bool(self.klang_da())
+        except Exception as e:
+            self.klang = False
+            self.log(f"Equalizer nicht geprüft: {e!r}")
         self._merken()
 
     def _merken(self):
-        self.einst.lauf_schreiben("ausgang", {"ausgang": self.aktuell})
+        self.einst.lauf_schreiben("ausgang", {"ausgang": self.aktuell, "klang": self.klang})
 
     # ------------------------------------------------------------ vom Empfangsfaden (ausgabe.py meldet Fehler)
 

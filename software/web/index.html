@@ -710,6 +710,8 @@ function klangZeigen() {
     $('kvorlagen').innerHTML = '';
     return;
   }
+  $('kergebnis').innerHTML = klang.fehler ? '<div class="hinweis fehler">Equalizer ging nicht, Musik lief ohne ihn weiter: '
+    + esc(klang.fehler) + '. Beim nächsten Musikstart wird er wieder versucht.</div>' : '';
   $('kvorlagen').innerHTML = Object.keys(klang.vorlagen).map(n =>
     `<button onclick="klangVorlage('${n}')">${esc(VORLAGE_NAMEN[n] || n)}</button>`).join('');
   $('kbaender').innerHTML = klang.namen.map((n, i) =>

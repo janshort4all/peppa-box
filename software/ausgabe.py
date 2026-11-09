@@ -16,6 +16,9 @@ Fehler werden hier abgefangen:
   Lautsprecher-Ausgang endet                   -> neu öffnen; dreimal in 10 s -> Ende mit Fehler
                                                  (librespot startet das Programm dann einmal neu)
   aplay nimmt 3 s lang nichts an (hängt)       -> aplay beenden und neu öffnen wie oben
+  Equalizer geht nicht (lautsprecher_klang)    -> sofort Lautsprecher ohne Equalizer, Meldung
+                                                 (09.11.2026: ein Fehler im Equalizer schaltete die
+                                                 Musik ganz ab – das darf nie wieder passieren)
 
 Rückmeldung an den Player per UDP an 127.0.0.1:47150 (JSON, "q": "ausgabe"): start, fluss (jede
 Sekunde, solange Ton fließt: lokaler Beleg, dass wirklich Musik läuft), wechsel, fehler, haengt, ende.
@@ -49,6 +52,7 @@ APLAY = os.environ.get("PEPPA_AUSGABE_APLAY") or "/usr/bin/aplay"
 PORT = int(os.environ.get("PEPPA_RUECKMELDUNG_PORT") or 47150)
 AUSGAENGE = ("lautsprecher", "kopfhoerer")
 RUECKFALL = "lautsprecher"
+KLANG_GERAET = "lautsprecher_klang"   # Lautsprecher mit Equalizer (asound.conf); geht er nicht: ohne
 FORMAT = ["-t", "raw", "-f", "S16_LE", "-r", "44100", "-c", "2"]
 PRUEF_S = 0.25            # so oft nach der Vorgabe des Players sehen
 MELDEN_S = 1.0            # so oft den Fluss melden
@@ -96,13 +100,23 @@ class Melder:
             pass
 
 
-def wahl_lesen(pfad=WAHL):
+def _wahl(pfad):
     try:
         with open(pfad, encoding="utf-8") as f:
-            ziel = json.load(f).get("ausgang")
-    except (OSError, ValueError, AttributeError):
-        return RUECKFALL
+            d = json.load(f)
+        return d if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def wahl_lesen(pfad=WAHL):
+    ziel = _wahl(pfad).get("ausgang")
     return ziel if ziel in AUSGAENGE else RUECKFALL
+
+
+def klang_lesen(pfad=WAHL):
+    """Soll der Lautsprecher über den Equalizer laufen? (vom Player, nur wenn er eingerichtet ist)"""
+    return _wahl(pfad).get("klang") is True
 
 
 class Relais:
@@ -111,6 +125,9 @@ class Relais:
         self.melden = melden or Melder()
         self.jetzt, self.schlaf = jetzt, schlaf
         self.ziel = None
+        self.geraet = None              # ALSA-Gerät, auf dem aplay gerade spielt
+        self.klang = False              # Equalizer gewünscht
+        self.klang_kaputt = False       # Equalizer hat in diesem Lauf versagt: ohne weiter
         self.proc = None
         self.gesperrt = set()           # Ausgänge, die in diesem Lauf versagt haben
         self.fehlstarts = []
@@ -122,7 +139,13 @@ class Relais:
 
     def _gewuenscht(self):
         ziel = wahl_lesen(self.wahl)
+        self.klang = klang_lesen(self.wahl)
         return RUECKFALL if ziel in self.gesperrt else ziel
+
+    def _geraet_fuer(self, ziel):
+        if ziel == "lautsprecher" and self.klang and not self.klang_kaputt:
+            return KLANG_GERAET
+        return ziel
 
     def _wahl_geaendert(self):
         try:
@@ -144,11 +167,15 @@ class Relais:
             self.melden("wechsel", von=self.ziel, nach=neu)
             self._beenden()
             self._starten(neu)
+        elif self.proc is not None and self._geraet_fuer(neu) != self.geraet:   # Equalizer an/aus
+            self._beenden()
+            self._starten(neu)
 
     # ------------------------------------------------------------ aplay
 
     def _starten(self, ziel):
-        befehl = [self.aplay, "-q", "-D", ziel, *FORMAT]
+        geraet = self._geraet_fuer(ziel)
+        befehl = [self.aplay, "-q", "-D", geraet, *FORMAT]
         try:
             p = subprocess.Popen(befehl, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, bufsize=0,
                                  close_fds=True)
@@ -162,7 +189,7 @@ class Relais:
         except (OSError, ImportError, ValueError):
             pass
         with self._sperre:
-            self.proc, self.ziel = p, ziel
+            self.proc, self.ziel, self.geraet = p, ziel, geraet
 
     def _beenden(self, sanft=False):
         with self._sperre:
@@ -193,7 +220,13 @@ class Relais:
         self._beenden()
         t = self.jetzt()
         self.fehlstarts = [x for x in self.fehlstarts if t - x < FEHLER_FENSTER_S] + [t]
-        text = grund or f"aplay auf '{self.ziel}' beendet (Code {code})"
+        text = grund or f"aplay auf '{self.geraet or self.ziel}' beendet (Code {code})"
+        if self.geraet == KLANG_GERAET:                # Equalizer geht nicht: Lautsprecher ohne ihn
+            self.klang_kaputt = True
+            self.fehlstarts.pop()
+            log(f"{text} – Lautsprecher ohne Equalizer")
+            self.melden("fehler", ziel="klang", text=text, rueckfall="lautsprecher")
+            return
         if self.ziel != RUECKFALL and grund is None and code != -9 and len([x for x in self.fehlstarts if t - x < 3]) < BELEGT_VERSUCHE:
             log(f"{text} – neuer Versuch")              # Pi-Klinke ohne Mischer: evtl. gerade belegt
             self.schlaf(BELEGT_PAUSE_S)

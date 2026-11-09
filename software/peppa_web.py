@@ -276,8 +276,11 @@ def _ausgabe_jetzt():
 
 
 def klang_info():
+    rasp = player_zustand().get("raspotify") or {}
+    fehler = [f for f in rasp.get("fehler") or [] if str(f).startswith("klang")]
     return {"da": klang.eingerichtet(), "baender": einstellungen.laden()["klang"]["baender"],
-            "namen": list(klang.BAENDER), "min": klang.MIN_DB, "max": klang.MAX_DB, "vorlagen": klang.VORLAGEN}
+            "namen": list(klang.BAENDER), "min": klang.MIN_DB, "max": klang.MAX_DB, "vorlagen": klang.VORLAGEN,
+            "fehler": fehler[-1] if fehler else None}
 
 
 def klang_setzen(daten):

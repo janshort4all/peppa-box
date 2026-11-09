@@ -164,7 +164,8 @@ class Player:
         self.regler = bedienung.Regler(lautstaerke, einstellungen, log=log)
         self.akkuwache = akku.Akkuwache(lesen=akku_lesen_gesperrt, ansage=self.ansager.sagen,
                                         ausschalten=self.herunterfahren, log=log)
-        self.ausgang = ausgang.Ausgang(self.st, lautstaerke, einstellungen, rueck=self.rueck, log=log)
+        self.ausgang = ausgang.Ausgang(self.st, lautstaerke, einstellungen, rueck=self.rueck, log=log,
+                                       klang_da=klang.eingerichtet if sp is spotify else None)
         self.bed = bedienung.Bedienung(self.st, self.auto, self.regler, einstellungen, sagen=self.ansager.sagen,
                                        akku_info=lambda: self.akkuwache.status,
                                        herunterfahren=self.herunterfahren, karte=self.karte_info,

@@ -31,7 +31,7 @@ class Werte(unittest.TestCase):
         def amixer(*args, eingabe=None):
             aufrufe.append((args, eingabe))
             return ""
-        with mock.patch.object(klang, "_amixer", amixer), mock.patch.object(klang.os, "chmod") as chmod:
+        with mock.patch.object(klang, "_amixer", amixer), mock.patch.object(klang, "_datei_ok", return_value=True):
             self.assertTrue(klang.anwenden([-24, 0, 0, 0, 0, 0, 0, 0, 0, 6]))
         self.assertEqual(len(aufrufe), 1)
         args, text = aufrufe[0]
@@ -39,7 +39,21 @@ class Werte(unittest.TestCase):
         zeilen = text.splitlines()
         self.assertEqual(zeilen[0], "cset numid=1 33,33")
         self.assertEqual(zeilen[9], "cset numid=10 75,75")
-        chmod.assert_called_once_with(klang.DATEI, 0o666)
+
+    def test_datei_fehlt_oder_nicht_fuer_alle_beschreibbar(self):
+        # 09.11.2026: amixer (als Benutzer) legte die Datei mit 0644 an -> Raspotify konnte nicht öffnen
+        aufrufe = []
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(klang, "DATEI", os.path.join(d, "k.bin")), \
+                mock.patch.object(klang, "_amixer", lambda *a, **k: aufrufe.append(a) or ""):
+            self.assertFalse(klang.eingerichtet())
+            self.assertFalse(klang.anwenden([0] * 10, log=lambda t: None))
+            self.assertEqual(aufrufe, [])                      # amixer darf die Datei nicht anlegen
+            with open(klang.DATEI, "wb"):
+                pass
+            os.chmod(klang.DATEI, 0o644)
+            self.assertFalse(klang.eingerichtet())
+            os.chmod(klang.DATEI, 0o666)
+            self.assertTrue(klang.anwenden([0] * 10))
 
     def test_anwenden_ohne_equalizer_meldet(self):
         log = []
@@ -51,7 +65,8 @@ class Werte(unittest.TestCase):
 
     def test_eingerichtet(self):
         zehn = "".join(f"numid={i},iface=MIXER,name='{i}. x Playback Volume'\n" for i in range(10))
-        with mock.patch.object(klang, "_amixer", lambda *a, **k: zehn):
+        with mock.patch.object(klang, "_amixer", lambda *a, **k: zehn), \
+                mock.patch.object(klang, "_datei_ok", return_value=True):
             self.assertTrue(klang.eingerichtet())
         with mock.patch.object(klang, "_amixer", lambda *a, **k: None):
             self.assertFalse(klang.eingerichtet())

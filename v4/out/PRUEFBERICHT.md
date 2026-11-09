@@ -1,4 +1,4 @@
-# Prüfbericht Musikbox v4 (Stand 27.10.2026)
+# Prüfbericht Musikbox v4 (Stand 09.11.2026)
 
 Automatisch gerechnet mit den Werten aus `model.py`. Bauteile, deren Maße noch fehlen, stecken als Platzhalter (Hüllquader) im Modell.
 
@@ -67,6 +67,7 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | 08_ein_taste_orange.stl | 17 × 17 × 13 | – |
 | 09_riemen_gegenplatte.stl | 18 × 24 × 4 | – |
 | 11_niederhalter_stiftleiste.stl | 65 × 20 × 18 | – |
+| 12_gummiecken_TPU_orange.stl | 145 × 145 × 19 | – |
 
 Alle anderen Flächen sind steiler als 45° oder liegen auf der Platte. Kein Teil braucht Stützmaterial.
 

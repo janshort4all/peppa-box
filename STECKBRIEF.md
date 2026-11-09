@@ -1,4 +1,4 @@
-# Peppa Box – Projekt-Steckbrief (Stand 08.11.2026)
+# Peppa Box – Projekt-Steckbrief (Stand 09.11.2026)
 
 Eigenbau einer Toniebox-Alternative für Kinder. Eine NFC-Karte mit aufgeklebtem Cover-Bild startet eine Spotify-Playlist.
 Gehäuse: gedruckter Würfel 140 × 140 × 140 mm in Beige mit orangen Akzenten, Elegoo Centauri Carbon 2 mit CANVAS (4 Rollen), PETG.
@@ -29,6 +29,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 | Druck | **Korpus 04./05.11. gedruckt – perfekt, abgenommen.** Deckel 05.11. (Symbole vertieft) nicht abgenommen; Symbole bleiben vertieft (ertastbar), Variante B (gerichtete Brücken) mit C12 bestätigt; als Nächstes ganzer Deckel, G-Code vorher prüfen (Nachtrag 05.11. (5)) |
 | Verdrahtung | **Komplett verdrahtet, exakt nach Verdrahtungsplan 08.11.** (Jan, 08.11. abends) |
 | Software | **Alle Bedienelemente programmiert (08.11. (3))**: Touchfelder, Drehknopf, Ein-Taste, Kopfhörer-Umschaltung, Akku-Ansage und -Schutz, Ansagen. Am Pi einrichten und testen (Anleitung im Nachtrag) |
+| Gummiecken | **Neu 09.11.:** Gummiecken mit Füßen aus orangem TPU, ein Teil, ohne Änderung am Gehäuse (Nachtrag 09.11.). Im Modell, geprüft. Als Nächstes: TPU kaufen, Coupon C16 drucken, Form (A/B/C) wählen |
 
 ## Hardware (endgültig)
 
@@ -55,6 +56,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 - **Rechts:** Drehknopf (y 84, z 60) und Klinke (y 84, z 24). **Links:** Riemen (z 118). **Hinten:** USB-C-Einbaubuchse x 114, z 60, innen höchstens 20 mm tief (Produkt offen; Stecker am Akku-Board gewinkelt oder ≤ 20 mm), Lüftungsschlitze.
 - **Front:** gedrucktes Gitter statt Stoff, **einfarbig beige**; Logo groß in der Mitte als **eigene orange Buchstaben, 1,2 mm erhaben, aufgeklebt** (Stifte in Sacklöchern), beiges Feld um das Logo ohne lose Löcher (`GR_HALO`): `06a` Gitter, `06b` alle Buchstaben, Bilder `out/gitter_ansicht.png`, `out/gitter_vorne_nah.png` (Nachträge 05.11. (6), 06.11. (1), (2), (4)).
 - Höhen: Klemmen 77,5 mm, Kartenfach ab 86,8 mm, Deckel-Module ab 117,4 mm.
+- **Gummiecken (TPU, seit 09.11.):** Rahmen `12_gummiecken_TPU_orange.stl` = 4 Eckschuhe + Ring unter dem Boden, Füße 3 mm. Hält per Rastwulst unter der Fuge Boden/Korpus, Fuß unter dem Boden und Ring (Vorspannung). Parameter `ECK_*` in `v4/model.py`.
 
 Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine Stützen. Fuzzy Skin 0,20 / 0,30 Classic **nur über den Modifier `01f_…FUZZY_aussenhaut`** (Prozess „Nur lackiert“, Modifier „Kontur“; alle Korpus-Einstellungen in `v4/out/README.md`); der alte Modifier `01m_…` ist ungültig (siehe Nachtrag 04.11.).
 
@@ -79,6 +81,7 @@ Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine St�
 8. Optional: Lichtleiter für die Lade-LED, Ideen zur optischen Individualisierung (Seitenteile, Deckeleinlage, Magnete).
 9. **Sprachausgaben überarbeiten (Wunsch Jan 08.11.):** Alle Ansagen außer „bereit“ (Sprachausgabe pico2wave) klingen schrecklich. Ziel: alle Ansagen als eigene Aufnahmen in einheitlicher Stimme (wie „bereit“: ElevenLabs, Stimme „Helmut“), gleiche Lautheit. Texte in `software/ansagen/TEXTE.md`. Details folgen von Jan.
 10. Spotify-Anmeldung über die Eltern-Seite statt im Terminal (für künftiges Neuaufsetzen).
+11. **Gummiecken:** TPU 95A orange kaufen, Coupon C16 (Wulst 0,4 / 0,5 / 0,6) drucken und an einer vorderen und einer hinteren Ecke probieren, Form wählen (A flach 10/10, B geschwungen 16/8 = Standard, C 20/8), Außenmaß der Box knapp über der Fuge messen, dann Rahmen drucken (Nachtrag 09.11.).
 
 ## Links (Artefakte, bleiben dauerhaft erhalten)
 
@@ -100,6 +103,7 @@ In einem neuen Chat die Zip anhängen und sagen: „Entpacke nach /home/claude/m
 | `v4/boden_plan.py` | Draufsicht und Höhen des Bodens |
 | `v4/usbc_schnitt.py` | Schnitte durch den Halter der USB-C-Platine, Ansicht der Öffnung (`out/usbc_schnitt.png`) |
 | `v4/modifier.py` | Modifier-Körper „ohne Fuzzy Skin“ |
+| `v4/ecken_bild.py` | Bilder Gummiecken: Ansicht, Schnitt durch Fuge und Wulst, Formvarianten (`out/gummiecken_*.png`) |
 | `v4/gitter/` | Logo-Vorlage (`peppa_box_logo.png`), Vektorisierung (`logo.py`), Bild zum Gitter (`render_gitter.py` → `out/gitter_ansicht.png`) |
 | `plan/gen_plan5.py` | erzeugt `verdrahtungsplan.html` (nach Baugruppen, Aufdrucke des Aufsatzes) |
 | `plan/einkaufsliste.html` | Einkaufsliste (Daten stehen im Skriptteil) |
@@ -782,3 +786,17 @@ Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) l�
 - **Offen (Jan, 23:59):** Musik wird unterbrochen; die Box „kommt durcheinander“ bei Akku-Ansage während der Musik und bei mehrmals „vor“ hintereinander. Noch kein Protokoll dazu. Unklar, ob das Update (7) schon eingespielt war. Nächster Schritt: nach jedem Vorfall „Letzte Meldungen“ als Screenshot.
 - **00:00:** Protokoll nach Update (7): lokaler Beleg greift („Raspotify spielt aber nachweislich – läuft“), „Nächster Titel“ ok. Danach „Play-Feld: Pause“ ohne Berührung (Karte lag die ganze Zeit) = **Phantom-Berührung am Play-Feld**. Die Folgezeile „Karte weg, Pause“ war nur irreführend formuliert (allgemeine Pause-Meldung, auch bei Tasten-Pause) → jetzt „Pause (Spotify …)“. Offen: Touch-Schwelle mit den Balken der Eltern-Seite einstellen (Standard 8/4), Deckel-Kabel weg von Verstärker/Lautsprecherkabel.
 - **00:05:** Stopp über Play-Feld → Pause ok; Play → Weiter ok, nach einigen Sekunden Abbruch, dann Ansage „Einen Moment, die Musik kommt gleich“ (kommt, wenn ein Spielen-Wunsch 8 s unbestätigt ist). Tasten haben richtig reagiert; vermutlich scheiterte die **Prüfung nach dem Weiter** → Fehlschlag → frischer Start. Verdacht (unbelegt): librespot braucht im gleichmäßigen Spielen weniger als die Schwelle 2 % (7,7 % war evtl. die Startlast). Protokoll fehlt (Box aus). **Nächster Schritt:** librespot-CPU beim gleichmäßigen Spielen und in Pause messen (`top -bn3 -d2 -p $(pgrep -x librespot)`), dann Schwelle festlegen; Alternative robuster: Ereignis-Hook von librespot (`LIBRESPOT_ONEVENT`, meldet playing/paused direkt) statt Web-API/CPU.
+
+## Nachtrag 09.11.2026 – Gummiecken mit Füßen (TPU orange), ohne Neudruck des Gehäuses
+
+- **Wunsch Jan:** Die Box soll doch Füße bzw. einen Gummischutz bekommen (ersetzt „keine Gummifüße“ vom 06.11.): orange Gummiecken, die die Ecken schützen, stylisch aussehen und beim Stehen Vibrationen dämpfen. Anklipsen, **Gehäuse nicht neu drucken**.
+- **Befestigung (Lösung):** Am fertigen Gehäuse gibt es außen genau einen Hinterschnitt: die Fuge Boden/Korpus 4 mm über der Standfläche. Einzelne Ecken halten trotzdem nicht: Eine 90°-Ecke lässt sich nicht umklammern, sie fiele schräg nach außen ab. Deshalb **ein Teil**: vier Eckschuhe, unter dem Boden durch einen Ring verbunden. Halt: (1) Rastwulst im Schuh hakt unter die Fuge (nicht nach unten abziehbar), (2) Fuß unter dem Boden (nicht nach oben), (3) Ring zieht die Ecken nach innen (`ECK_VOR` 0,25 je Seite kleiner gebaut, dazu drücken die Fuzzy-Spitzen ±0,2 ins TPU). Ohne Werkzeug, ohne Kleber, ohne Schrauben.
+- **Befund gedruckter Korpus (STL 04.11. ausgewertet, `01_korpus_beige.stl`):** Die V-Fuge ist nur an den Seiten, hinten und an den hinteren Teilen der vorderen Rundungen vollständig. **Vorne (x ≈ 9–131) hat der Korpus unten keine Fase**: die Frontplatte (`plate_front`) füllt sie, dort ist die Fuge eine Stufe (Fase nur am Boden, Korpus-Unterkante waagerecht). Der Wulst ist deshalb ein **Sägezahn**: untere Flanke 45° parallel zur Bodenfase (0,14 Luft), Oberseite waagerecht 0,1 unter der Korpus-Unterkante. Passt in beide Formen, hakt vorne sogar fester. Mit den gedruckten STL von Korpus und Boden geprüft: 0,000 mm³ Überschneidung.
+- **Modell (`gummiecken()`, Parameter `ECK_*`):** Wand 2,4, oben außen gerundet R 1,2, Fuß 3 mm (Box steht nur auf den Ecken), Fuß reicht 20 mm unter den Boden (deckt die Eckschrauben), Schenkel 10 mm über die Rundung R 16 hinaus, Enden gerundet. Höhe an der Ecke 16, an den Schenkelenden 8 mm (cos²-Übergang, Variante B); vorne begrenzt die Fase des Gittersitzes (Abstand 2,8 mm, Prüfung ≥ 1). Ring 7,5 × 1,2 mm, 12 mm hinter der Kante, liegt auf der Platte (druckt ohne Stütze), 1,8 mm Luft zum Boden, trägt nicht; von der Seite erst unter ca. 9° zu sehen. Rahmen ringsum gleich (Richtung beim Aufsetzen egal). Ca. 20 g, Druckmaß 144 × 144 × 19 mm, Überhang 0.
+- **Prüfungen (`check.py`, neuer Abschnitt):** 1 Teil, keine Überschneidung mit Korpus/Boden, Abstand Gittersitz 2,8 mm, Wulst vorhanden, keine Kollision mit anderen Teilen; alle übrigen Prüfungen unverändert, alle anderen STL bytegleich.
+- **Netz:** Die Wand jedes Eckschuhs wird als Querschnitt (außen Fase/Rundung, innen genau die Box mit Wulst) entlang der Kontur direkt als Netz gezogen, die vier Ecken gespiegelt statt gedreht, die Stationen der Rundung um eine halbe Teilung gegen die 5°-Teilung der Kontur versetzt, Innenseite 0,02 nach außen (Sehnenfehler). Ergebnis: Rahmen und C16 dicht (trimesh), keine entarteten Dreiecke. Eine Vereinigung vieler Hüllen hatte Splitter erzeugt.
+- **Dateien:** `12_gummiecken_TPU_orange.stl` (mit Vorspannung, Druckausrichtung), Coupons `coupon_C16_gummiecke_wulst_0-4/0-5/0-6.stl` (eine Ecke ohne Ring, ohne Vorspannung, 1/2/3 Löcher im Fuß), Bilder `gummiecken_ansicht.png`, `gummiecken_schnitt.png`, `gummiecken_varianten.png` (A flach 10/10, B 16/8, C 20/8). README-Abschnitt „Gummiecken“ mit allen Einstellungen (Elegoo TPU 95A @ECC2; Arachne, 3 Wände, Gyroid 15 %, oben 3 Schichten, Außenwand 25 mm/s, keine Umrandung, Naht innen aufmalen).
+- **Drucker:** TPU laut Elegoo nicht über den normalen CANVAS-Weg: Adapter für flexibles Filament (Datei auf dem USB-Stick / Nexprint) und CANVAS-Kabel abziehen. TPU vorher trocknen.
+- **Filament (orange TPU 95A, Elegoo hat kein Orange):** Kingroon TPU95A Orange 1 kg (3DJake, günstig) oder colorFabb TPU 95A Orange 700 g (niederländischer Hersteller, ca. doppelter Preis). Farbton gegen das vorhandene Orange nicht geprüft. Bedarf ca. 20 g + Coupons ca. 12 g.
+- **Dämpfung (ehrlich):** TPU 95A ist recht hart. Die Füße verhindern Klappern und Rutschen und dämpfen etwas; die Gyroid-Füllung in den Füßen macht sie weicher. Echte Entkopplung wie bei Lautsprecher-Absorbern ist das nicht.
+- **Offen:** C16 drucken und an einer vorderen und einer hinteren Ecke prüfen (Klick, Sitz, kein Spalt oben), `ECK_WULST` festlegen; Form wählen; **Außenmaß der Box messen** (Messschieber links–rechts und vorne–hinten, ca. 8 mm über der Standfläche; Modell 140,0 + Fuzzy-Spitzen), danach `ECK_VOR` bestätigen; Rahmen drucken.

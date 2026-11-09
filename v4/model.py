@@ -1415,6 +1415,164 @@ def niederhalter_schraube():
 
 
 # =====================================================================================
+# Gummiecken mit Füßen (TPU, orange) – Nachtrag 09.11.2026
+# Ein Teil: vier Eckschuhe + Ring unter dem Boden. Hält am fertigen Gehäuse ohne Änderung:
+#  - Rastwulst unter der Fuge Boden/Korpus (z 4, hakt unter die Korpus-Unterkante): Ecke kann nicht nach unten abrutschen,
+#  - Fuß unter dem Boden: Ecke kann nicht nach oben rutschen,
+#  - Ring unter dem Boden zieht die Ecken nach innen (eine 90°-Ecke allein lässt sich nicht umklammern, sie fiele schräg ab).
+# Koordinaten wie im Einbau: z = 0 ist die Unterseite des Bodens, der Rahmen reicht bis z = -ECK_FUSS.
+# =====================================================================================
+ECK_WAND = par("ECK_WAND", 2.4, "festgelegt", "Wandstärke der Eckschuhe (TPU, ca. 5 Linien à 0,45)")
+ECK_H = par("ECK_H", (16.0, 8.0), "festgelegt",
+            "Oberkante der Eckschuhe über der Bodenunterseite: in der Mitte der Rundung, an den Schenkelenden; dazwischen weicher Übergang (cos²). "
+            "Grenze vorne: Fase des Gittersitzes (z 11,4 ab x 21, an der Sitzrundung R 9 höher); Abstand dazu mindestens 1 mm (check.py)")
+ECK_SCHENKEL = par("ECK_SCHENKEL", 10.0, "festgelegt", "Schenkel auf den geraden Flächen hinter dem Ende der Eckrundung R 16 (je Seite)")
+ECK_END_R = par("ECK_END_R", 5.0, "festgelegt", "Rundung der Schenkelenden oben (in der Ansicht); auf diesen letzten Millimetern bleibt die Höhe gleich")
+ECK_KANTE = par("ECK_KANTE", 1.2, "festgelegt",
+                "Obere Außenkante gerundet mit diesem Radius; untere Außenkante am Fuß Fase 45° gleicher Größe (druckbar, nimmt den Elefantenfuß)")
+ECK_FUSS = par("ECK_FUSS", 3.0, "festgelegt", "Fuß unter dem Boden: so viel steht die Box höher; nur die vier Ecken tragen")
+ECK_FUSS_IN = par("ECK_FUSS_IN", 20.0, "festgelegt", "Fuß reicht so weit unter den Boden (ab Außenkante); deckt die Eckschrauben (8,6 / 8,6)")
+ECK_WULST = par("ECK_WULST", 0.5, "Probedruck",
+                "Rastwulst (Sägezahn) unter der Fuge Boden/Korpus: untere Flanke 45° parallel zur Fase der Boden-Oberkante (0,14 Luft), "
+                "Oberseite waagerecht 0,1 unter der Korpus-Unterkante (z 3,9), so tief. Passt in beide Fugenformen am gedruckten Korpus: "
+                "V-Fuge an Seiten, Rückseite und den hinteren Teilen der Rundungen; vorne (x 9–131) hat der Korpus keine Fase, dort "
+                "ist es eine Stufe (Fase nur am Boden, Korpus-Unterkante waagerecht). Coupon C16: 0,4 / 0,5 / 0,6")
+ECK_VOR = par("ECK_VOR", 0.25, "Probedruck",
+              "Vorspannung: Rahmen je Seite um so viel kleiner gebaut. Beim Aufsetzen dehnt sich der Ring je Seite um 2 × 0,25; "
+              "dazu drücken die Fuzzy-Spitzen (±0,2) in das TPU")
+ECK_RING = par("ECK_RING", (12.0, 7.5, 1.2), "festgelegt",
+               "Ring unter dem Boden: Abstand zur Außenkante, Breite, Dicke. Liegt auf der Druckplatte (ohne Stütze), trägt nicht: "
+               "zwischen Ring und Boden bleiben ECK_FUSS − 1,2 = 1,8 mm Luft. 12 mm hinter der Kante, innen 0,5 vor dem Rand der Füße: erst unter ca. 9° Blickwinkel von der Seite zu sehen")
+
+
+def _vor(vor):
+    return ECK_VOR if vor is None else vor
+
+
+def eck_kontur(vor=None):
+    """Kontur, auf der der Rahmen gebaut wird: Außenkontur der Box, je Seite um die Vorspannung kleiner (Eckradius bleibt R)."""
+    v = _vor(vor)
+    return rr(v, v, W - v, W - v, R)
+
+
+def eck_hoehe(s):
+    """Oberkante über der Bodenunterseite, s = Weg entlang der Kontur ab der Mitte der Eckrundung."""
+    h0, h1 = ECK_H
+    s1 = R * math.pi / 4 + ECK_SCHENKEL - ECK_END_R          # ab hier gleich hoch (Rundung des Schenkelendes)
+    t = min(abs(s) / s1, 1.0)
+    return h1 + (h0 - h1) * math.cos(math.pi / 2 * t) ** 2
+
+
+def _eck_profil(h, wulst=None):
+    """Querschnitt eines Eckschuhs (n = nach außen ab Kontur, z), einfaches Polygon gegen den Uhrzeigersinn:
+    außen Fase unten und gerundete Oberkante; innen genau die Box: Fase der Standkante, Bodenrand, Rastwulst (Sägezahn),
+    Korpus. Unter dem Boden reicht er bis n = −0,8 (dort schließt der Fuß an)."""
+    k, wd, f = ECK_KANTE, ECK_WAND, ECK_FUSS
+    wu = ECK_WULST if wulst is None else wulst
+    zt = BASE_T - 0.1                              # Oberseite des Wulsts: 0,1 unter der Korpus-Unterkante (vorne Stufe, sonst V-Fuge)
+    assert zt - wu > BASE_T - EDGE_V, "Wulst tiefer als die Fase am Boden"
+    s = 0.02                                       # Innenseite 0,02 nach außen: Sehnen der Rundung (5°-Teilung) ragen sonst 0,015 in die Box
+    pts = [(-BASE_CHAMF + s, -f), (wd - k, -f), (wd, -f + k), (wd, h - k)]
+    for i in range(1, 9):
+        t = math.radians(90.0 * i / 8)
+        pts.append((wd - k + k * math.cos(t), h - k + k * math.sin(t)))
+    pts += [(s, h), (s, zt), (s - wu, zt), (s, zt - wu), (s, BASE_CHAMF), (-BASE_CHAMF + s, 0.0)]
+    return pts
+
+
+def _eck_wand(vor=None, wulst=None, schritt=0.8):
+    """Wand der vorderen linken Ecke als Folge konvexer Stücke entlang der Kontur (Höhe ändert sich mit eck_hoehe)."""
+    v = _vor(vor)
+    c = v + R                                       # Mittelpunkt der Eckrundung (c, c)
+    sa = R * math.pi / 4
+    e = c + ECK_SCHENKEL + 1.0                      # etwas über das Schenkelende hinaus, die Zone schneidet ab
+    stat = []                                       # (Punkt, Normale, s)
+    for x in np.arange(e, c, -schritt):
+        stat.append(((x, v), (0.0, -1.0), sa + (x - c)))
+    st = 360.0 / SEG                                                 # Teilung der Rundungen der Kontur (5°)
+    winkel = [270.0] + list(np.arange(270.0 - st / 2, 180.0, -st)) + [180.0]   # um halbe Teilung versetzt: Kanten des Fußes
+    for th in winkel:                                                # treffen nie genau auf eine Station (sonst Splitter im Netz)
+        a = math.radians(th)
+        stat.append(((c + R * math.cos(a), c + R * math.sin(a)), (math.cos(a), math.sin(a)), R * math.radians(th - 225.0)))
+    for y in np.arange(c + schritt, e + 1e-6, schritt):
+        stat.append(((v, y), (-1.0, 0.0), sa + (y - c)))
+
+    def sec(p, nrm, s):
+        return [(p[0] + n * nrm[0], p[1] + n * nrm[1], z) for (n, z) in _eck_profil(eck_hoehe(s), wulst)]
+    return _sweep([sec(*st) for st in stat], _eck_profil(ECK_H[1], wulst))
+
+
+def _sweep(secs, prof2d):
+    """Geschlossener Körper aus Querschnitten gleicher Punktzahl (je ein ebenes, einfaches Polygon; prof2d = dasselbe Polygon
+    in seiner Ebene, für die Enden), direkt als Netz:
+    Mantel aus Vierecken, Enden als Fächer. Sauberer als eine Vereinigung vieler Hüllen (dort entstehen Splitter)."""
+    S, N = len(secs), len(secs[0])
+    v = np.array([pt for sec in secs for pt in sec], dtype=np.float64)
+    tri = []
+    for i in range(S - 1):
+        for j in range(N):
+            a, b = i * N + j, i * N + (j + 1) % N
+            c, d = a + N, b + N
+            tri += [(a, b, d), (a, d, c)]
+    last = (S - 1) * N
+    cap = m3.triangulate([np.asarray(prof2d, dtype=np.float64)])     # Profil ist nicht konvex (Wulst): echte Triangulierung
+    for (a, b, c) in cap:
+        tri.append((int(a), int(c), int(b)))
+        tri.append((last + int(a), last + int(b), last + int(c)))
+    tri = np.array(tri, dtype=np.int64)
+    p0, p1, p2 = v[tri[:, 0]], v[tri[:, 1]], v[tri[:, 2]]
+    if np.einsum("ij,ij->i", p0, np.cross(p1, p2)).sum() < 0:          # Umlaufsinn so, dass das Volumen positiv ist
+        tri = tri[:, ::-1]
+    m = Manifold(m3.Mesh(vert_properties=v.astype(np.float32), tri_verts=tri.astype(np.uint32)))
+    assert m.status() == m3.Error.NoError and m.volume() > 0, "Sweep ungültig"
+    return m
+
+
+def _eck_zone_ecke(vor):
+    """Bereich der vorderen linken Ecke (x, y klein): Schenkel enden bei R + ECK_SCHENKEL, oben gerundet, unten Fase."""
+    v = _vor(vor)
+    e = v + R + ECK_SCHENKEL                       # Schenkelende, gemessen ab der Außenkante (Rahmenkontur)
+    f, h, r = ECK_FUSS, ECK_H[1], ECK_END_R
+    c = ECK_KANTE - 0.2                            # Fase am Schenkelende; bewusst nicht auf Höhe der Ringoberkante (sonst Splitter im Netz)
+    pts = [(-30.0, -f - 1.0), (e - c - 1.0, -f - 1.0), (e - c, -f), (e, -f + c), (e, h - r)]
+    for i in range(1, 9):
+        t = math.radians(90.0 * i / 8)
+        pts.append((e - r + r * math.cos(t), h - r + r * math.sin(t)))
+    pts += [(e - r, max(ECK_H) + 1.0), (-30.0, max(ECK_H) + 1.0)]
+    prof = CrossSection([pts])
+    return ext_xz(prof, -30.0, W + 30.0) ^ ext_yz(prof, -30.0, W + 30.0)
+
+
+def _an_ecke(m, k):
+    """Eckschuh vorne links an Ecke k setzen (0 vorne links, 1 vorne rechts, 2 hinten rechts, 3 hinten links). Gespiegelt statt
+    gedreht: der Schuh ist zur Diagonale symmetrisch, und Spiegeln ist exakt (Drehen um 90° hinterlässt Rundungsfehler → Splitter)."""
+    if k in (1, 2):
+        m = m.mirror([1, 0, 0]).translate([W, 0, 0])
+    if k in (2, 3):
+        m = m.mirror([0, 1, 0]).translate([0, W, 0])
+    return m
+
+
+def gummiecken(vor=None, wulst=None, ecken=(0, 1, 2, 3), ring=True):
+    """Gummiecken-Rahmen in Einbaulage (z = 0 = Bodenunterseite). vor=0: so, wie er auf der Box sitzt (für Prüfungen und Bilder)."""
+    cs = eck_kontur(vor)
+    f = ECK_FUSS
+    # Fuß unter dem Boden nur bis zur Kontur; Außenhaut, Fase und Rundung kommen allein von der Wand (keine deckungsgleichen Flächen)
+    fuss = slab(cs.offset(-0.5, JoinType.Round) - cs.offset(-ECK_FUSS_IN, JoinType.Round), -f, 0.0) ^ box(-30, -30, -f - 1, W / 2, W / 2, 1)
+    ecke = (_eck_wand(vor, wulst) + fuss) ^ _eck_zone_ecke(vor)          # Innenseite (Fase, Wulst) steckt im Querschnitt der Wand
+    teile = [_an_ecke(ecke, i) for i in ecken]
+    if ring:
+        a, b, t = ECK_RING
+        teile.append(slab(cs.offset(-a, JoinType.Round) - cs.offset(-a - b, JoinType.Round), -f, -f + t))
+    return U([p for p in U(teile).decompose() if p.volume() > 1.0])    # Splitter ohne Volumen (Rechenreste der Hüllen) weglassen
+
+
+def gummiecken_druck(m):
+    """Druckausrichtung: wie im Einbau, Fußflächen auf der Platte (reine Verschiebung)."""
+    return m.translate([0, 0, ECK_FUSS])
+
+
+# =====================================================================================
 # Platzhalter (für den Kollisionscheck, nicht zum Drucken)
 # =====================================================================================
 
@@ -1496,6 +1654,7 @@ def build():
         "ein_taste": taste(),
         "riemen_gegenplatte": gegenplatte(),
         "niederhalter": niederhalter(),
+        "gummiecken": gummiecken(vor=0),          # so, wie der Rahmen auf der Box sitzt; Druckdatei mit Vorspannung (build_all)
     }
     return parts
 

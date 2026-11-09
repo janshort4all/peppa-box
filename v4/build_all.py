@@ -36,6 +36,7 @@ DRUCK = {   # Teil: (Datei, Farbe, Hinweis)
     "ein_taste": ("08_ein_taste_orange.stl", "Orange", "Kopf unten"),
     "riemen_gegenplatte": ("09_riemen_gegenplatte.stl", "Schwarz/Grau", "flach"),
     "niederhalter": ("11_niederhalter_stiftleiste.stl", "Schwarz/Grau", "Dachoberseite mit den Schraubensenkungen auf der Platte, Säulen nach oben; Steg über der gelben Stiftleiste"),
+    "gummiecken": ("12_gummiecken_TPU_orange.stl", "Orange, TPU 95A", "Fußflächen auf der Platte, wie im Einbau; ein Teil (4 Eckschuhe + Ring), mit Vorspannung gebaut. Einstellungen: Abschnitt „Gummiecken“"),
 }
 
 
@@ -48,6 +49,8 @@ def export_parts(parts):
             o = M.gitter_druck(parts[k], parts[k])
         elif k == "gitter_logo":
             o = M.buchstaben_druck(parts[k])
+        elif k == "gummiecken":
+            o = M.gummiecken_druck(M.gummiecken())          # Druckdatei mit Vorspannung ECK_VOR (parts: ohne, für Prüfungen)
         else:
             o = K.orient(k, parts[k])
         p = os.path.join(OUT, fn)
@@ -114,7 +117,7 @@ def renders(parts):
     ext = [(parts["korpus"], COL["beige"], None), (parts["deckel_orange"], COL["orange"], None), (parts["deckel_beige"], COL["beige"], None),
            (parts["gitter_beige"], COL["beige"], None), (parts["gitter_logo"], COL["orange"], None), (ph["Lautsprecher"], COL["spk"], None),
            (parts["drehknopf"], COL["orange"], None), (parts["ein_taste"], COL["orange"], None),
-           (M.karte_world(), COL["orange"], None), (card_cover(), COL["cover"], None)]
+           (M.karte_world(), COL["orange"], None), (card_cover(), COL["cover"], None), (parts["gummiecken"], COL["orange"], None)]
     a = render(ext, 22, -36, size=1000, scale=3.0, center=(70, 70, 75))
     b = render(ext, 20, 150, size=620, scale=2.2, center=(70, 70, 78), light=(0.5, 0.7, 0.8))
     # Schnitt bei x = 70 (linke Hälfte entfernt)

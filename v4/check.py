@@ -114,8 +114,8 @@ def handedness(name):
     return int(np.sign(d1 * d0))
 def orient(name, m):
     """Gibt das Teil so zurück, wie es auf der Platte liegt (z=0 unten)."""
-    if name in ("korpus", "boden", "riemen_gegenplatte_flat"):
-        pass
+    if name in ("korpus", "boden", "riemen_gegenplatte_flat", "gummiecken"):
+        pass                                          # gummiecken: wie im Einbau, Fußflächen unten (M.gummiecken_druck)
     if name in ("deckel_orange", "deckel_beige"):
         m = m.rotate([0, 180, 0])                     # kopfüber: Oberseite auf die Platte (wie M.deckel_kopfueber)
     elif name == "deckelrahmen":
@@ -195,6 +195,27 @@ def insertion_bottom(parts, ph):
     return res
 
 
+def gummiecken_pruefung(parts):
+    """Gummiecken-Rahmen: sitzt ohne Überschneidung auf Korpus und Boden (ohne Vorspannung), Abstand zur Fase des Gittersitzes,
+    Rastwulst greift unter die Fuge, ein zusammenhängendes Teil, Blickwinkel, unter dem der Ring sichtbar wird."""
+    from manifold3d import JoinType
+    g = parts["gummiecken"]
+    r = {"teile": len(g.decompose()), "volumen": g.volume(), "masse_g": g.volume() / 1000 * 1.21}
+    r["ueberschneidung_korpus"] = inter_vol(g, parts["korpus"])
+    r["ueberschneidung_boden"] = inter_vol(g, parts["boden"])
+    sx0, sx1, sz0, sz1 = M.SEAT
+    c = M.SEAT_CH
+    seat = M.ext_xz(M.rr(sx0 - c, sz0 - c, sx1 + c, sz1 + c, M.SEAT_R + c), -5, 0.5)
+    r["abstand_gittersitz"] = g.min_gap(seat, 20.0)
+    # Wulst: Material des Rahmens innerhalb der Kontur zwischen Fasenbeginn am Boden und Fuge (z 3,2–4,0)
+    band = M.slab(M.OUT.offset(-0.05, JoinType.Round) - M.OUT.offset(-1.0, JoinType.Round), M.BASE_T - M.EDGE_V, M.BASE_T)
+    r["wulst_volumen"] = (g ^ band).volume()
+    a, b, t = M.ECK_RING
+    r["ring_blickwinkel"] = math.degrees(math.atan((M.ECK_FUSS - t) / (a - M.BASE_CHAMF)))
+    r["druck"] = M.gummiecken_druck(M.gummiecken()).bounding_box()
+    return r
+
+
 if __name__ == "__main__":
     parts = M.build()
     ph = M.placeholders()
@@ -243,6 +264,14 @@ if __name__ == "__main__":
     print(f"  Buchstaben: {g['teile']} Teile, {g['stifte']} Stifte, Abstand auf der Platte mindestens {g['abstand_platte']:.1f} mm, "
           f"Platte {g['platte'][3]:.0f} × {g['platte'][4]:.0f} mm; Schicht 1: {b1['flaeche']:.0f} mm², schmaler als 0,4: {b1['d04']:.2f} mm²")
     print(f"  Stifte im Gitter: Überschneidung {g['sitz']:.3f} mm³ (soll 0)")
+    print("== Gummiecken mit Füßen (TPU, ein Teil) ==")
+    gp = gummiecken_pruefung(parts)
+    print(f"  {gp['teile']} Teil, {gp['volumen'] / 1000:.1f} cm³ ≈ {gp['masse_g']:.0f} g TPU; Druckmaß {gp['druck'][3] - gp['druck'][0]:.1f} × "
+          f"{gp['druck'][4] - gp['druck'][1]:.1f} × {gp['druck'][5] - gp['druck'][2]:.1f} mm")
+    print(f"  Überschneidung mit Korpus / Boden: {gp['ueberschneidung_korpus']:.2f} / {gp['ueberschneidung_boden']:.2f} mm³ (soll 0)")
+    print(f"  Abstand zur Fase des Gittersitzes: {gp['abstand_gittersitz']:.2f} mm (soll ≥ 1)" + ("" if gp['abstand_gittersitz'] >= 1.0 else "  ZU KNAPP"))
+    print(f"  Rastwulst unter der Fuge: {gp['wulst_volumen']:.1f} mm³ (soll > 0)")
+    print(f"  Ring unter dem Boden erst unter {gp['ring_blickwinkel']:.0f}° Blickwinkel von der Seite zu sehen")
     print("== Fuzzy Skin (Nachbildung ElegooSlicer je 0,2-mm-Schicht, Modifier 01f Außenhaut) ==")
     import fuzzy_check as FC
     rows = FC.analyse(korpus=parts["korpus"])

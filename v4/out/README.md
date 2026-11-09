@@ -1,4 +1,4 @@
-# Musikbox v4 – Druckpaket (Stand 27.10.2026)
+# Musikbox v4 – Druckpaket (Stand 09.11.2026)
 
 **Noch nicht das Gehäuse drucken.** Einige Maße sind Platzhalter, bis deine Teile gemessen sind
 (Liste in `PARAMETER.md`, Abschnitt „Vorläufig“). Jetzt sinnvoll: C7 (Lochbild) und die Probedruck-Coupons.
@@ -20,6 +20,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 
 | Datei | Prüft | Was du mir zurückmeldest |
 | --- | --- | --- |
+| coupon_C16_gummiecke_wulst_0-4 / _0-5 / _0-6 | **Probe vor den Gummiecken (09.11.):** eine Ecke vorne links aus **TPU**, ohne Ring, Rastwulst 0,4 / 0,5 / 0,6 mm (1 / 2 / 3 Löcher im Fuß), je ca. 4 g | Einstellungen wie der Rahmen (Abschnitt „Gummiecken“). Box an die Tischkante stellen, Stück von unten auf die Ecke vorne links drücken: Klickt der Wulst unter die Fuge? Liegt der Schuh an der Rundung ringsum an, auch oben an der Kante (kein Spalt)? Hält er, wenn man unten am Fuß zieht? Lässt er sich mit dem Fingernagel wieder lösen? Dasselbe an einer hinteren Ecke (dort V-Fuge statt Stufe). Passenden Wulst melden (`ECK_WULST`, Standard 0,5) |
 | coupon_C14_gitter_ecke_beige + coupon_C14_buchstaben_P_e_p_orange | **Probe vor dem Gitter:** Ecke oben links einfarbig (Löcher, Rand, schräge Oberkante, ein Stift) mit den Sacklöchern für „P“, „e“, „p“, dazu diese drei Buchstaben, ca. 12 g | Mit den Gitter- bzw. Buchstaben-Einstellungen (Abschnitt „Gitter“). Fäden in den Löchern weg? Buchstaben-Stifte: leicht hinein, ohne zu wackeln? Buchstaben liegen plan auf? In die obere linke Ecke des Korpus drücken: Stift fest? |
 | coupon_C15_karte_rastung_20grad / _30grad / _40grad | **Rastung der Karte (07.11.):** untere 60 mm der Karte mit Rille, Auszugsflanke 20° / 30° / 40° (1 / 2 / 3 Kerben oben), je ca. 8 g. Braucht das **neue** Kartenfach `04` (Nase 0,7 mm über der Karte) | Wie die Karte drucken (Rückseite unten). Einstecken: deutlicher Klick? Box kopfüber halten und schütteln: bleibt das Stück drin? Kann dein Sohn es ohne Mühe herausziehen? Den passenden Winkel Claude melden (`RAST_ALPHA`, Standard 30°), danach die Karten drucken |
 | coupon_C12_deckel_oberseite_* (5 Dateien) | **Probe vor dem Deckel:** obere 2,4 mm vorne rechts (Play, Vor, Mond, Kante mit Fase), kopfüber, Symbole vertieft, ca. 15 g | Wie den Deckel einrichten: Variante A mit `_opfer_PLA`, Variante B mit `_MODIFIER_bruecke_richtung`, beide mit `_MODIFIER_haut_1wand`. Beige in den Kreisen so ruhig wie außen? Symbolböden eben bzw. Fäden parallel? |
@@ -51,6 +52,7 @@ Anschlusskante mit USB-C und Schalter nach hinten. Das Bild `boden_plan.png` zei
 | 08_ein_taste_orange.stl | Orange | Kopf unten |
 | 09_riemen_gegenplatte.stl | Schwarz/Grau | flach |
 | 11_niederhalter_stiftleiste.stl | Schwarz/Grau | Dachoberseite mit den Schraubensenkungen auf der Platte, Säulen nach oben; Steg über der gelben Stiftleiste |
+| 12_gummiecken_TPU_orange.stl | Orange, TPU 95A | Fußflächen auf der Platte, wie im Einbau; ein Teil (4 Eckschuhe + Ring), mit Vorspannung gebaut. Einstellungen: Abschnitt „Gummiecken“ |
 | 02_deckel_einfarbig.stl | eine Farbe | Prototyp, gleiche Form wie 02a + 02b; Symbole 0,8 mm vertieft |
 | 10_karte_orange.stl | Orange | Rückseite unten (NFC-Tasche an der Platte), Einschubtasche oben; Cover auf Papier von oben einschieben. Rille vorne unten + Einführfase für die Rastung (seit 07.11.; ältere Karten ohne Rille neu drucken) |
 
@@ -320,6 +322,47 @@ Bild: `drehknopf_schnitt.png`. Die Ein-Taste `08` passt mit auf die Platte (glei
 Aufstecken: Steg in den Achsschlitz ausrichten, Knopf gerade **bis Anschlag** aufschieben (Achsende liegt am Knopfboden) –
 dann bleibt 1 mm Luft zur Wand. Die Markierung ist nur Zierde: Der Drehgeber dreht endlos, sie zeigt keine Lautstärke an.
 
+### Gummiecken mit Füßen (`12_gummiecken_TPU_orange.stl`, Stand 09.11.2026, TPU 95A orange)
+
+Ein Teil: vier Eckschuhe und ein Ring unter dem Boden. Der Rahmen hält ohne jede Änderung am Gehäuse: Ein Rastwulst in jedem
+Eckschuh hakt unter die Fuge zwischen Boden und Korpus (vorne ist dort eine Stufe, an den Seiten und hinten die V-Fuge), der Fuß
+liegt unter dem Boden, und der Ring zieht die vier Ecken nach innen. Die Box steht nur auf den vier Füßen (3 mm). Bilder:
+`gummiecken_ansicht.png`, `gummiecken_schnitt.png`, `gummiecken_varianten.png`. Zuerst Coupon C16.
+
+**Drucker:** TPU nicht über den normalen CANVAS-Weg laden. Elegoo: Adapter für flexibles Filament einsetzen (Datei und Anleitung
+auf dem USB-Stick des Druckers bzw. bei Nexprint „Flexible Filament Printing Adapter for Centauri Carbon 2 Combo“) und vor dem
+Druck das CANVAS-Kabel abziehen. Rolle vorher trocknen (TPU zieht Wasser; feuchtes TPU zieht Fäden und blüht auf).
+
+Ausgangspunkt: Drucker „Elegoo Centauri Carbon 2 0.4 nozzle“, Filament „Elegoo TPU 95A @ECC2“, Prozess „0.20mm Standard @Elegoo CC2 0.4 nozzle“,
+Druckbetttyp „Texturierte PEI-Platte“. In Klammern: Profilwert vorher.
+
+| Reiter → Gruppe | Einstellung | Wert |
+| --- | --- | --- |
+| Lage | Datei laden, nicht drehen | Fußflächen auf der Platte, Eckschuhe oben offen; keine Stützen nötig (Wulst 45°, Rundungen weichen zurück) |
+| Qualität → Schichthöhe | Schichthöhe / Höhe der ersten Schicht | 0,2 / 0,2 (bleibt) |
+| Qualität → Naht | Nahtposition | Ausgerichtet (bleibt) + **Naht aufmalen** (Pinselgröße 0,5, Vertikal) auf der **Innenseite** jedes Eckschuhs (Fläche zur Box), Mitte der Rundung – dort unsichtbar |
+| | Schrägnaht | Keine (bleibt) |
+| Qualität → Präzision | Elefantenfußkompensation | 0,15 (0,1) – Fase unten bleibt sauber |
+| Qualität → Wandgenerator | Wandgenerator | **Arachne** (Klassisch) – die 2,4-mm-Wand wird ganz aus Wandlinien gedruckt, ohne Lücken |
+| Qualität → Wände und Oberflächen | Vermeiden von Wandüberquerungen | an (aus) – weniger Fahrten über die Sichtfläche, weniger Fäden |
+| Struktur → Wände | Wandschleifen | 3 (2) |
+| Struktur → Obere/Untere Schichten | Obere / untere Schalenschichten | 3 (5) / 3 (bleibt) – Füße innen weich, Ring (6 Schichten) massiv |
+| Struktur → Füllung | Fülldichte / Füllmuster | 15 % (bleibt) / **Gyroid** (Geradlinig) – die Füße federn in alle Richtungen |
+| Geschwindigkeit → erste Schicht | Erste Schicht / Füllung erste Schicht | 15 (50) / 15 (105) mm/s |
+| Geschwindigkeit → restliche Schichten | Außenwand / Innere Wand | 25 (160) / 35 (200) mm/s; alles andere begrenzt der maximale Volumenstrom des Filamentprofils (3,2 mm³/s ≈ 38 mm/s) |
+| Unterstützung | Stützen | aus (bleibt) |
+| Sonstiges → Umrandung | Randtyp | **Keine Umrandung** (Automatisch) – Füße und Ring haften flächig |
+| Sonstiges → Fuzzy Skin | Fuzzy Skin | Keine (bleibt) – glattes Orange neben dem körnigen Beige |
+| Filament (Elegoo TPU 95A @ECC2) | Düse / Druckbett / Lüfter / Rückzug | 225 °C / 35 °C / 100 % ab Schicht 2 / 0,4 mm (alles Profilwerte, bleiben). Düse innerhalb der Herstellerangabe deiner Rolle halten (colorFabb 220–230 °C, Kingroon 210–230 °C) |
+| Drucker → Extruder | Z-Hub-Höhe | 0,4 (bleibt) |
+
+Ca. 20 g TPU, Druckmaß 144 × 144 × 19 mm. Nach dem Druck abkühlen lassen und die Platte biegen; TPU haftet fest.
+
+**Aufsetzen:** Rahmen auf den Tisch legen (er ist ringsum gleich, die Richtung ist egal), Box gerade hineinstellen und jede Ecke
+nach unten drücken, bis der Wulst unter der Fuge einrastet. Prüfen: Oberkante der Schuhe liegt überall an. **Abnehmen:** Schuh oben
+an der Kante mit dem Daumen nach außen ziehen, Ecke für Ecke. Die 4 Eckschrauben des Bodens liegen unter den Füßen: Zum Öffnen
+von unten erst den Rahmen abnehmen (der Deckel ist davon nicht betroffen).
+
 ### Fuzzy Skin nur außen (Modifier „Außenhaut“, seit 04.11.2026)
 
 Warum: Jedes Loch durch die Wand (Klinke, Drehgeber, USB-C, Schlitze, Riemen, Deckelschrauben, Lautsprecher) schneidet den
@@ -448,3 +491,4 @@ Alle Dome, Kernlöcher und Senkungen sind auf die vorhandenen Kunststoffschraube
 - `PARAMETER.md`, `PRUEFBERICHT.md` – Werte mit Status und Prüfergebnis
 - `boden_plan.png` – Boden von oben und Höhen von der Seite
 - `gitter_ansicht.png` – Frontgitter: Ansichten, Schnitt durch Buchstabe, Stift und Luftraum, Lage auf den Druckplatten
+- `gummiecken_ansicht.png`, `gummiecken_schnitt.png`, `gummiecken_varianten.png` – Gummiecken mit Füßen (`ecken_bild.py`)

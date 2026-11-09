@@ -198,6 +198,22 @@ def c15_karte_rastung():
     return out
 
 
+C16_WULST = (0.4, 0.5, 0.6)
+
+
+def c16_gummiecke():
+    """Eine Gummiecke (vorne links, ohne Ring, ohne Vorspannung) mit Rastwulst 0,4 / 0,5 / 0,6 mm. Kennung: 1 / 2 / 3 Löcher Ø 2
+    im Fuß (liegen unter dem Boden, unsichtbar). Auf eine Ecke der Box drücken: Klick, Sitz an der Rundung, kein Spalt oben.
+    TPU, Druck wie der Rahmen: Fußfläche unten."""
+    out = []
+    for i, w in enumerate(C16_WULST):
+        c = M.gummiecken_druck(M.gummiecken(vor=0, wulst=w, ecken=(0,), ring=False))
+        for j in range(i + 1):
+            c = c - cyl_z(13.0 + 3.5 * j, 6.0, -1, M.ECK_FUSS + 2, 1.0)
+        out.append(base_at_zero(c))
+    return out
+
+
 def all_coupons():
     out = {}
     out["C1_wand_rechts_drehgeber_klinke"] = c1_wand_rechts()
@@ -236,6 +252,8 @@ def all_coupons():
     out["C14_buchstaben_P_e_p_orange"] = b
     for a, k in zip(C15_WINKEL, c15_karte_rastung()):
         out[f"C15_karte_rastung_{int(a)}grad"] = k
+    for w, k in zip(C16_WULST, c16_gummiecke()):
+        out[f"C16_gummiecke_wulst_{w:.1f}".replace(".", "-")] = k
     a, b = c9_kopfueber()
     out["C9_deckel_kopfueber_felder"] = a
     out["C9_deckel_kopfueber_taste_schlitz"] = b

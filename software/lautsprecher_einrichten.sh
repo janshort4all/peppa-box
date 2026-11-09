@@ -224,6 +224,16 @@ else
     echo "$ASOUND: Mischer und Software-Lautstaerke eingetragen."
 fi
 
+# --- Probe der ganzen Kette mit Equalizer (die Probe oben prueft ihn nur allein, gegen "null").
+#     Am Pi (09.11.) brach aplay in der Kette mit Mischer ab (snd_pcm_hw_param_get_min: Assertion
+#     !snd_interval_empty) -> kein Ton. Dann die Einrichtung ohne Equalizer wiederholen.
+if [ "$EQ" = 1 ] && [ -z "$PEPPA_EQ" ] && [ -z "$PEPPA_TROCKEN" ]; then
+    if ! sudo timeout 10 aplay -q -D lautsprecher -t raw -f S16_LE -r 44100 -c 2 "$STILLE" > /dev/null 2>&1; then
+        echo "WARNUNG: Lautsprecher-Kette mit Equalizer spielt nicht – richte ohne Equalizer ein."
+        PEPPA_EQ=0 exec sh "$0" "$@"
+    fi
+fi
+
 # --- 3. Dienst peppa-stille
 PINCTRL="$(command -v pinctrl || echo /usr/bin/pinctrl)"
 KLANG_START=""

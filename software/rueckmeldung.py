@@ -36,6 +36,9 @@ class Rueckmeldung:
         self.ereignis_zeit = None
         self.spielt = None
         self.titel = None
+        self.titel_uri = None            # spotify:track:… (aus track_changed)
+        self.dauer_ms = None
+        self._pos = None                 # (Position in ms, Zeit) aus playing/paused/seeked
         self.verbunden = None            # session_connected / session_disconnected
         self._faden = None
         self.empfang_ok = False
@@ -128,7 +131,21 @@ class Rueckmeldung:
             elif name in ("paused", "stopped", "end_of_track", "unavailable"):
                 self.spielt = False
             if name in ("track_changed", "playing", "paused", "loading") and n.get("track_id"):
+                if n.get("track_id") != self.titel:
+                    self._pos = None
                 self.titel = n.get("track_id")
+            if name == "track_changed":
+                self.titel_uri = n.get("uri") or self.titel_uri
+                try:
+                    self.dauer_ms = int(n.get("duration_ms"))
+                except (TypeError, ValueError):
+                    self.dauer_ms = None
+                self._pos = (0, t)
+            if n.get("position_ms") is not None:
+                try:
+                    self._pos = (int(n["position_ms"]), t)
+                except (TypeError, ValueError):
+                    pass
             if name == "session_connected":
                 self.verbunden = True
             elif name == "session_disconnected":
@@ -141,6 +158,22 @@ class Rueckmeldung:
             self.log("Raspotify: mit Spotify verbunden.")
 
     # ------------------------------------------------------------ Abfragen
+
+    def position(self):
+        """Geschätzte Stelle im aktuellen Titel (ms) aus den Ereignissen, None wenn unbekannt."""
+        with self._sperre:
+            pos, spielt = self._pos, self.spielt
+        if pos is None:
+            return None
+        ms = pos[0] + (int((self.jetzt() - pos[1]) * 1000) if spielt else 0)
+        return min(ms, self.dauer_ms) if self.dauer_ms else ms
+
+    def stelle(self):
+        """(Titel-URI, Position) für fortschritt.py, wenn librespot gerade spielt; sonst None."""
+        p = self.position()
+        if not self.spielt or not self.titel_uri or p is None:
+            return None
+        return self.titel_uri, p
 
     def relais_aktiv(self):
         return self.relais_zeit is not None

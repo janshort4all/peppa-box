@@ -57,10 +57,16 @@ class FakeSpotify:
             return 404, {"error": {"status": 404}}
         return 204, None
 
-    def abspielen(self, dev, uri):
+    def abspielen(self, dev, uri, titel=None, position_ms=0):
+        self.stellen = getattr(self, "stellen", []) + [(titel, position_ms)]
+        if titel == "spotify:track:weg":               # Titel nicht mehr in der Playlist
+            self.befehle.append(("spielen", uri))
+            return 404, {"error": {"status": 404, "message": "Invalid offset"}}
         st, d = self._befehl("spielen", uri)
         if st < 300:
             self._starte(uri, neu=True)
+            if position_ms:
+                self.pos_basis = position_ms
         return st, d
 
     def fortsetzen(self, dev):
@@ -646,3 +652,86 @@ class Gegenprobe(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FakeFortschritt:
+    def __init__(self):
+        self.daten, self.vergessen_von = {}, []
+
+    def stelle(self, uri):
+        return self.daten.get(uri)
+
+    def vergessen(self, uri):
+        self.vergessen_von.append(uri)
+        self.daten.pop(uri, None)
+
+    def merken(self, uri, titel, pos):
+        self.daten[uri] = {"titel": titel, "position_ms": pos}
+
+
+class Weiterspielen(Basis):
+    """Wunsch Jan (09.11.2026): nach einer Unterbrechung nie wieder von vorn."""
+
+    def setUp(self):
+        super().setUp()
+        self.fs = FakeFortschritt()
+        self.st.fortschritt = self.fs
+
+    def test_karte_startet_an_gemerkter_stelle(self):
+        self.fs.daten["spotify:album:A"] = {"titel": "spotify:track:t7", "position_ms": 95000}
+        self.st.karte_auf("spotify:album:A")
+        self.lauf(10)
+        self.assertEqual(self.sp.stellen, [("spotify:track:t7", 95000)])
+        self.assertTrue(self.spielt("spotify:album:A"))
+        self.assertTrue(any("gemerkter Stelle (1:35" in m for m in self.meldungen))
+
+    def test_nach_raspotify_neustart_an_der_stelle_statt_von_vorn(self):
+        self.fs.daten["spotify:album:A"] = {"titel": "spotify:track:t3", "position_ms": 60000}
+        self.sp.modus = "zombie"                         # spielt nicht -> frisch, dann Neustart
+        self.st.karte_auf("spotify:album:A")
+        self.lauf(40)
+        self.assertGreaterEqual(len(self.sp.stellen), 2)
+        self.assertTrue(all(st == ("spotify:track:t3", 60000) for st in self.sp.stellen))
+
+    def test_stelle_unbrauchbar_dann_von_vorn(self):
+        self.fs.daten["spotify:album:A"] = {"titel": "spotify:track:weg", "position_ms": 5000}
+        self.st.karte_auf("spotify:album:A")
+        self.lauf(15)
+        self.assertEqual(self.sp.stellen, [("spotify:track:weg", 5000), (None, 0)])
+        self.assertTrue(self.spielt("spotify:album:A"))
+        self.assertEqual(self.di.neustarts, [])          # kein Neustart wegen der Stelle
+
+    def test_von_vorn_vergisst_stelle_und_startet_neu(self):
+        self.fs.daten["spotify:album:A"] = {"titel": "spotify:track:t7", "position_ms": 95000}
+        self.st.karte_auf("spotify:album:A")
+        self.lauf(10)
+        self.assertTrue(self.st.von_vorn())
+        self.lauf(10)
+        self.assertEqual(self.sp.stellen[-1], (None, 0))
+        self.assertEqual(self.fs.vergessen_von, ["spotify:album:A"])
+        self.assertTrue(self.spielt("spotify:album:A"))
+
+    def test_von_vorn_ohne_karte(self):
+        self.assertFalse(self.st.von_vorn())
+
+    def test_pause_und_weiter_bleibt_fortsetzen(self):
+        self.st.karte_auf("spotify:album:A")
+        self.lauf(10)
+        self.st.taste_play()
+        self.lauf(3)
+        self.st.taste_play()
+        self.lauf(5)
+        self.assertEqual(self.starts()[-1], ("weiter", None))
+
+    def test_pruefung_merkt_stelle_aus_web_api(self):
+        alt = self.sp.zustand
+
+        def mit_uri():
+            z = alt()
+            if z and not z.get("leer"):
+                z["titel_uri"] = "spotify:track:t1"
+            return z
+        self.sp.zustand = mit_uri
+        self.st.karte_auf("spotify:album:A")
+        self.lauf(10)
+        self.assertEqual(self.fs.daten["spotify:album:A"]["titel"], "spotify:track:t1")

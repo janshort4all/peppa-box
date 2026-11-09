@@ -25,6 +25,10 @@ Abgefangen wird
   401 / 429 / Netz weg     Token erneuern / Wartezeit von Spotify einhalten / mit wachsendem
                            Abstand wiederholen (nie Dauerfeuer).
   Pause durch Automatik    (Schlummer-Timer, Ruhezeit) gilt als gewollt: keine "Reparatur".
+  Weiterspielen            Jeder Neustart einer Karte (Störung, Raspotify-/Player-Neustart, Box
+                           aus und an, Karte wieder aufgelegt) beginnt an der gemerkten Stelle
+                           (fortschritt.py); lässt sie sich nicht anspielen, von vorn. Von vorn
+                           auch: Play-Feld 2 s halten (von_vorn).
   Tasten im Deckel         Play = Pause/Weiter bei liegender Karte (Karte weg nach Tasten-Pause
                            ändert nichts), vor/zurück = Titel springen, Halten = spulen. Befehle
                            werden zusammengefasst und nur gesendet, solange Musik zur Karte läuft.
@@ -160,7 +164,7 @@ class Dienste:
 
 class Steuerung:
     def __init__(self, spotify, dienste=None, geraet="Peppa Box", jetzt=time.monotonic,
-                 log=print, bei_bereit=None, lokal=None):
+                 log=print, bei_bereit=None, lokal=None, fortschritt=None):
         self.sp, self.dienste = spotify, dienste or Dienste()
         self.lokal = lokal or (lambda: None)   # Messfühler: spielt Raspotify wirklich? (LibrespotLast)
         self.geraet, self.jetzt, self.log, self.bei_bereit = geraet, jetzt, log, bei_bereit
@@ -198,6 +202,11 @@ class Steuerung:
         self.sprung = 0             # vorgemerkte Titelsprünge (+ vor, - zurück)
         self.spul_ms = 0            # vorgemerktes Spulen
         self.reparatur = None       # Grund, wenn ein anderer Teil (Ausgang) Raspotify neu haben will
+        # Weiterspielen an der gemerkten Stelle (fortschritt.py): stelle(uri) -> dict|None, vergessen(uri)
+        self.fortschritt = fortschritt
+        self.von_vorn_uri = None    # Play-Feld lange gehalten: diese Karte von vorn
+        self.ohne_stelle = set()    # Stelle ließ sich nicht anspielen: von vorn
+        self._mit_stelle = None     # letzter Start lief mit gemerkter Stelle (Karte)
 
     # ------------------------------------------------------------ vom Kartenleser / der Automatik
 
@@ -224,6 +233,38 @@ class Steuerung:
                 self._wunsch_setzen(("spielen", self.karte_uri))
                 return "weiter"
             return "keine_karte"
+
+    def von_vorn(self):
+        """Play-Feld lange gehalten: liegende Karte von vorn. True, wenn eine Karte liegt."""
+        with self._sperre:
+            uri = self.karte_uri
+            if not uri:
+                return False
+            self.von_vorn_uri = uri
+            if self.ist and self.ist[1] == uri:
+                self.ist = None                     # nicht "läuft schon" / "weiter", sondern neu
+            self.wunsch = None                      # gleicher Wunsch soll trotzdem neu umgesetzt werden
+            self._wunsch_setzen(("spielen", uri))
+        if self.fortschritt is not None:
+            try:
+                self.fortschritt.vergessen(uri)
+            except Exception as e:
+                self.log(f"Gemerkte Stelle nicht gelöscht: {e!r}")
+        return True
+
+    def _stelle(self, uri):
+        """Gemerkte Stelle für einen Start dieser Karte (oder {} = von vorn)."""
+        if self.von_vorn_uri == uri:
+            self.von_vorn_uri = None
+            return {}
+        if self.fortschritt is None or uri in self.ohne_stelle:
+            return {}
+        try:
+            st = self.fortschritt.stelle(uri)
+        except Exception as e:
+            self.log(f"Gemerkte Stelle nicht lesbar: {e!r}")
+            return {}
+        return dict(st) if st else {}
 
     def pausieren(self):
         """Pause wünschen, die Karte bleibt gemerkt (Ein-Taste vor dem Ausschalten). True, wenn etwas lief."""
@@ -443,6 +484,7 @@ class Steuerung:
         uebertragen = weiter and self.nach_neustart_uebertragen
         if weiter and self.fehler >= 1:
             weiter = uebertragen = False                # Fortsetzen hat nicht geklappt: frisch starten
+        self._mit_stelle = None
         try:
             if uebertragen:
                 status, data = self.sp.uebertragen(dev, True)
@@ -451,8 +493,15 @@ class Steuerung:
                 status, data = self.sp.fortsetzen(dev)
                 text = "Weiter"
             else:
-                status, data = self.sp.abspielen(dev, uri)
-                text = "Spiele"
+                stelle = self._stelle(uri)
+                if stelle:
+                    status, data = self.sp.abspielen(dev, uri, **stelle)
+                    sek = stelle.get("position_ms", 0) // 1000
+                    text = f"Spiele ab gemerkter Stelle ({sek // 60}:{sek % 60:02d} in {stelle.get('titel')})"
+                else:
+                    status, data = self.sp.abspielen(dev, uri)
+                    text = "Spiele"
+                self._mit_stelle = uri if stelle else None
         except Exception as e:
             self._netzfehler(e, jetzt)
             return
@@ -471,6 +520,12 @@ class Steuerung:
         self._befehl_fehlgeschlagen(status, data, jetzt)
 
     def _befehl_fehlgeschlagen(self, status, data, jetzt):
+        if self._mit_stelle and status in (400, 403, 404):  # z. B. Titel nicht mehr in der Playlist
+            self.log("  Gemerkte Stelle lässt sich nicht anspielen – Karte von vorn.")
+            self.ohne_stelle.add(self._mit_stelle)
+            self._mit_stelle = None
+            self.naechster_versuch = jetzt + 1
+            return
         if status == 401:
             self.sp.token_verwerfen()
             self.log("  Spotify-Zugang erneuert (401).")
@@ -577,6 +632,11 @@ class Steuerung:
         elif lokal:                                     # Web-API stumm, aber Ton fließt nachweislich
             probe = (False, "(lokal)", 0, jetzt, True)
         p["proben"].append(probe)
+        if z and probe and probe[0] and self.fortschritt is not None and z.get("titel_uri"):
+            try:
+                self.fortschritt.merken(p["uri"], z["titel_uri"], z.get("position", 0))
+            except Exception:
+                pass
         if self._laeuft_sicher(p["proben"]):
             if not p["proben"][-1][0]:
                 self.log("  Spotify meldet keine Wiedergabe, Raspotify spielt aber nachweislich – läuft.")

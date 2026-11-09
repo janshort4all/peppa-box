@@ -44,6 +44,10 @@ class FakeSteuerung:
         self.aufrufe.append(("pausieren",))
         return True
 
+    def von_vorn(self):
+        self.aufrufe.append(("von_vorn",))
+        return True
+
 
 class FakeAuto:
     def __init__(self):
@@ -153,8 +157,12 @@ class Felder(Basis):
         self.assertEqual(self.gesagt, ["ruhezeit"])
 
     def test_play_lange_gehalten_nichts(self):
-        self.tippen("play", dauer=2.0)
+        self.tippen("play", dauer=1.8)
         self.assertEqual(self.st.aufrufe, [])
+
+    def test_play_2_s_halten_von_vorn(self):
+        self.tippen("play", dauer=4.0)
+        self.assertEqual(self.st.aufrufe, [("von_vorn",)])          # einmal, kein Pause/Weiter
 
     def test_phantom_beruehrung_loest_nichts_aus(self):
         # Befund 09.11.2026: Play-Feld meldete ohne Finger ständig kurze Berührungen

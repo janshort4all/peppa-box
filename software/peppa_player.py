@@ -37,6 +37,7 @@ import automatik
 import bedienung
 import drehgeber
 import einstellungen
+import fortschritt
 import i2c
 import klang
 import lautstaerke
@@ -157,8 +158,12 @@ class Player:
         self.ansager = ansager or toene.Ansager(log=log)
         # Rückmeldung der Tonausgabe (ausgabe.py) und der librespot-Ereignisse (ereignis.py)
         self.rueck = rueckmeldung.Rueckmeldung(log=log)
+        # Weiterspielen an der unterbrochenen Stelle (Wunsch Jan 09.11.2026)
+        self.fortschritt = fortschritt.Fortschritt(log=log) if sp is spotify else None
         self.st = Steuerung(sp, geraet=GERAET, log=log,
-                            lokal=lokaler_beleg(self.rueck, LibrespotLast()) if sp is spotify else None)
+                            lokal=lokaler_beleg(self.rueck, LibrespotLast()) if sp is spotify else None,
+                            fortschritt=self.fortschritt)
+        self._spielte = None                    # Karte, die im letzten Durchlauf lief
         self.auto = automatik.Automatik(SpotifyFuerAutomatik(self.st, sp), lautstaerke, einstellungen, log=log,
                                         ausschalten=lambda: self.herunterfahren("Auto-Aus", None))
         self.regler = bedienung.Regler(lautstaerke, einstellungen, log=log)
@@ -384,6 +389,8 @@ class Player:
 
     def aufraeumen(self):
         """Touch-Chip und Kartenleser schlafen legen (vor dem Ausschalten und beim Beenden)."""
+        if getattr(self, "fortschritt", None) is not None:
+            self.fortschritt.sichern(sofort=True)   # Stelle der Musik nicht verlieren
         try:
             self.hw.schlafen()
         except Exception:
@@ -412,6 +419,10 @@ class Player:
             self._warten_ansagen()
         except Exception as e:
             self.log(f"Rückmeldung: Fehler {e!r}")
+        try:
+            self._stelle_merken()
+        except Exception as e:                      # Merken darf nie die Kartenabfrage stören
+            self.log(f"Stelle merken: Fehler {e!r}")
         self.zustand.update(self.auto.status)
         self.zustand.update(self.st.status)
         self.zustand["karte"] = self.aktuell
@@ -423,6 +434,26 @@ class Player:
         status_schreiben(self.zustand)
         systemd_melden("WATCHDOG=1")
         return beginn
+
+    def _stelle_merken(self):
+        """Jede Sekunde: Wo ist die Musik der liegenden Karte? (aus den librespot-Ereignissen)"""
+        if self.fortschritt is None:
+            return
+        ist = self.st.ist
+        karte = ist[1] if ist and ist[0] == "spielt" else None
+        if karte:
+            stelle = self.rueck.stelle()
+            if stelle:
+                self.fortschritt.merken(karte, *stelle)
+            ereignis, alter = self.rueck.ereignis, self.rueck.status.get("ereignis_vor_s")
+            pos, dauer = self.rueck.position(), self.rueck.dauer_ms
+            am_ende = ereignis and (ereignis[0] == "end_of_track" or (
+                ereignis[0] == "stopped" and pos is not None and dauer and dauer - pos < 10000))
+            if am_ende and alter is not None and alter > 5:
+                self.fortschritt.vergessen(karte)   # zu Ende gehört: nächstes Mal von vorn
+        elif self._spielte:
+            self.fortschritt.sichern(sofort=True)   # Pause/Karte weg: Stelle gleich auf die Karte schreiben
+        self._spielte = karte
 
     def lauf(self):
         self.starten()

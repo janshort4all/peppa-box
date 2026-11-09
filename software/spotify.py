@@ -176,8 +176,16 @@ def link_zu_uri(text):
     raise ValueError("Das sieht nicht nach einem Spotify-Link aus: " + text)
 
 
-def abspielen(device_id, uri):
-    body = {"uris": [uri]} if uri.split(":")[1] in ("track", "episode") else {"context_uri": uri}
+def abspielen(device_id, uri, titel=None, position_ms=0):
+    """Karte abspielen; mit titel/position_ms an einer gemerkten Stelle (fortschritt.py) weiter."""
+    if uri.split(":")[1] in ("track", "episode"):
+        body = {"uris": [uri]}
+    else:
+        body = {"context_uri": uri}
+        if titel:
+            body["offset"] = {"uri": titel}
+    if position_ms:
+        body["position_ms"] = int(max(0, position_ms))
     status, data = api("PUT", "/me/player/play", body, {"device_id": device_id})
     if status == 404:                       # Geraet noch nicht aktiv: erst Wiedergabe uebertragen
         api("PUT", "/me/player", {"device_ids": [device_id], "play": False})
@@ -207,7 +215,8 @@ def zustand():
         return None
     item = data.get("item") or {}
     return {"geraet": (data.get("device") or {}).get("id"), "spielt": bool(data.get("is_playing")),
-            "titel": item.get("id") or item.get("uri"), "position": data.get("progress_ms") or 0}
+            "titel": item.get("id") or item.get("uri"), "position": data.get("progress_ms") or 0,
+            "titel_uri": item.get("uri"), "kontext": (data.get("context") or {}).get("uri")}
 
 
 def uebertragen(device_id, spielen=True):

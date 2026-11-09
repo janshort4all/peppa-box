@@ -3,6 +3,7 @@
 Belegung (Verdrahtungsplan 08.11.2026; welche Elektrode welches Feld ist, steht in den Einstellungen):
   E0 zurück   antippen: vorheriger Titel        halten: zurückspulen (15 s alle 0,8 s)
   E1 Play     antippen: Pause / weiter (die Karte bleibt liegen)
+              2 s halten: Karte von vorn (sonst immer an der gemerkten Stelle weiter)
   E2 vor      antippen: nächster Titel          halten: vorspulen
   E3 Mond     antippen: Schlummer-Timer 15 -> 30 -> 45 -> 60 Min -> aus, jeweils mit Ansage
               5 s halten: Akkustand ansagen
@@ -37,6 +38,7 @@ LANG_SPRUNG_S = 0.7       # vor/zurück so lange halten = spulen
 SPUL_MS = 15000
 SPUL_TAKT_S = 0.8
 TIPP_MAX_S = 1.5          # länger gehalten = kein Antippen (Play, Mond)
+VON_VORN_S = 2.0          # Play so lange halten: Karte von vorn (sonst geht es an der gemerkten Stelle weiter)
 TIPP_MIN_S = 0.07         # kürzer = kein Finger, sondern Rauschen (Phantom-Berührung, Befund 09.11.2026)
 KURZ_MELDEN_S = 60.0      # ignorierte Phantom-Berührungen höchstens so oft zusammengefasst melden
 AKKU_HALTEN_S = 5.0
@@ -243,6 +245,10 @@ class Bedienung:
             elif f == "schlaf" and d >= AKKU_HALTEN_S and not g["lang"]:
                 g["lang"] = True
                 self.akku_ansagen()
+            elif f == "play" and d >= VON_VORN_S and not g.get("vorn"):
+                g["lang"] = g["vorn"] = True
+                if self.st.von_vorn():
+                    self.log("Play-Feld 2 s gehalten: Karte von vorn.")
             elif f == "play" and d >= TIPP_MAX_S:
                 g["lang"] = True                           # zu lang für ein Antippen: nichts
 

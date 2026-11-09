@@ -19,13 +19,23 @@ Fehler werden hier abgefangen:
 
 Rückmeldung an den Player per UDP an 127.0.0.1:47150 (JSON, "q": "ausgabe"): start, fluss (jede
 Sekunde, solange Ton fließt: lokaler Beleg, dass wirklich Musik läuft), wechsel, fehler, haengt, ende.
+Ansagen während der Musik (seit 09.11.2026): toene.py legt eine Ansage als Roh-Ton (S16_LE,
+44,1 kHz, Stereo) nach /dev/shm/peppa-box-ansage.raw und einen Auftrag nach
+/dev/shm/peppa-box-ansage.json. Dieses Programm mischt sie in den Musikstrom und senkt die Musik
+dabei weich ab („Ducking“): S-Kurve in dB auf −12 dB in 0,35 s, die Ansage beginnt nach 0,3 s,
+nach der Ansage 0,4 s halten, dann in 1,2 s zurück. So hört man die Ansage auf Lautsprecher und
+Kopfhörern gleich, und die Pi-Klinke (ohne Mischer) wird nicht doppelt belegt. Quittung und
+Lebenszeichen in /dev/shm/peppa-box-ausgabe.json; ohne Quittung spielt toene.py wie bisher selbst.
+
 Fehlertexte von aplay landen im Protokoll von Raspotify (journalctl -u raspotify).
 
 Installiert als root-eigene Kopie /usr/local/lib/peppa-box/ausgabe (dienst_einrichten.sh); läuft
 unter Raspotify (ohne Zugriff auf /home). Nur Standardbibliothek. Umgebungsvariablen PEPPA_* nur
 für Tests.
 """
+import array
 import json
+import math
 import os
 import select
 import socket
@@ -49,6 +59,16 @@ FEHLER_GRENZE = 3
 FEHLER_FENSTER_S = 10.0
 BELEGT_VERSUCHE = 3       # Kopfhörer ohne Mischer: kurz belegt (z. B. Ansage) -> so oft neu versuchen
 BELEGT_PAUSE_S = 0.5
+
+AUFTRAG = os.environ.get("PEPPA_ANSAGE_AUFTRAG") or "/dev/shm/peppa-box-ansage.json"
+STATUS = os.environ.get("PEPPA_AUSGABE_STATUS") or "/dev/shm/peppa-box-ausgabe.json"
+RATE = 44100
+DUCK_DB = -12.0           # Musik während der Ansage (−12 dB ≈ ein Viertel)
+AB_S = 0.35               # weich absenken
+VORLAUF_S = 0.30          # Ansage beginnt, wenn die Musik schon fast unten ist
+HALTEN_S = 0.40           # nach der Ansage noch leise bleiben
+AUF_S = 1.20              # langsam zurück
+BLOCK = 512               # Verstärkung je 512 Frames (12 ms) als Stützstelle, dazwischen linear – glatt und sparsam
 
 
 def log(text):
@@ -228,10 +248,143 @@ class Relais:
                     self.schreibt_seit = None
 
 
+def _s_kurve(x):
+    return 0.5 - 0.5 * math.cos(math.pi * x)
+
+
+class Mischer:
+    """Mischt Ansagen in den Musikstrom und senkt die Musik dabei weich ab (siehe oben)."""
+
+    def __init__(self, auftrag=AUFTRAG, status=STATUS, uhr=time.time):
+        self.auftrag, self.status, self.uhr = auftrag, status, uhr
+        self.tiefe = 0.0                 # 0 = volle Musik, 1 = ganz abgesenkt
+        self.ansage = None               # array('h') Stereo
+        self.pos = 0
+        self.vorlauf = 0                 # Frames bis zum Beginn der Ansage
+        self.halten = 0                  # Frames nach der Ansage
+        self.rest = b""
+        self.quittung = None
+        self._stand = None
+        self._status_fehler = False
+
+    def status_schreiben(self):
+        try:
+            tmp = self.status + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump({"pid": os.getpid(), "t": self.uhr(), "quittung": self.quittung}, f)
+            os.replace(tmp, self.status)
+            self._status_fehler = False
+        except OSError as e:
+            if not self._status_fehler:
+                log(f"Status nicht schreibbar ({e}) – Ansagen spielen dann ohne Absenken")
+            self._status_fehler = True
+
+    def status_entfernen(self):
+        try:
+            os.remove(self.status)
+        except OSError:
+            pass
+
+    def auftrag_pruefen(self):
+        """Neuen Auftrag übernehmen. True, wenn sich etwas geändert hat (dann Quittung schreiben)."""
+        try:
+            st = os.stat(self.auftrag)
+            stand = (st.st_ino, st.st_mtime_ns, st.st_size)
+        except OSError:
+            return False
+        if stand == self._stand:
+            return False
+        self._stand = stand
+        try:
+            with open(self.auftrag, encoding="utf-8") as f:
+                a = json.load(f)
+            kennung = a.get("id")
+        except (OSError, ValueError, AttributeError):
+            return False
+        if not kennung or kennung == self.quittung or self.uhr() > float(a.get("bis") or 0):
+            return False                 # alt oder abgelaufen: toene.py spielt dann selbst
+        werte = None
+        if a.get("pcm"):
+            try:
+                with open(a["pcm"], "rb") as f:
+                    roh = f.read()
+                werte = array.array("h")
+                werte.frombytes(roh[:len(roh) // 4 * 4])
+                if sys.byteorder == "big":
+                    werte.byteswap()
+            except OSError as e:
+                log(f"Ansage nicht lesbar: {e}")
+                return False
+        if werte:
+            if self.ansage is None:      # neue Ansage: erst absenken; folgt sie direkt einer anderen, sofort
+                self.vorlauf = int(VORLAUF_S * RATE * (1.0 - self.tiefe))
+            self.ansage, self.pos, self.halten = werte, 0, 0
+        else:                            # Stopp
+            if self.ansage is not None:
+                self.halten = int(HALTEN_S * RATE)
+            self.ansage = None
+        self.quittung = kennung
+        return True
+
+    def _gain(self):
+        return 10 ** (DUCK_DB * _s_kurve(self.tiefe) / 20)
+
+    def verarbeiten(self, daten):
+        daten = self.rest + daten
+        n = len(daten) // 4 * 4
+        self.rest, daten = daten[n:], daten[:n]
+        if self.ansage is None and self.halten <= 0 and self.tiefe <= 0.0:
+            return daten                 # nichts zu tun: Musik unverändert durchreichen
+        werte = array.array("h")
+        werte.frombytes(daten)
+        if sys.byteorder == "big":
+            werte.byteswap()
+        frames = len(werte) // 2
+        ab, auf = BLOCK / (AB_S * RATE), BLOCK / (AUF_S * RATE)
+        i = 0
+        while i < frames:
+            m = min(BLOCK, frames - i)
+            unten = self.ansage is not None or self.halten > 0
+            g0 = self._gain()
+            self.tiefe = min(1.0, self.tiefe + ab) if unten else max(0.0, self.tiefe - auf)
+            g1 = self._gain()
+            j0, j1 = 2 * i, 2 * (i + m)
+            if g0 == g1:
+                musik = [v * g0 for v in werte[j0:j1]]
+            else:
+                d = (g1 - g0) / m
+                musik = [v * (g0 + d * (k >> 1)) for k, v in enumerate(werte[j0:j1])]
+            # Ansage: zuerst Vorlauf (Musik senkt sich), dann dazumischen
+            a, pos, frei = self.ansage, self.pos, 0
+            if a is not None:
+                frei = min(self.vorlauf, m)
+                self.vorlauf -= frei
+                n = min(m - frei, (len(a) - pos) // 2)
+                if n > 0:
+                    o = 2 * frei
+                    musik[o:o + 2 * n] = [x + y for x, y in zip(musik[o:o + 2 * n], a[pos:pos + 2 * n])]
+                    pos += 2 * n
+                if pos >= len(a) and frei < m:
+                    self.ansage = None
+                    self.halten = int(HALTEN_S * RATE) - (m - frei - max(n, 0))
+            elif self.halten > 0:
+                self.halten -= m
+            werte[j0:j1] = array.array("h", [-32768 if x < -32768 else 32767 if x > 32767 else int(x)
+                                             for x in musik])
+            self.pos = pos
+            i += m
+        if sys.byteorder == "big":
+            werte.byteswap()
+        return werte.tobytes()
+
+
 def main(eingabe=None):
     fd = sys.stdin.fileno() if eingabe is None else eingabe
     melden = Melder()
     r = Relais(melden=melden)
+    mix = Mischer()
+    mix.auftrag_pruefen()                # gerade gestellter Auftrag (alte sind abgelaufen)
+    mix.status_schreiben()
     r._wahl_geaendert()
     r._starten(r._gewuenscht())
     melden("start", ziel=r.ziel)
@@ -246,19 +399,25 @@ def main(eingabe=None):
                 daten = os.read(fd, STUECK)
                 if not daten:
                     break
-                r.schreiben(daten)
                 menge += len(daten)
+                daten = mix.verarbeiten(daten)
+                if daten:
+                    r.schreiben(daten)
             t = time.monotonic()
             if t >= naechste_wahl:
                 naechste_wahl = t + PRUEF_S
                 r.wahl_pruefen()
                 r.pruefen_lebt()
+                if mix.auftrag_pruefen():
+                    mix.status_schreiben()
             if t >= naechste_meldung:
                 naechste_meldung = t + MELDEN_S
                 if menge:
                     melden("fluss", ziel=r.ziel, bytes=menge, s=round(t - letzte, 2))
                 menge, letzte = 0, t
+                mix.status_schreiben()
     finally:
+        mix.status_entfernen()
         ende.set()
         melden("ende", ziel=r.ziel)
         r._beenden(sanft=True)

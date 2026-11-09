@@ -20,6 +20,7 @@ Von Hand:  python3 ~/peppa-box/software/toene.py bereit        (eine Ansage)
 """
 import array
 import hashlib
+import json
 import math
 import os
 import shutil
@@ -214,6 +215,155 @@ def quelle_ohne_erzeugen(name):
     return "ton"
 
 
+# ---------------------------------------------------------------- In die Musik mischen
+
+MISCH_AUFTRAG = os.environ.get("PEPPA_ANSAGE_AUFTRAG") or "/dev/shm/peppa-box-ansage.json"
+MISCH_PCM = os.environ.get("PEPPA_ANSAGE_PCM") or "/dev/shm/peppa-box-ansage.raw"
+MISCH_STATUS = os.environ.get("PEPPA_AUSGABE_STATUS") or "/dev/shm/peppa-box-ausgabe.json"
+MISCH_FRISCH_S = 2.5          # so alt darf das Lebenszeichen der Tonausgabe höchstens sein
+MISCH_QUITTUNG_S = 0.6        # so lange auf die Quittung warten, sonst selbst spielen
+MISCH_VORLAUF_S = 0.30        # wie VORLAUF_S in ausgabe.py (Musik senkt sich vorher ab)
+_misch_zaehler = 0
+
+
+def _status():
+    try:
+        with open(MISCH_STATUS, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
+def musik_fliesst():
+    """Läuft gerade die Tonausgabe der Musik (ausgabe.py) und meldet sich?"""
+    st = _status()
+    if not isinstance(st, dict) or time.time() - float(st.get("t") or 0) > MISCH_FRISCH_S:
+        return False
+    try:
+        os.kill(int(st.get("pid") or 0), 0)
+    except PermissionError:
+        return True                  # läuft unter Raspotify (anderer Benutzer)
+    except (OSError, ValueError):
+        return False
+    return True
+
+
+def _pcm_stereo(pfad):
+    """WAV (16 Bit, mono/stereo, beliebige Rate) -> Roh-Ton S16_LE 44,1 kHz Stereo."""
+    with wave.open(pfad) as w:
+        kanaele, breite, rate = w.getnchannels(), w.getsampwidth(), w.getframerate()
+        roh = w.readframes(w.getnframes())
+    if breite != 2 or kanaele not in (1, 2):
+        raise ValueError("nur 16-Bit-WAV mono/stereo")
+    werte = array.array("h")
+    werte.frombytes(roh)
+    if sys.byteorder == "big":
+        werte.byteswap()
+    mono = werte if kanaele == 1 else array.array("h", ((werte[i] + werte[i + 1]) // 2
+                                                         for i in range(0, len(werte) - 1, 2)))
+    if rate != 44100 and len(mono) > 1:
+        n = int(len(mono) * 44100 / rate)
+        schritt = (len(mono) - 1) / max(1, n - 1)
+        neu = array.array("h", bytes(2 * n))
+        for i in range(n):
+            x = i * schritt
+            k = int(x)
+            f = x - k
+            b = mono[k + 1] if k + 1 < len(mono) else mono[k]
+            neu[i] = int(mono[k] + (b - mono[k]) * f)
+        mono = neu
+    stereo = array.array("h", bytes(4 * len(mono)))
+    stereo[0::2] = mono
+    stereo[1::2] = mono
+    if sys.byteorder == "big":
+        stereo.byteswap()
+    return stereo.tobytes()
+
+
+def _auftrag(pcm):
+    global _misch_zaehler
+    _misch_zaehler += 1
+    kennung = f"{os.getpid()}-{time.monotonic_ns()}-{_misch_zaehler}"
+    auftrag = {"id": kennung, "pcm": pcm, "bis": time.time() + MISCH_QUITTUNG_S + 0.1}
+    tmp = MISCH_AUFTRAG + f".{os.getpid()}.tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(auftrag, f)
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, MISCH_AUFTRAG)
+    return kennung
+
+
+def _quittiert(kennung, zeit=MISCH_QUITTUNG_S):
+    ende = time.monotonic() + zeit
+    while time.monotonic() < ende:
+        st = _status()
+        if isinstance(st, dict) and st.get("quittung") == kennung:
+            return True
+        time.sleep(0.03)
+    return False
+
+
+class Gemischt:
+    """Wie ein Popen-Objekt (poll/wait/communicate/terminate) für eine in die Musik gemischte Ansage."""
+
+    def __init__(self, dauer):
+        self._ende = time.monotonic() + dauer
+        self._stopp = threading.Event()
+        self.returncode = None
+
+    def poll(self):
+        if self.returncode is None and time.monotonic() >= self._ende:
+            self.returncode = 0
+        return self.returncode
+
+    def wait(self, timeout=None):
+        rest = self._ende - time.monotonic()
+        if timeout is not None and rest > timeout:
+            self._stopp.wait(timeout)
+            if self.returncode is None:
+                raise subprocess.TimeoutExpired("ansage", timeout)
+            return self.returncode
+        self._stopp.wait(max(0.0, rest))
+        return self.poll()
+
+    def communicate(self, timeout=None):
+        self.wait(timeout)
+        return b"", b""
+
+    def terminate(self):
+        if self.poll() is None:
+            self.returncode = -15
+            try:
+                _auftrag(None)       # Stopp an die Tonausgabe
+            except OSError:
+                pass
+            self._stopp.set()
+
+    kill = terminate
+
+
+def mischen(pfad, log=print):
+    """Ansage in die laufende Musik mischen (Musik wird weich abgesenkt). Gibt ein Gemischt-Objekt
+    zurück oder None, wenn keine Musik läuft oder die Tonausgabe nicht quittiert (dann selbst spielen)."""
+    if not musik_fliesst():
+        return None
+    try:
+        pcm = _pcm_stereo(pfad)
+        tmp = MISCH_PCM + f".{os.getpid()}.tmp"
+        with open(tmp, "wb") as f:
+            f.write(pcm)
+        os.chmod(tmp, 0o644)
+        os.replace(tmp, MISCH_PCM)
+        kennung = _auftrag(MISCH_PCM)
+    except (OSError, ValueError, wave.Error) as e:
+        log(f"Ansage nicht in die Musik gemischt: {e!r}")
+        return None
+    if not _quittiert(kennung):
+        log("Tonausgabe hat die Ansage nicht angenommen – spiele sie selbst")
+        return None
+    return Gemischt(MISCH_VORLAUF_S + len(pcm) / (44100 * 4) + 0.1)
+
+
 # ---------------------------------------------------------------- Abspielen
 
 def _befehl(pfad):
@@ -231,6 +381,11 @@ def spielen(name, warten=False, log=print):
     if not pfad or not os.path.isfile(pfad):
         log(f"Ansage '{name}' fehlt: {datei(name)}")
         return False
+    g = mischen(pfad, log=log)
+    if g is not None:
+        if warten:
+            g.wait()
+        return True
     cmd = [aplay, "-q", "-D", geraet(), pfad]
     try:
         if warten:
@@ -331,6 +486,11 @@ class Ansager:
         pfad, art = quelle(name, log=self.log)
         if not pfad:
             return None
+        g = mischen(pfad, log=self.log)
+        if g is not None:
+            self._proc = g
+            self.zuletzt = (name, art)
+            return g
         try:
             p = self.popen(_befehl(pfad), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         except OSError as e:

@@ -1,3 +1,7 @@
 __pycache__/
 *.pyc
 *.zip
+
+# eigene Sprachaufnahmen (persönlich, nur auf dem Pi)
+software/ansagen/*.wav
+!software/ansagen/peppa_box_bereit.wav

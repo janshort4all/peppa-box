@@ -810,3 +810,10 @@ Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) l�
 - **Montage je Ecke** (Ecke ragt über die Tischkante): Eckschraube heraus (die anderen 5 halten den Boden), Hülse von unten in den Fuß, Ecke aufdrücken bis der Wulst einrastet, Schraube 3,0 × 16 eindrehen.
 - **Prüfungen:** keine Überschneidung Ecken ↔ gedruckter Korpus/Boden, Hülse liegt am Boden an (0,00) und berührt das TPU nicht, Abstand Gittersitz 1,59 mm (Form C, Grenze 1), Überhang 0, keine Kollision; Ecke, Hülse und C16 dicht, ohne entartete Dreiecke. Je Ecke 3,9 g TPU, Druckmaß 28,4 × 28,4 × 23 mm; Hülse 0,15 g PETG.
 - **Dateien:** `12_gummiecke_TPU_orange.stl` (eine Ecke, 4 × drucken; ersetzt `12_gummiecken_TPU_orange.stl`), `13_eckhuelse_PETG.stl` (5 ×, eine Reserve), C16 neu als drei vollständige Ecken (Form C, verschraubt; die passende ist schon eine der vier), Bilder neu (Schnitt jetzt auch durch die Schraube), README-Abschnitt „Gummiecken“ mit Einstellungen für TPU-Ecken und PETG-Hülsen und Montage; Schraubentabelle ergänzt.
+
+## Nachtrag 09.11.2026 (3) – TPU-Empfehlung für die Gummiecken
+
+- **Empfehlung:** colorFabb TPU 95A Orange, 1,75 mm / 700 g, direkt beim Hersteller (NL, colorfabb.com): deckendes Orange (eSUN und GEEETECH gibt es nur transluzent), 95A wie im Modell und im Profil „Elegoo TPU 95A @ECC2“ (Hersteller: 220–230 °C, Trocknen 70 °C 6–9 h). Regulär 37,68 €, am 09.11. mit 30 % Rabatt 26,38 € angezeigt; Versandkosten nach DE nicht geprüft. Bei 3DJake.de derselbe Artikel 37,99 € (Versand frei ab 52,90 €).
+- **Alternative (Sparen, wenn der Versand bei colorFabb teuer ist):** 3DJAKE TPU A95 Orange 750 g (Made in EU, RAL 2008, sehr gut bewertet; laut einer Bewertung etwas härter als Polymaker PolyFlex). Kingroon (vorher in der Einkaufsliste) nicht mehr empfohlen: kein Hersteller in der EU, Qualität unbekannt.
+- Nicht geeignet: Extrudr TPU medium Neon Orange (98A, Neonfarbe), Recreus Filaflex (82A, zu weich für Wulst und Hülse).
+- Farbton gegen das vorhandene orange PETG nicht geprüft. Einkaufsliste angepasst.

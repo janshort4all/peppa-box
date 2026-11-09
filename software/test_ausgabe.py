@@ -134,7 +134,7 @@ class AusgabeProgramm(unittest.TestCase):
     def test_kaputter_kopfhoerer_faellt_auf_lautsprecher_zurueck(self):
         self.waehlen("kopfhoerer")
         p = self.starten(kaputt="kopfhoerer")
-        self.senden(p, 1.2)
+        self.senden(p, 3.0)                                                 # erst zwei neue Versuche
         self.assertIsNone(p.poll())                                         # läuft weiter
         p.stdin.close()
         p.wait(timeout=5)
@@ -144,6 +144,32 @@ class AusgabeProgramm(unittest.TestCase):
         self.assertEqual((fehler[0]["ziel"], fehler[0]["rueckfall"]), ("kopfhoerer", "lautsprecher"))
         self.assertGreater(self.groesse("lautsprecher"), 0)
         self.assertTrue([n for n in self.nachrichten if n["art"] == "fluss" and n["ziel"] == "lautsprecher"])
+
+    def test_kopfhoerer_kurz_belegt_neuer_versuch(self):
+        # Pi-Klinke ohne Mischer: einmal belegt (z. B. Ansage), beim zweiten Versuch frei
+        sperre = os.path.join(self.ordner, "belegt_einmal")
+        with open(sperre, "w"):
+            pass
+        with open(self.aplay, "a") as f:
+            pass
+        with open(self.aplay) as f:
+            text = f.read()
+        text = text.replace('if geraet in os.environ.get("FAKE_KAPUTT", "").split(","):',
+                            'if geraet == "kopfhoerer" and os.path.exists(os.environ["FAKE_ORDNER"] + "/belegt_einmal"):\n'
+                            '    os.remove(os.environ["FAKE_ORDNER"] + "/belegt_einmal")\n'
+                            '    sys.exit(1)\n'
+                            'if geraet in os.environ.get("FAKE_KAPUTT", "").split(","):')
+        with open(self.aplay, "w") as f:
+            f.write(text)
+        self.waehlen("kopfhoerer")
+        p = self.starten()
+        self.senden(p, 1.5)
+        p.stdin.close()
+        p.wait(timeout=5)
+        self.sammeln(0.2)
+        self.assertNotIn("fehler", self.arten())
+        self.assertGreater(self.groesse("kopfhoerer"), 0)
+        self.assertEqual(self.groesse("lautsprecher"), 0)
 
     def test_lautsprecher_kaputt_endet_mit_fehler(self):
         self.waehlen("lautsprecher")

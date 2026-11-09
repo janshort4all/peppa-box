@@ -117,23 +117,11 @@ pcm.lautsprecher {
 EOF
 if [ -n "$KH_KARTE" ]; then
     cat >> "$TMP" <<EOF
-# Kopfhoerer (Pi-Klinke): Spotify und Ansagen mischen; Lautstaerke ueber den Regler PCM der Karte
-pcm.peppa_kh_dmix {
-    type dmix
-    ipc_key 5151
-    ipc_perm 0666
-    slave {
-        pcm "hw:CARD=$KH_KARTE,DEV=0"
-        rate 44100
-        channels 2
-        format S16_LE
-        period_size 1024
-        buffer_size 8192
-    }
-}
+# Kopfhoerer (Pi-Klinke) direkt, ohne Mischer: dmix oeffnet die Pi-Klinke zwar, gibt aber nie Ton aus
+# (haengt; am Pi gemessen 09.11.2026). Lautstaerke ueber den Regler PCM der Karte.
 pcm.kopfhoerer {
     type plug
-    slave.pcm "peppa_kh_dmix"
+    slave.pcm "hw:CARD=$KH_KARTE,DEV=0"
 }
 EOF
 else
@@ -170,6 +158,8 @@ ExecStartPost=/bin/sh -c 'sleep 0.5; $PINCTRL set 16 op dh'
 ExecStop=$PINCTRL set 16 op dl
 Restart=always
 RestartSec=2
+# aplay endet beim gewollten Stoppen mit 1 ("Interrupted system call"): kein Fehler
+SuccessExitStatus=1
 
 [Install]
 WantedBy=multi-user.target

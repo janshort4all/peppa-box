@@ -225,8 +225,8 @@ class Einrichtungsskript(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         a = self.lesen(self.asound)
         self.assertIn("pcm.kopfhoerer {", a)
-        self.assertIn('pcm "hw:CARD=Headphones,DEV=0"', a)
-        self.assertIn("ipc_key 5151", a)
+        self.assertIn('slave.pcm "hw:CARD=Headphones,DEV=0"', a)      # direkt: dmix hängt an der Pi-Klinke
+        self.assertNotIn("ipc_key 5151", a)
         self.assertLess(a.index("pcm.kopfhoerer"), a.index("# <<< peppa-box lautsprecher"))
         rasp = self.lesen(self.rasp)
         self.assertIn('LIBRESPOT_DEVICE="lautsprecher"', rasp)     # ohne Tonausgabe nie auf den Kopfhörern

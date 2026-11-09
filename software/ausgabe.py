@@ -9,7 +9,9 @@ Spotify etwas davon merkt. Vorher (bis 09.11.2026) wurde dafür Raspotify neu ge
 die Box für Spotify oft nicht erreichbar (502 „Bad gateway“).
 
 Fehler werden hier abgefangen:
-  Kopfhörer-Ausgang geht nicht (aplay endet)  -> sofort zurück auf den Lautsprecher, Kopfhörer für
+  Kopfhörer-Ausgang geht nicht (aplay endet)  -> zweimal nach 0,5 s neu versuchen (die Pi-Klinke hat
+                                                 keinen Mischer, eine Ansage kann sie kurz belegen),
+                                                 dann zurück auf den Lautsprecher, Kopfhörer für
                                                  diesen Lauf gesperrt, Meldung an den Player
   Lautsprecher-Ausgang endet                   -> neu öffnen; dreimal in 10 s -> Ende mit Fehler
                                                  (librespot startet das Programm dann einmal neu)
@@ -45,6 +47,8 @@ STUECK = 16384
 PIPE_GROESSE = 16384      # kleiner Puffer zu aplay: Wechsel und Pause wirken schnell (ca. 0,1 s)
 FEHLER_GRENZE = 3
 FEHLER_FENSTER_S = 10.0
+BELEGT_VERSUCHE = 3       # Kopfhörer ohne Mischer: kurz belegt (z. B. Ansage) -> so oft neu versuchen
+BELEGT_PAUSE_S = 0.5
 
 
 def log(text):
@@ -170,6 +174,10 @@ class Relais:
         t = self.jetzt()
         self.fehlstarts = [x for x in self.fehlstarts if t - x < FEHLER_FENSTER_S] + [t]
         text = grund or f"aplay auf '{self.ziel}' beendet (Code {code})"
+        if self.ziel != RUECKFALL and grund is None and code != -9 and len([x for x in self.fehlstarts if t - x < 3]) < BELEGT_VERSUCHE:
+            log(f"{text} – neuer Versuch")              # Pi-Klinke ohne Mischer: evtl. gerade belegt
+            self.schlaf(BELEGT_PAUSE_S)
+            return
         if self.ziel != RUECKFALL:
             self.gesperrt.add(self.ziel)
             log(f"{text} – zurück auf {RUECKFALL}")

@@ -18,6 +18,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 - Vor jeder Anschlussanleitung die Produktseite bzw. das Datenblatt des Bauteils prüfen (Jumper, Lötbrücken, Spannung, Pinbelegung) und die Quelle nennen. Nicht geprüfte Aussagen ausdrücklich als Vermutung kennzeichnen.
 - Bei der Fehlersuche zuerst den Aufbau der beteiligten Platinen prüfen, dann Kabel und Lötstellen.
 - Slicer ist ElegooSlicer (nicht SatelLite, das ist für Harz).
+- **Kein Umbau mehr an der Box, egal an welchem Teil** (Grundbedingung Jan, 09.11.). Änderungen nur noch an Teilen, die nicht zur Box gehören (Karten); deren Steckteil bleibt maßgleich.
 
 ## Aktueller Stand
 
@@ -824,3 +825,11 @@ Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) l�
 - **Gekauft (Jan, 09.11.):** TINMORRY TPU 95A Orange („Brandschutz Orange“), 1,75 mm / 1 kg, Amazon.de, 15,98 €. Kein RAL-/Hex-Wert angegeben; der Name lässt eher ein rötliches Sicherheitsorange erwarten (nicht geprüft).
 - **Herstellerangaben (Amazon-Angebot):** Düse 210–240 °C, Druckbett 30–50 °C, unter 60 mm/s, trocknen 70 °C / 8 h, Spule zufällig aus Karton oder Kunststoff. Das Profil „Elegoo TPU 95A @ECC2“ (225 °C / 35 °C) und die Geschwindigkeiten aus dem README (Volumenstrom 3,2 mm³/s ≈ 38 mm/s) liegen darin, also keine Änderung an den Einstellungen.
 - **Vorgehen:** zuerst C16 drucken und bei Tageslicht an die Box halten, dann erst die restlichen Ecken. Einkaufsliste (TPU als bestellt) und README angepasst.
+
+## Nachtrag 09.11.2026 (5) – Etiketten für die Karten (Konzept, noch nicht entschieden)
+
+- **Wunsch Jan:** möglichst wenig Aufwand. Beim Bespielen einer Karte holt die Box das Cover und druckt das Etikett lokal, im selben Schritt. Etikett aus Papier, möglichst ohne Zuschneiden, in die Karte **einklicken** wie in einen Bilderrahmen. Standardformat erwünscht. **Abgelehnt:** Karte oben breiter (Querformat).
+- **Befund Papier:** Den jetzigen Einleger 67 × 68 mm gibt es nirgends fertig getrennt. Das einzige verbreitete Standardformat, das in 70 mm Kartenbreite passt, ist Visitenkarte/Kreditkarte hochkant: Avery Zweckform C32010-25 (85 × 54, mikroperforiert, A4) und Canon Selphy KC-36IP (54 × 86, braucht Kassette PCC-CP400). Folge: Die Karte ragt ca. 89 statt 70 mm über den Deckel, Steckteil unverändert. Sigel 85 × 55 ist 1 mm breiter (nicht vorgesehen). Selphy Square QX10 (68 × 68) bei Canon nicht mehr erhältlich, Papier 72 × 85 breiter als die Karte. A8 nur als lose Karten.
+- **Einklicken (Prinzip Preisschiene):** Lippen links und rechts mit 45°-Unterseite wie bisher, unten Lippe, oben geschlossene Kante mit Griffkerbe. Etikett leicht wölben, einlegen, loslassen → liegt flach unter den Lippen, fällt kopfüber nicht heraus. Druck Rückseite unten ohne Stützen. Mit Coupon und echtem Papier prüfen (Papierdicke messen, `INS_GAP` 0,6 ist Probedruck).
+- **Software (Plan):** Link auf der Eltern-Seite einfügen → Box schreibt den Link selbst auf die Karte (nur NTAG21x) und liest zurück → Cover über Web API (`GET /albums/{id}`, `/shows/{id}`, `/audiobooks/{id}`; fremde Playlists nur Metadaten, seit Feb. 2026), Rückfall oEmbed (300 px), dann eigenes Foto/nur Titel → Druck über CUPS (IPP/AirPrint) ohne weiteren Klick, PDF als Rückfall. Auslöser „Link zum ersten Mal gesehen“ (auch für mit NFC Tools beschriebene Karten). A4-Bögen: Sammeldruck, wenn mehrere Karten nacheinander bespielt werden. CUPS vor dem Schreibschutz einrichten.
+- **Offen:** Druckermodell und ob er im WLAN hängt; Typ der NFC-Aufkleber; ob 89 mm Kartenhöhe in Ordnung ist.

@@ -348,6 +348,21 @@ class Einrichtungsskript(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertTrue(self.lesen(self.rasp).endswith('LIBRESPOT_DEVICE="lautsprecher"\n'))
 
+    def test_bitrate_nur_auf_wunsch(self):
+        self.schreiben(self.cfg, CONFIG_TXT)
+        self.schreiben(self.rasp, RASPOTIFY + '#LIBRESPOT_BITRATE="160"\n')
+        self.schreiben(self.cards, KARTEN_MIT)
+        self.assertEqual(self.lauf().returncode, 0)
+        self.assertNotIn('\nLIBRESPOT_BITRATE=', self.lesen(self.rasp))     # ohne Angabe unveraendert
+        self.env["PEPPA_BITRATE"] = "96"
+        r = self.lauf()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('\nLIBRESPOT_BITRATE="96"\n', self.lesen(self.rasp))
+        self.env["PEPPA_BITRATE"] = "128"
+        r = self.lauf()
+        self.assertIn("96, 160 oder 320", r.stdout)
+        self.assertIn('\nLIBRESPOT_BITRATE="96"\n', self.lesen(self.rasp))
+
 
 if __name__ == "__main__":
     unittest.main()

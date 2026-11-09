@@ -327,6 +327,13 @@ if sudo test -f "$RASPOTIFY"; then   # Datei/Ordner nur mit sudo lesbar
     if [ -x "$EREIGNIS" ]; then
         raspotify_setzen LIBRESPOT_ONEVENT "$EREIGNIS"
     fi
+    # Datenmenge unterwegs (Handy-Hotspot): PEPPA_BITRATE=96 spart ca. 40 % gegenueber 160
+    case "$PEPPA_BITRATE" in
+    96|160|320) raspotify_setzen LIBRESPOT_BITRATE "$PEPPA_BITRATE"
+                echo "Raspotify: Bitrate $PEPPA_BITRATE kbit/s." ;;
+    "") ;;
+    *) echo "PEPPA_BITRATE bitte 96, 160 oder 320 (nicht geaendert)." ;;
+    esac
 else
     echo "Raspotify-Einstellungen ($RASPOTIFY) nicht gefunden, Ausgabe nicht umgestellt."
 fi

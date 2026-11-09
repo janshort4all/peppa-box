@@ -1,4 +1,4 @@
-"""Tests für wlan_beschleunigen.sh und wlan_rueckfall.sh, ohne echten NetworkManager:
+"""Tests für wlan_beschleunigen.sh, wlan_rueckfall.sh, wlan_hinzufuegen.sh und wlan_suche.sh, ohne echten NetworkManager:
 nmcli, sudo und systemctl werden nachgebaut, alle Pfade zeigen in einen Temp-Ordner.
 Aufruf: cd software && python3 -m unittest -v test_wlan
 """
@@ -69,6 +69,7 @@ esac''')
         self.assertIn("\npsk=geheim\\\\pass wort;#1\n", k)                 # Backslash maskiert
         self.assertIn("key-mgmt=wpa-psk", k)
         self.assertIn("powersave=2", k)
+        self.assertIn("\nautoconnect-priority=10\nautoconnect-retries=0\n", k)  # nie aufgeben
         self.assertRegex(k, r"\nuuid=[0-9a-f-]{36}\n")
         self.assertEqual(os.listdir(self.netplan), [])
         self.assertEqual(sorted(os.listdir(self.sicherung)), ["90-NM-a.yaml", "90-NM-b.yaml"])
@@ -120,6 +121,133 @@ esac''')
         r = self.lauf("wlan_rueckfall.sh", PEPPA_RUECKFALL_FRIST="0")
         self.assertEqual((r.returncode, r.stdout), (0, ""))
         self.assertEqual(len(os.listdir(self.netplan)), 2)
+
+
+HEIM = """[connection]
+id=peppa-wlan
+uuid=11111111-2222-3333-4444-555555555555
+type=wifi
+autoconnect=true
+autoconnect-priority=10
+
+[wifi]
+ssid=WLAN-567C6T_2_4
+"""
+
+
+class Hinzufuegen(unittest.TestCase):
+    """wlan_hinzufuegen.sh direkt auf Dateien im Temp-Ordner (PEPPA_OHNE_SUDO, PEPPA_TROCKEN)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.nm = os.path.join(self.tmp.name, "nm")
+        os.mkdir(self.nm)
+        with open(os.path.join(self.nm, "peppa-wlan.nmconnection"), "w") as f:
+            f.write(HEIM)
+        self.env = dict(os.environ, PEPPA_NM_CONNECTIONS=self.nm, PEPPA_OHNE_SUDO="1", PEPPA_TROCKEN="1")
+
+    def lauf(self, eingabe="", *args):
+        return subprocess.run(["sh", os.path.join(HIER, "wlan_hinzufuegen.sh"), *args], input=eingabe,
+                              env=self.env, capture_output=True, text=True)
+
+    def lesen(self, name):
+        with open(os.path.join(self.nm, name)) as f:
+            return f.read()
+
+    def test_hotspot_eintragen(self):
+        r = self.lauf("JanHandy\nsuper\\geheim 1\n")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertNotIn("geheim", r.stdout + r.stderr)                  # Passwort nie ausgeben
+        datei = os.path.join(self.nm, "peppa-wlan-JanHandy.nmconnection")
+        self.assertEqual(stat.S_IMODE(os.stat(datei).st_mode), 0o600)
+        k = self.lesen("peppa-wlan-JanHandy.nmconnection")
+        for zeile in ("id=peppa-wlan-JanHandy", "autoconnect-priority=5", "autoconnect-retries=0",
+                      "ssid=JanHandy", "psk=super\\\\geheim 1", "key-mgmt=wpa-psk", "powersave=2"):
+            self.assertIn("\n" + zeile + "\n", k)
+        self.assertRegex(k, r"\nuuid=[0-9a-f-]{36}\n")
+        heim = self.lesen("peppa-wlan.nmconnection")                     # Heim-WLAN: nie aufgeben
+        self.assertIn("\nautoconnect-priority=10\nautoconnect-retries=0\n", heim)
+        self.assertEqual(heim.count("autoconnect-retries"), 1)
+
+    def test_zweimal_gleicher_name_ersetzt_und_behaelt_uuid(self):
+        self.lauf("JanHandy\npasswort1\n")
+        alt = self.lesen("peppa-wlan-JanHandy.nmconnection")
+        r = self.lauf("JanHandy\npasswort2\n", "--prioritaet", "6")
+        self.assertIn("aktualisiert", r.stdout)
+        neu = self.lesen("peppa-wlan-JanHandy.nmconnection")
+        self.assertIn("psk=passwort2", neu)
+        self.assertIn("autoconnect-priority=6", neu)
+        uuid = [z for z in alt.splitlines() if z.startswith("uuid=")]
+        self.assertIn(uuid[0], neu)
+        self.assertEqual(self.lesen("peppa-wlan.nmconnection").count("autoconnect-retries"), 1)
+
+    def test_falsche_eingaben_aendern_nichts(self):
+        for eingabe, args in (("JanHandy\nkurz\n", ()),                         # Passwort < 8
+                              ("\npasswort1\n", ()),                           # kein Name
+                              ("A" * 33 + "\npasswort1\n", ()),                # Name zu lang
+                              ("WLAN-567C6T_2_4\npasswort1\n", ()),            # Heim-WLAN
+                              ("JanHandy\npasswort1\n", ("--prioritaet", "10"))):
+            r = self.lauf(eingabe, *args)
+            self.assertNotEqual(r.returncode, 0, eingabe)
+            self.assertNotIn("passwort1", r.stdout + r.stderr)
+        self.assertEqual(os.listdir(self.nm), ["peppa-wlan.nmconnection"])
+
+    def test_sonderzeichen_hinweis(self):
+        r = self.lauf("Jan’s Handy\npasswort1\n")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("Sonderzeichen", r.stdout)
+        self.assertIn("\nssid=Jan’s Handy\n", self.lesen("peppa-wlan-Jan___s_Handy.nmconnection"))
+
+    def test_liste_und_entfernen(self):
+        self.lauf("JanHandy\npasswort1\n")
+        self.lauf("Handy Frau\npasswort2\n")
+        r = self.lauf("", "--liste")
+        self.assertRegex(r.stdout, r"WLAN-567C6T_2_4 +Prioritaet 10")
+        self.assertRegex(r.stdout, r"JanHandy +Prioritaet 5")
+        self.assertRegex(r.stdout, r"Handy Frau +Prioritaet 5")
+        self.assertNotIn("passwort", r.stdout)
+        r = self.lauf("", "--entfernen", "Handy Frau")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(sorted(os.listdir(self.nm)), ["peppa-wlan-JanHandy.nmconnection", "peppa-wlan.nmconnection"])
+        self.assertNotEqual(self.lauf("", "--entfernen", "Gibtsnicht").returncode, 0)
+
+
+class Suche(unittest.TestCase):
+    """wlan_suche.sh: neue Suche nur, wenn das WLAN wirklich getrennt ist."""
+
+    def lauf(self, zustand):
+        with tempfile.TemporaryDirectory() as d:
+            log = os.path.join(d, "log")
+            p = os.path.join(d, "nmcli")
+            with open(p, "w") as f:
+                f.write(f"""#!/bin/sh
+echo "nmcli $*" >> {log}
+case "$*" in
+  *"-f TYPE,STATE device"*) printf 'wifi:{zustand}\\nloopback:connected (externally)\\n' ;;
+  *"device show wlan0"*) echo peppa-wlan-JanHandy ;;
+esac
+""")
+            os.chmod(p, 0o755)
+            env = dict(os.environ, PATH=d + ":" + os.environ["PATH"], PEPPA_SUCHE_EINMAL="1")
+            r = subprocess.run(["sh", os.path.join(HIER, "wlan_suche.sh")], env=env, capture_output=True,
+                               text=True, timeout=10)
+            with open(log) as f:
+                return r, f.read()
+
+    def test_getrennt_sucht(self):
+        r, log = self.lauf("disconnected")
+        self.assertIn("nmcli device wifi rescan", log)
+        self.assertIn("suche alle 10 s", r.stdout)
+
+    def test_verbunden_sucht_nicht(self):
+        r, log = self.lauf("connected")
+        self.assertNotIn("rescan", log)
+        self.assertIn("verbunden: peppa-wlan-JanHandy", r.stdout)
+
+    def test_waehrend_anmeldung_sucht_nicht(self):
+        r, log = self.lauf("connecting (getting IP configuration)")
+        self.assertNotIn("rescan", log)
 
 
 if __name__ == "__main__":

@@ -113,7 +113,8 @@ class Syntax(unittest.TestCase):
         for teil in ("$HELFER zeigen, $HELFER neustart, $HELFER lautsprecher, $HELFER kopfhoerer",
                      "/usr/local/lib/peppa-box/ausgabe", "/usr/local/lib/peppa-box/ereignis",
                      "Storage=persistent", "gpio spi input",
-                     "bedienung_einrichten.sh", "RuntimeWatchdogSec=15", "libttspico-utils", "TimeoutStopSec="):
+                     "bedienung_einrichten.sh", "RuntimeWatchdogSec=15", "libttspico-utils", "TimeoutStopSec=",
+                     "/usr/local/lib/peppa-box/wlan_suche", "peppa-wlan-suche", "autoconnect-retries=0"):
             self.assertIn(teil, s)
 
 

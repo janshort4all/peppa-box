@@ -13,13 +13,15 @@
 # fuer Ansagen ohne eigene Aufnahme (pico2wave) und: Raspotify startet erst mit Netz.
 # Notfall-Rueckweg (Ton wieder direkt ueber ALSA, ohne Kopfhoerer-Umschaltung):
 #   PEPPA_ALSA_DIREKT=1 sh ~/peppa-box/software/dienst_einrichten.sh
-# Und: WLAN-Stromsparen aus (sonst nach einer Weile nicht mehr erreichbar).
+# Und: WLAN-Stromsparen aus (sonst nach einer Weile nicht mehr erreichbar), WLAN-Suche alle 10 s ohne
+# Verbindung (peppa-wlan-suche, Handy-Hotspot wird schnell gefunden), Heim-WLAN gibt nie auf.
 # Aufruf (als normaler Benutzer, nicht als root):  sh ~/peppa-box/software/dienst_einrichten.sh
 # Kann beliebig oft wiederholt werden.
 set -e
 BENUTZER="$(id -un)"
 ORDNER="$(cd "$(dirname "$0")" && pwd)"
 SYSTEMCTL="$(command -v systemctl)"
+SUCHE_NEU=0
 if [ "$BENUTZER" = "root" ]; then
     echo "Bitte ohne sudo aufrufen, das Skript fragt selbst nach dem Passwort."; exit 1
 fi
@@ -158,6 +160,37 @@ else
 fi
 rm -f "$TMP"
 
+# --- WLAN-Suche: ohne Verbindung alle 10 s nach WLANs suchen (Handy-Hotspot unterwegs schnell finden).
+#     Root-eigene Kopie ausserhalb von /home, laeuft als root (nmcli rescan).
+if command -v nmcli > /dev/null; then
+    sudo install -d -m 0755 -o root -g root /usr/local/lib/peppa-box
+    sudo install -m 0755 -o root -g root "$ORDNER/wlan_suche.sh" /usr/local/lib/peppa-box/wlan_suche
+    sudo tee /etc/systemd/system/peppa-wlan-suche.service > /dev/null <<EOF
+# Peppa Box (erzeugt von dienst_einrichten.sh): WLAN-Suche, solange keine Verbindung besteht
+[Unit]
+Description=Peppa Box WLAN-Suche
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+ExecStart=/bin/sh /usr/local/lib/peppa-box/wlan_suche
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    SUCHE_NEU=1
+    # Heim-WLAN (und schon eingetragene Hotspots): nach Fehlversuchen nie aufgeben
+    for f in /etc/NetworkManager/system-connections/peppa-wlan*.nmconnection; do
+        sudo test -f "$f" || continue
+        if ! sudo grep -q '^autoconnect-retries=' "$f"; then
+            sudo sed -i '/^autoconnect-priority=/a autoconnect-retries=0' "$f"
+            echo "WLAN $(basename "$f" .nmconnection): gibt nach Fehlversuchen nie auf (ab dem naechsten Start)."
+        fi
+    done
+fi
+
 # --- Gruppen (nur die, die es auf dem System gibt)
 for G in i2c adm video audio gpio spi input; do
     if getent group "$G" > /dev/null; then sudo usermod -aG "$G" "$BENUTZER"; fi
@@ -232,6 +265,11 @@ sh "$ORDNER/bedienung_einrichten.sh" || echo "Bedienung-Einrichtung mit Fehler b
 
 sudo systemctl daemon-reload
 sudo systemctl enable peppa-player peppa-web
+if [ "$SUCHE_NEU" = 1 ]; then
+    sudo systemctl enable peppa-wlan-suche > /dev/null 2>&1
+    sudo systemctl restart peppa-wlan-suche
+    echo "WLAN-Suche aktiv (peppa-wlan-suche)."
+fi
 sudo systemctl restart peppa-player peppa-web
 sleep 3
 systemctl status peppa-player --no-pager | head -n 5

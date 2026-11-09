@@ -67,6 +67,7 @@ uuid=$UUID
 type=wifi
 autoconnect=true
 autoconnect-priority=10
+autoconnect-retries=0
 
 [wifi]
 mode=infrastructure

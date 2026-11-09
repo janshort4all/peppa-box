@@ -927,3 +927,10 @@ Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) l�
 - **Bekannte Grenze (nicht gemessen):** Mit Kopfhörern **während Musik** kommt der Klick um den Puffer von aplay verzögert (vermutlich einige Zehntel Sekunden). Am Lautsprecher und ohne Musik sollte er praktisch sofort kommen. Am Pi hören; ist es störend, Puffer der Kopfhörer-Ausgabe verkleinern (Risiko Aussetzer am Pi 3A+).
 - Tests: 332 grün (neu `test_klick.py`, 22: welche Felder klicken, Mond/Ein-Taste nie, einmal je Berührung, Rauschen/mehrere Felder, Pegel 15 %, aus bei 0, Wege Lautsprecher/Kopfhörer/gemischt, Mischen ohne Absenken, Begrenzung, Einstellung).
 - **Am Pi:** Update über die Eltern-Seite, dann einmal `sh ~/peppa-box/software/dienst_einrichten.sh` (neue Tonausgabe für den Klick auf Kopfhörern während Musik; Lautsprecher klickt auch ohne). Probe von Hand: `python3 ~/peppa-box/software/toene.py klick`.
+
+## Nachtrag 09.11.2026 (14) – Meldung „Keine Verbindung zu Spotify“ blieb nach WLAN-Wechsel stehen
+
+- **Befund Jan (22:38):** Nach erfolgreichem Wechsel ins neue WLAN zeigte die Eltern-Seite weiter „kümmert sich – Keine Verbindung zu Spotify (Temporary failure in name resolution), neuer Versuch in 2 s“. Der Fehler selbst ist beim Wechsel normal (Netz/DNS kurz weg).
+- **Ursache (Code):** Im Leerlauf (Box bereit, Gerät bekannt) hat eine erfolgreiche Abfrage danach die Netz-Meldung nicht gelöscht; sie blieb bis zur nächsten Taste/Karte stehen.
+- **Korrektur:** `steuerung.py`: antwortet Spotify wieder, verschwindet eine Netz-Meldung sofort, Protokoll „Spotify wieder erreichbar.“ Test `test_netz_kurz_weg_im_leerlauf_meldung_verschwindet` (schlägt ohne Korrektur fehl). Alle Tests grün. **Am Pi:** nur Update über die Eltern-Seite.
+- **Danach (22:39):** „Spotify kennt die Box gerade nicht (Gerät 'Peppa Box' fehlt)“. Erwartbar, solange librespot nach dem IP-Wechsel noch nicht neu bei Spotify angemeldet ist. Vorhandene Selbstheilung: Raspotify-Neustart nach 45 s (Karte wartet) bzw. 180 s (Leerlauf). **Offen:** Wie lange dauert es ohne Eingriff (Protokoll)? Ggf. nach WLAN-Wechsel früher neu starten.

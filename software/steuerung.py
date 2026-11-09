@@ -394,6 +394,11 @@ class Steuerung:
                 self.log("Spotify kennt die Box." if self.bereit else "Bereit. Karte auflegen.")
             if self.dev_fehlt_seit is not None:
                 self._ok()
+            elif self.bereit and self.problem_art == "netz":
+                # Netz war kurz weg (z. B. WLAN-Wechsel zum Handy-Hotspot): Spotify antwortet wieder,
+                # alte Meldung weg (Befund Jan 09.11.2026: blieb sonst bis zur nächsten Taste stehen)
+                self.log("Spotify wieder erreichbar.")
+                self._ok()
             self.dev, self.dev_zeit, self.dev_fehlt_seit = dev, jetzt, None
             if not self.bereit:
                 self.bereit = True

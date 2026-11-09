@@ -422,6 +422,16 @@ class Reparatur(Basis):
         self.lauf(70)
         self.assertTrue(self.spielt("spotify:playlist:A"))
 
+    def test_netz_kurz_weg_im_leerlauf_meldung_verschwindet(self):
+        """WLAN-Wechsel ohne Karte: die Meldung 'Keine Verbindung' darf nicht stehen bleiben."""
+        self.sp.modus = "netz"
+        self.lauf(steuerung.LEERLAUF_PRUEFUNG + 2)
+        self.assertEqual(self.st.problem_art, "netz")
+        self.sp.modus = "gut"
+        self.lauf(steuerung.LEERLAUF_PRUEFUNG + 2)
+        self.assertIsNone(self.st.problem)
+        self.assertIn("Spotify wieder erreichbar.", self.meldungen)
+
     def test_429_wartezeit(self):
         zeiten = []
         orig = self.sp._befehl

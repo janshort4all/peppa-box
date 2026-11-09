@@ -29,6 +29,9 @@ dabei weich ab („Ducking“): S-Kurve in dB auf −12 dB in 0,35 s, die Ansage
 nach der Ansage 0,4 s halten, dann in 1,2 s zurück. So hört man die Ansage auf Lautsprecher und
 Kopfhörern gleich, und die Pi-Klinke (ohne Mischer) wird nicht doppelt belegt. Quittung und
 Lebenszeichen in /dev/shm/peppa-box-ausgabe.json; ohne Quittung spielt toene.py wie bisher selbst.
+Klick der Touchfelder (seit 09.11.2026), nur nötig auf Kopfhörern (die Pi-Klinke hat keinen
+Mischer): Auftrag /dev/shm/peppa-box-klick.json, Ton /dev/shm/peppa-box-klick.raw. Wird bei jedem
+Stück Musik geprüft (nicht nur alle 0,25 s) und sofort dazugemischt, ohne die Musik abzusenken.
 
 Fehlertexte von aplay landen im Protokoll von Raspotify (journalctl -u raspotify).
 
@@ -66,6 +69,7 @@ BELEGT_PAUSE_S = 0.5
 
 AUFTRAG = os.environ.get("PEPPA_ANSAGE_AUFTRAG") or "/dev/shm/peppa-box-ansage.json"
 STATUS = os.environ.get("PEPPA_AUSGABE_STATUS") or "/dev/shm/peppa-box-ausgabe.json"
+KLICK_AUFTRAG = os.environ.get("PEPPA_KLICK_AUFTRAG") or "/dev/shm/peppa-box-klick.json"
 RATE = 44100
 DUCK_DB = -12.0           # Musik während der Ansage (−12 dB ≈ ein Viertel)
 AB_S = 0.35               # weich absenken
@@ -288,8 +292,13 @@ def _s_kurve(x):
 class Mischer:
     """Mischt Ansagen in den Musikstrom und senkt die Musik dabei weich ab (siehe oben)."""
 
-    def __init__(self, auftrag=AUFTRAG, status=STATUS, uhr=time.time):
+    def __init__(self, auftrag=AUFTRAG, status=STATUS, uhr=time.time, klick_auftrag=KLICK_AUFTRAG):
         self.auftrag, self.status, self.uhr = auftrag, status, uhr
+        self.klick_auftrag = klick_auftrag
+        self.klick = None                # array('h') Stereo, wird ohne Absenken dazugemischt
+        self.klick_pos = 0
+        self._klick_stand = None
+        self._klick_id = None
         self.tiefe = 0.0                 # 0 = volle Musik, 1 = ganz abgesenkt
         self.ansage = None               # array('h') Stereo
         self.pos = 0
@@ -304,7 +313,7 @@ class Mischer:
         try:
             tmp = self.status + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
-                json.dump({"pid": os.getpid(), "t": self.uhr(), "quittung": self.quittung}, f)
+                json.dump({"pid": os.getpid(), "t": self.uhr(), "quittung": self.quittung, "klick": True}, f)
             os.chmod(tmp, 0o644)         # läuft unter Raspotify als root; der Player (anderer Benutzer) muss lesen
             os.replace(tmp, self.status)
             self._status_fehler = False
@@ -360,6 +369,45 @@ class Mischer:
         self.quittung = kennung
         return True
 
+    def klick_pruefen(self):
+        """Neuen Klick übernehmen (billig: nur stat, solange sich nichts ändert)."""
+        try:
+            st = os.stat(self.klick_auftrag)
+            stand = (st.st_ino, st.st_mtime_ns, st.st_size)
+        except OSError:
+            return False
+        if stand == self._klick_stand:
+            return False
+        self._klick_stand = stand
+        try:
+            with open(self.klick_auftrag, encoding="utf-8") as f:
+                a = json.load(f)
+            kennung = a.get("id")
+            if not kennung or kennung == self._klick_id or self.uhr() > float(a.get("bis") or 0):
+                return False
+            with open(a["pcm"], "rb") as f:
+                roh = f.read()
+        except (OSError, ValueError, AttributeError, KeyError, TypeError):
+            return False
+        werte = array.array("h")
+        werte.frombytes(roh[:len(roh) // 4 * 4])
+        if sys.byteorder == "big":
+            werte.byteswap()
+        self._klick_id = kennung
+        self.klick, self.klick_pos = (werte or None), 0
+        return True
+
+    def _klick_mischen(self, werte):
+        """Klick in die Werte (array('h'), schon fertig gerechnet) mischen, mit Begrenzung."""
+        k, pos = self.klick, self.klick_pos
+        n = min(len(werte), len(k) - pos)
+        for i in range(n):
+            x = werte[i] + k[pos + i]
+            werte[i] = -32768 if x < -32768 else 32767 if x > 32767 else x
+        self.klick_pos = pos + n
+        if self.klick_pos >= len(k):
+            self.klick, self.klick_pos = None, 0
+
     def _gain(self):
         return 10 ** (DUCK_DB * _s_kurve(self.tiefe) / 20)
 
@@ -368,7 +416,16 @@ class Mischer:
         n = len(daten) // 4 * 4
         self.rest, daten = daten[n:], daten[:n]
         if self.ansage is None and self.halten <= 0 and self.tiefe <= 0.0:
-            return daten                 # nichts zu tun: Musik unverändert durchreichen
+            if self.klick is None:
+                return daten             # nichts zu tun: Musik unverändert durchreichen
+            werte = array.array("h")
+            werte.frombytes(daten)
+            if sys.byteorder == "big":
+                werte.byteswap()
+            self._klick_mischen(werte)
+            if sys.byteorder == "big":
+                werte.byteswap()
+            return werte.tobytes()
         werte = array.array("h")
         werte.frombytes(daten)
         if sys.byteorder == "big":
@@ -407,6 +464,8 @@ class Mischer:
                                              for x in musik])
             self.pos = pos
             i += m
+        if self.klick is not None:
+            self._klick_mischen(werte)
         if sys.byteorder == "big":
             werte.byteswap()
         return werte.tobytes()
@@ -434,6 +493,7 @@ def main(eingabe=None):
                 if not daten:
                     break
                 menge += len(daten)
+                mix.klick_pruefen()
                 daten = mix.verarbeiten(daten)
                 if daten:
                     r.schreiben(daten)

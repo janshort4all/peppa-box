@@ -260,7 +260,7 @@ class Faeden(unittest.TestCase):
         pl = peppa_player.Player.__new__(peppa_player.Player)
         pl.jetzt, pl.log = time.monotonic, lambda t: None
         ok = mock.Mock(lebt=lambda: True)
-        pl.st = pl.regler = pl.ansager = pl.rueck = ok
+        pl.st = pl.regler = pl.ansager = pl.klicker = pl.rueck = ok
         pl.sp = peppa_player.spotify
         pl.hw = mock.Mock(lebt=lambda: True, lebenszeichen=time.monotonic() - 40)
         pl.drehgeber = mock.Mock(lebenszeichen=time.monotonic())
@@ -273,7 +273,7 @@ class Faeden(unittest.TestCase):
         pl = peppa_player.Player.__new__(peppa_player.Player)
         pl.jetzt, pl.log = time.monotonic, lambda t: None
         pl.st = mock.Mock(lebt=lambda: False)
-        pl.regler = pl.ansager = mock.Mock(lebt=lambda: True)
+        pl.regler = pl.ansager = pl.klicker = mock.Mock(lebt=lambda: True)
         pl.rueck = mock.Mock(lebt=lambda: False)
         pl.sp = peppa_player.spotify
         pl.hw = mock.Mock(lebt=lambda: True, lebenszeichen=time.monotonic())

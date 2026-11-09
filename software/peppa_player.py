@@ -11,6 +11,7 @@ Im Player laufen (je ein Faden, alle überwacht und bei Ausfall neu gestartet):
   Drehknopf       Kernel-Eingabegerät des Overlays rotary-encoder (drehgeber.py)
   Lautstärke      Drehknopf -> amixer (bedienung.Regler)
   Ansagen         toene.Ansager: „bereit“, Akkustand, Timer, „Einen Moment …“, „Tschüss“ …
+  Klick           toene.Klicker: leiser Klick beim Antippen von zurück, Play und vor
   Automatik       Schlummer-Timer, Ruhezeit, Auto-Aus, Grenzen (automatik.py), in der Hauptschleife
 Zustand für die Eltern-Seite: /dev/shm/peppa-box-status.json (jede Sekunde) und
 /dev/shm/peppa-box-bedienung.json (Bedienelemente live).
@@ -150,12 +151,13 @@ def poweroff():
 
 
 class Player:
-    def __init__(self, sp=spotify, leser_fabrik=leser_einrichten, ansager=None, hardware=None,
+    def __init__(self, sp=spotify, leser_fabrik=leser_einrichten, ansager=None, hardware=None, klicker=None,
                  ausschalten=poweroff, jetzt=time.monotonic, schlaf=time.sleep, log=log):
         self.sp, self.leser_fabrik, self.ausschalten_befehl = sp, leser_fabrik, ausschalten
         self.jetzt, self.schlaf, self.log = jetzt, schlaf, log
         self.zustand = {"karte": None, "link": None, "spotify_bereit": False, "problem": None, "leser": None}
         self.ansager = ansager or toene.Ansager(log=log)
+        self.klicker = klicker or toene.Klicker(log=log)
         # Rückmeldung der Tonausgabe (ausgabe.py) und der librespot-Ereignisse (ereignis.py)
         self.rueck = rueckmeldung.Rueckmeldung(log=log)
         # Weiterspielen an der unterbrochenen Stelle (Wunsch Jan 09.11.2026)
@@ -174,7 +176,7 @@ class Player:
         self.bed = bedienung.Bedienung(self.st, self.auto, self.regler, einstellungen, sagen=self.ansager.sagen,
                                        akku_info=lambda: self.akkuwache.status,
                                        herunterfahren=self.herunterfahren, karte=self.karte_info,
-                                       log=log, laut=lautstaerke)
+                                       log=log, laut=lautstaerke, klick=self.klicker.klick)
         self.drehgeber = drehgeber.Drehgeber(self.bed.drehen, log=log)
         self.hw = hardware or bedienung.Hardware(self.bed, self.ausgang, self.akkuwache, einstellungen,
                                                  drehgeber=self.drehgeber, log=log)
@@ -219,6 +221,7 @@ class Player:
         except Exception as e:
             self.log(f"Startlautstärke nicht gesetzt: {e!r}")
         self.ansager.starten()
+        self.klicker.starten()
         self.regler.starten()
         self.st.starten()
         self.hw.starten()
@@ -234,6 +237,7 @@ class Player:
                                     ("Bedienung", self.hw.lebt, self.hw.starten),
                                     ("Lautstärke", self.regler.lebt, self.regler.starten),
                                     ("Ansagen", self.ansager.lebt, self.ansager.starten),
+                                    ("Klick", self.klicker.lebt, self.klicker.starten),
                                     ("Rückmeldung", lambda: self.sp is not spotify or self.rueck.lebt(),
                                      self.rueck.starten),
                                     ("Drehknopf", lambda: self._dreh_faden is not None and self._dreh_faden.is_alive(),

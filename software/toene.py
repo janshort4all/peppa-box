@@ -15,7 +15,11 @@ Lautstärke. Fehler beim Abspielen werden gemeldet, halten aber nichts auf.
 Ansager: eigener Faden für den Player. Eine neue Ansage beendet die laufende (zählt nur die
 neueste, z. B. beim Weiterschalten des Schlummer-Timers). Der Aufrufer wartet nie.
 
+Klicker: leiser Klick beim Antippen von zurück, Play und vor (klaenge/klick.wav, Lautstärke in
+den Einstellungen, bedienung.klick in Prozent der Aufnahme, 0 = aus).
+
 Von Hand:  python3 ~/peppa-box/software/toene.py bereit        (eine Ansage)
+           python3 ~/peppa-box/software/toene.py klick         (der Klick der Touchfelder)
            python3 ~/peppa-box/software/toene.py --alle        (alle nacheinander, mit Quelle)
 """
 import array
@@ -364,6 +368,139 @@ def mischen(pfad, log=print):
     return Gemischt(MISCH_VORLAUF_S + len(pcm) / (44100 * 4) + 0.1)
 
 
+# ---------------------------------------------------------------- Klick der Touchfelder
+
+KLICK_DATEI = os.path.join(os.path.dirname(os.path.abspath(__file__)), "klaenge", "klick.wav")
+KLICK_AUFTRAG = os.environ.get("PEPPA_KLICK_AUFTRAG") or "/dev/shm/peppa-box-klick.json"
+KLICK_PCM = os.environ.get("PEPPA_KLICK_PCM") or "/dev/shm/peppa-box-klick.raw"
+KLICK_STANDARD = 15            # Prozent der Aufnahme (Wunsch Jan 09.11.: sehr weich und dezent)
+_klick_sperre = threading.Lock()
+_klick_proc = None
+
+
+def klick_pegel():
+    try:
+        return int(einstellungen.laden()["bedienung"].get("klick", KLICK_STANDARD))
+    except Exception:
+        return KLICK_STANDARD
+
+
+def _klick_wav(pegel, ordner=None):
+    """Klick in der gewünschten Lautstärke als WAV im Arbeitsspeicher-Ordner (einmal je Pegel erzeugt)."""
+    ordner = ordner or os.path.dirname(einstellungen.lauf_pfad("x"))
+    ziel = os.path.join(ordner, f"peppa-box-klick-{pegel}.wav")
+    if os.path.isfile(ziel):
+        return ziel
+    with wave.open(KLICK_DATEI) as w:
+        params, roh = w.getparams(), w.readframes(w.getnframes())
+    werte = array.array("h")
+    werte.frombytes(roh)
+    if sys.byteorder == "big":
+        werte.byteswap()
+    f = pegel / 100.0
+    werte = array.array("h", (int(v * f) for v in werte))
+    if sys.byteorder == "big":
+        werte.byteswap()
+    tmp = ziel + f".{os.getpid()}.tmp"
+    with wave.open(tmp, "wb") as w:
+        w.setparams(params)
+        w.writeframes(werte.tobytes())
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, ziel)
+    return ziel
+
+
+def _ausgabe_kann_klick():
+    st = _status()
+    return isinstance(st, dict) and bool(st.get("klick"))
+
+
+def klick_freigeben():
+    """Laufenden Klick auf der Pi-Klinke beenden (sie hat keinen Mischer), damit eine Ansage sie bekommt."""
+    global _klick_proc
+    with _klick_sperre:
+        p, _klick_proc = _klick_proc, None
+    if p is not None and p.poll() is None:
+        try:
+            p.terminate()
+            p.wait(timeout=0.3)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+
+
+class Klicker:
+    """Leiser Klick beim Antippen von zurück, Play und vor (nicht Mond, nicht Ein-Taste).
+    klick() kehrt sofort zurück; abgespielt wird in einem eigenen Faden.
+      Lautsprecher: aplay in den Mischer (dmix) – klingt neben der Musik, ohne sie abzusenken.
+      Kopfhörer, Musik läuft: die Tonausgabe (ausgabe.py) mischt ihn in den Musikstrom.
+      Kopfhörer, keine Musik: aplay direkt auf die Pi-Klinke."""
+
+    def __init__(self, log=print, popen=subprocess.Popen, pegel=klick_pegel, ausgang=None):
+        self.log, self.popen, self.pegel = log, popen, pegel
+        self.ausgang = ausgang or lautstaerke.aktive_ausgabe
+        self._wunsch = threading.Event()
+        self._faden = None
+        self._fehler_gemeldet = False
+        self.anzahl = 0
+
+    def starten(self):
+        self._faden = threading.Thread(target=self._lauf, name="klick", daemon=True)
+        self._faden.start()
+        return self._faden
+
+    def lebt(self):
+        return self._faden is not None and self._faden.is_alive()
+
+    def klick(self):
+        self._wunsch.set()
+
+    def _lauf(self):
+        while True:
+            self._wunsch.wait()
+            self._wunsch.clear()
+            try:
+                self.spielen()
+            except Exception as e:                     # der Faden darf nie sterben
+                if not self._fehler_gemeldet:
+                    self.log(f"Klick: Fehler {e!r}")
+                    self._fehler_gemeldet = True
+
+    def spielen(self):
+        global _klick_proc
+        pegel = self.pegel()
+        if pegel <= 0:
+            return None
+        pfad = _klick_wav(pegel)
+        if self.ausgang() == "lautsprecher":
+            p = self.popen([shutil.which("aplay") or "aplay", "-q", "-D", "lautsprecher", pfad],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            self.anzahl += 1
+            return "lautsprecher"
+        if musik_fliesst() and _ausgabe_kann_klick():
+            with wave.open(pfad) as w:
+                roh = w.readframes(w.getnframes())
+            tmp = KLICK_PCM + f".{os.getpid()}.tmp"
+            with open(tmp, "wb") as f:
+                f.write(roh)
+            os.chmod(tmp, 0o644)
+            os.replace(tmp, KLICK_PCM)
+            tmp = KLICK_AUFTRAG + f".{os.getpid()}.tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump({"id": f"{os.getpid()}-{time.monotonic_ns()}", "pcm": KLICK_PCM,
+                           "bis": time.time() + 0.5}, f)
+            os.chmod(tmp, 0o644)
+            os.replace(tmp, KLICK_AUFTRAG)
+            self.anzahl += 1
+            return "gemischt"
+        klick_freigeben()                              # schnell hintereinander: den vorigen Klick beenden
+        p = self.popen([shutil.which("aplay") or "aplay", "-q", "-D", kopfhoerer_geraet(), pfad],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        with _klick_sperre:
+            _klick_proc = p
+        self.anzahl += 1
+        return "kopfhoerer"
+
+
 # ---------------------------------------------------------------- Abspielen
 
 def _befehl(pfad):
@@ -386,6 +523,7 @@ def spielen(name, warten=False, log=print):
         if warten:
             g.wait()
         return True
+    klick_freigeben()
     cmd = [aplay, "-q", "-D", geraet(), pfad]
     try:
         if warten:
@@ -491,6 +629,7 @@ class Ansager:
             self._proc = g
             self.zuletzt = (name, art)
             return g
+        klick_freigeben()
         try:
             p = self.popen(_befehl(pfad), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         except OSError as e:
@@ -543,6 +682,12 @@ if __name__ == "__main__":
             print(f"{n:16} {art:9} {ANSAGEN[n]}")
             spielen(n, warten=True)
             time.sleep(0.4)
+        sys.exit(0)
+    if len(sys.argv) > 1 and sys.argv[1] == "klick":
+        k = Klicker()
+        weg = k.spielen()
+        print(f"Klick ({klick_pegel()} %): {weg or 'aus'}")
+        time.sleep(0.5)
         sys.exit(0)
     name = sys.argv[1] if len(sys.argv) > 1 else "bereit"
     if name not in ANSAGEN:

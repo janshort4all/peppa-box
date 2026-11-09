@@ -7,6 +7,8 @@ Belegung (Verdrahtungsplan 08.11.2026; welche Elektrode welches Feld ist, steht 
   E2 vor      antippen: nächster Titel          halten: vorspulen
   E3 Mond     antippen: Schlummer-Timer 15 -> 30 -> 45 -> 60 Min -> aus, jeweils mit Ansage
               5 s halten: Akkustand ansagen
+  Klick       zurück, Play und vor klicken leise, sobald die Berührung als Finger zählt (nach 70 ms,
+              einmal je Berührung, auch beim Halten); Mond und Ein-Taste klicken nie (Wunsch Jan 09.11.)
   Drehknopf   Lautstärke (2 % je Raste, Einstellung), nie über die Höchstlautstärke, nie unter 5 %
   Ein-Taste   ausgeschaltet: einschalten (das macht der Pi selbst: GPIO 3 nach Masse weckt ihn)
               kurz drücken: Akkustand ansagen
@@ -39,6 +41,7 @@ SPUL_MS = 15000
 SPUL_TAKT_S = 0.8
 TIPP_MAX_S = 1.5          # länger gehalten = kein Antippen (Play, Mond)
 VON_VORN_S = 2.0          # Play so lange halten: Karte von vorn (sonst geht es an der gemerkten Stelle weiter)
+KLICK_FELDER = ("zurueck", "play", "vor")   # nicht "schlaf" (Mond), nicht die Ein-Taste
 TIPP_MIN_S = 0.07         # kürzer = kein Finger, sondern Rauschen (Phantom-Berührung, Befund 09.11.2026)
 KURZ_MELDEN_S = 60.0      # ignorierte Phantom-Berührungen höchstens so oft zusammengefasst melden
 AKKU_HALTEN_S = 5.0
@@ -65,10 +68,11 @@ LIVE_MIN_S, LIVE_MAX_S = 0.2, 2.0
 
 class Bedienung:
     def __init__(self, st, auto, regler, einst, sagen, akku_info, herunterfahren, karte,
-                 jetzt=time.monotonic, uhr=time.time, log=print, timer=automatik, laut=None):
+                 jetzt=time.monotonic, uhr=time.time, log=print, timer=automatik, laut=None, klick=None):
         self.st, self.auto, self.regler, self.einst = st, auto, regler, einst
         self.sagen_roh, self.akku_info, self.herunterfahren, self.karte = sagen, akku_info, herunterfahren, karte
         self.jetzt, self.uhr, self.log, self.timer, self.laut = jetzt, uhr, log, timer, laut
+        self.klick_roh = klick
         self.gesten = {}                 # Feld -> {"start", "lang", "naechster"}
         self.mehrfach = False
         self.kurz = {}                   # Feld -> Anzahl ignorierter Phantom-Berührungen seit der letzten Meldung
@@ -90,6 +94,16 @@ class Bedienung:
             return
         self._angesagt[name] = t
         self.sagen_roh(name)
+
+    def _klick(self, f, g):
+        """Einmal je Berührung klicken, sobald sie als Finger zählt (nicht bei mehreren Feldern)."""
+        if g.get("klick") or self.mehrfach or f not in KLICK_FELDER or self.klick_roh is None:
+            return
+        g["klick"] = True
+        try:
+            self.klick_roh()
+        except Exception as e:
+            self.log(f"Klick: {e!r}")
 
     def akku_ansagen(self):
         try:
@@ -126,6 +140,7 @@ class Bedienung:
         if dauer < TIPP_MIN_S:
             self._kurz(f, t)
             return
+        self._klick(f, g)                  # losgelassen, bevor der nächste Durchlauf klicken konnte
         if f == "play" and dauer < TIPP_MAX_S:
             self._play()
         elif f in ("vor", "zurueck") and dauer < LANG_SPRUNG_S:
@@ -237,6 +252,8 @@ class Bedienung:
             return
         for f, g in self.gesten.items():
             d = t - g["start"]
+            if d >= TIPP_MIN_S:
+                self._klick(f, g)
             if f in ("vor", "zurueck") and d >= LANG_SPRUNG_S:
                 if g["naechster"] is None or t >= g["naechster"]:
                     g["lang"] = True

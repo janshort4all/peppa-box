@@ -43,6 +43,8 @@ STANDARD = {
         "drehknopf_umkehren": False,          # falls rechts herum leiser wird
         "kopfhoerer_erkennung": True,
         "klinke_eingesteckt_bei": "hoch",     # Pegel an P26 bei eingestecktem Stecker
+        # Klick beim Antippen von zurück, Play und vor: Prozent der Aufnahme (klaenge/klick.wav), 0 = aus
+        "klick": 15,
     },
     # Klang des Lautsprechers: Equalizer mit 10 Bändern (31 Hz … 16 kHz), je -24 … +6 dB (klang.py)
     "klang": {"baender": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
@@ -146,6 +148,8 @@ def bereinigen(neu, basis):
                 ziel[k] = _ganzzahl(v, "Touch-Schwelle", 2, 40)
             elif k == "touch_loslassen":
                 ziel[k] = _ganzzahl(v, "Touch loslassen", 1, 39)
+            elif k == "klick":
+                ziel[k] = _ganzzahl(v, "Klick-Lautstärke", 0, 100)
             elif k == "drehknopf_schritt":
                 ziel[k] = _ganzzahl(v, "Drehknopf-Schritt", 1, 10)
             elif k in ("drehknopf_umkehren", "kopfhoerer_erkennung"):

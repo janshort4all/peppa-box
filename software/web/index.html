@@ -193,6 +193,10 @@ input.schalter:checked::after { transform:translateX(20px); }
       <label class="zeile"><span>Drehrichtung umkehren<br><span class="leise">falls rechts herum leiser wird</span></span>
         <input type="checkbox" class="schalter" id="bumkehren"></label>
     </div>
+    <div class="trenner"><b>Klick</b> <span class="leise">(zurück, Play, vor – nicht Mond, nicht Ein-Taste)</span>
+      <div class="grenze"><div class="kopf"><span>Lautstärke <small class="leise">(0 = aus)</small></span><b id="bklickw"></b></div>
+        <input type="range" id="bklick" min="0" max="60" step="1" oninput="$('bklickw').textContent = this.value + '\u00a0%'"></div>
+    </div>
     <div class="trenner"><b>Kopfhörer</b>
       <label class="zeile"><span>Kopfhörer erkennen<br><span class="leise">aus: immer Lautsprecher</span></span>
         <input type="checkbox" class="schalter" id="bkerkennung"></label>
@@ -669,6 +673,8 @@ function bedienungFuellen() {
   $('bschritt').value = b.drehknopf_schritt; $('bschrittw').textContent = b.drehknopf_schritt + '\u00a0%';
   $('bumkehren').checked = b.drehknopf_umkehren; $('bkerkennung').checked = b.kopfhoerer_erkennung;
   $('bkpolung').value = b.klinke_eingesteckt_bei;
+  const kl = (b.klick === undefined) ? 15 : b.klick;
+  $('bklick').value = kl; $('bklickw').textContent = kl + '\u00a0%';
   FELDER.forEach(([f]) => { $('z-' + f).value = b.felder[f]; });
 }
 async function bedienungSpeichern() {
@@ -678,7 +684,8 @@ async function bedienungSpeichern() {
   stand++;
   const erg = await sicher('/api/einstellungen', {bedienung: {touch_schwelle: s, touch_loslassen: Math.max(1, Math.floor(s / 2)),
     drehknopf_schritt: +$('bschritt').value, drehknopf_umkehren: $('bumkehren').checked,
-    kopfhoerer_erkennung: $('bkerkennung').checked, klinke_eingesteckt_bei: $('bkpolung').value, felder}});
+    kopfhoerer_erkennung: $('bkerkennung').checked, klinke_eingesteckt_bei: $('bkpolung').value, felder,
+    klick: +$('bklick').value}});
   stand++;
   if (erg.ok) { einst = erg.einstellungen; geaendert.bedienung = false; formFuellen(); }
   hinweis('bergebnis2', erg, true);

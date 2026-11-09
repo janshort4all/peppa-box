@@ -44,7 +44,10 @@ STANDARD = {
         "kopfhoerer_erkennung": True,
         "klinke_eingesteckt_bei": "hoch",     # Pegel an P26 bei eingestecktem Stecker
     },
+    # Klang des Lautsprechers: Equalizer mit 10 Bändern (31 Hz … 16 kHz), je -24 … +6 dB (klang.py)
+    "klang": {"baender": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
 }
+KLANG_MIN_DB, KLANG_MAX_DB = -24, 6
 
 FELDER = ("zurueck", "play", "vor", "schlaf")
 MIN_LAUT = 5                                  # darunter ist die Box praktisch stumm
@@ -162,11 +165,20 @@ def bereinigen(neu, basis):
                 ziel["felder"] = felder
             else:
                 raise ValueError(f"bedienung: unbekannter Wert '{k}'")
+    klang = neu.get("klang")
+    if klang is not None:
+        if not isinstance(klang, dict) or set(klang) - {"baender"}:
+            raise ValueError("klang: Objekt mit 'baender' erwartet")
+        if "baender" in klang:
+            v = klang["baender"]
+            if not isinstance(v, list) or len(v) != 10:
+                raise ValueError("Klang: 10 Bänder erwartet")
+            erg["klang"]["baender"] = [_ganzzahl(x, "Klang-Band", KLANG_MIN_DB, KLANG_MAX_DB) for x in v]
     b = erg["bedienung"]
     if b["touch_loslassen"] >= b["touch_schwelle"]:
         b["touch_loslassen"] = max(1, b["touch_schwelle"] // 2)
 
-    unbekannt = set(neu) - {"lautstaerke", "ruhezeit", "auto_aus", "bedienung"}
+    unbekannt = set(neu) - {"lautstaerke", "ruhezeit", "auto_aus", "bedienung", "klang"}
     if unbekannt:
         raise ValueError("Unbekannte Einstellung: " + ", ".join(sorted(unbekannt)))
     return erg

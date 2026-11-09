@@ -38,6 +38,7 @@ import bedienung
 import drehgeber
 import einstellungen
 import i2c
+import klang
 import lautstaerke
 import rueckmeldung
 import spotify
@@ -202,6 +203,11 @@ class Player:
         if self.sp is spotify:
             self.rueck.starten()                # vor allem anderen: Meldungen von Raspotify nicht verpassen
         self.ausgang.start()                    # Umschalten eingerichtet? Beginnt mit dem Lautsprecher
+        try:
+            if klang.eingerichtet():            # Klang (Equalizer) wie gespeichert
+                klang.anwenden(einstellungen.laden()["klang"]["baender"], log=self.log)
+        except Exception as e:
+            self.log(f"Klang nicht gesetzt: {e!r}")
         try:
             self.auto.beim_start()              # Startlautstärke, bevor irgendetwas spielt
         except Exception as e:

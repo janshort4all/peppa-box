@@ -111,6 +111,12 @@ input.schalter:checked::after { transform:translateX(20px); }
       <div class="leise" id="ltext"></div></div>
   </div>
   <div id="lergebnis"></div>
+  <details id="kdetails" style="margin-top:8px"><summary>Klang (Equalizer)</summary>
+    <div class="leise klein" style="margin-top:6px">Wirkt sofort, am besten bei laufender Musik einstellen. Gilt für den Lautsprecher, nicht für Kopfhörer. Kleine Lautsprecher klingen meist besser mit weniger Bass.</div>
+    <div class="reihe" style="margin-top:8px; flex-wrap:wrap" id="kvorlagen"></div>
+    <div id="kbaender"></div>
+    <div id="kergebnis"></div>
+  </details>
   <details id="gdetails" style="margin-top:8px"><summary>Grenzen und Startlautstärke</summary>
     <div id="lgrenzen"></div>
     <button class="haupt" onclick="grenzenSpeichern()">Speichern</button>
@@ -691,6 +697,45 @@ async function ansagenLaden() {
 }
 async function ansageSpielen(name) { hinweis('aergebnis', await sicher('/api/ansage', {name}), true); }
 $('adetails').addEventListener('toggle', () => { if ($('adetails').open) ansagenLaden(); });
+
+// ------------------------------------------------------------ Klang (Equalizer)
+
+const VORLAGE_NAMEN = {neutral: 'Neutral', klein: 'Kleiner Lautsprecher', sprache: 'Hörspiel', weich: 'Weicher'};
+let klang = null, klangTimer = null;
+function dbText(v) { return (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v) + '\u00a0dB'; }
+function klangZeigen() {
+  if (!klang.da) {
+    $('kbaender').innerHTML = '<div class="hinweis fehler">Equalizer noch nicht eingerichtet: einmal am Pi '
+      + "'sh ~/peppa-box/software/dienst_einrichten.sh' ausführen.</div>";
+    $('kvorlagen').innerHTML = '';
+    return;
+  }
+  $('kvorlagen').innerHTML = Object.keys(klang.vorlagen).map(n =>
+    `<button onclick="klangVorlage('${n}')">${esc(VORLAGE_NAMEN[n] || n)}</button>`).join('');
+  $('kbaender').innerHTML = klang.namen.map((n, i) =>
+    `<div class="grenze"><div class="kopf"><span>${esc(n)}</span><b id="kw-${i}">${dbText(klang.baender[i])}</b></div>
+     <input type="range" id="kb-${i}" min="${klang.min}" max="${klang.max}" step="1" value="${klang.baender[i]}"
+       aria-label="${esc(n)}" oninput="klangGeaendert(${i}, +this.value)"></div>`).join('');
+}
+async function klangLaden() {
+  try { klang = await holen('/api/klang'); klangZeigen(); }
+  catch (e) { $('kbaender').textContent = 'Keine Verbindung zur Box.'; }
+}
+function klangGeaendert(i, v) {
+  klang.baender[i] = v;
+  $('kw-' + i).textContent = dbText(v);
+  clearTimeout(klangTimer);
+  klangTimer = setTimeout(async () => {
+    const erg = await sicher('/api/klang', {baender: klang.baender});
+    if (!erg.ok) hinweis('kergebnis', erg);
+  }, 250);
+}
+async function klangVorlage(name) {
+  const erg = await sicher('/api/klang', {vorlage: name});
+  if (erg.ok) { klang.baender = erg.baender; klangZeigen(); }
+  hinweis('kergebnis', erg.ok ? {ok: true, meldung: (VORLAGE_NAMEN[name] || name) + ' eingestellt.'} : erg, true);
+}
+$('kdetails').addEventListener('toggle', () => { if ($('kdetails').open) klangLaden(); });
 
 felderBauen();
 grenzenBauen();

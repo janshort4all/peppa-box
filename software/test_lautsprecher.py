@@ -268,6 +268,34 @@ class Einrichtungsskript(unittest.TestCase):
         self.assertIn('LIBRESPOT_BACKEND="alsa"', rasp)
         self.assertIn('\nLIBRESPOT_DEVICE="lautsprecher"\n', rasp)
 
+    def test_mit_equalizer(self):
+        self.schreiben(self.cfg, CONFIG_TXT)
+        self.schreiben(self.rasp, RASPOTIFY)
+        self.schreiben(self.cards, KARTEN_MIT)
+        self.env["PEPPA_EQ"] = "1"
+        r = self.lauf()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        a = self.lesen(self.asound)
+        self.assertIn('slave.pcm "peppa_klang_plug"', a)              # Mono -> Equalizer -> Mischer
+        self.assertIn("ttable.0.0 0.25", a)                           # Reserve für den Equalizer
+        self.assertIn("pcm.peppa_klang {\n    type equal\n    slave.pcm \"peppa_plug\"", a)
+        self.assertIn('ctl.peppa_klang {\n    type equal\n    controls "/dev/shm/peppa-box-klang.bin"', a)
+        dienst = self.lesen(os.path.join(self.systemd, "peppa-stille.service"))
+        self.assertIn("-D peppa_klang controls", dienst)
+        self.assertIn("chmod 0666 /dev/shm/peppa-box-klang.bin", dienst)
+        self.assertLess(dienst.index("peppa_klang controls"), dienst.index("ExecStart="))
+
+    def test_ohne_equalizer_wie_bisher(self):
+        self.schreiben(self.cfg, CONFIG_TXT)
+        self.schreiben(self.rasp, RASPOTIFY)
+        self.schreiben(self.cards, KARTEN_MIT)
+        self.env["PEPPA_EQ"] = "0"
+        r = self.lauf()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        a = self.lesen(self.asound)
+        self.assertNotIn("peppa_klang", a)
+        self.assertIn('slave.pcm "peppa_plug"\n    slave.channels 2\n    ttable.0.0 0.5', a)
+
     def test_notfall_rueckweg_alsa_direkt(self):
         self.tonausgabe_anlegen()
         self.schreiben(self.cfg, CONFIG_TXT)

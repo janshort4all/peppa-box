@@ -2,7 +2,8 @@
 # Richtet den Lautsprecher (MAX98357A ueber I2S) ein. Wird von dienst_einrichten.sh aufgerufen,
 # kann aber auch allein laufen. Beliebig oft wiederholbar.
 #   1. config.txt: I2S-Ausgang (hifiberry-dac); GPIO 16 (SD) beim Einschalten auf "stumm" (Ausgang low)
-#   2. /etc/asound.conf: Mischer (dmix) -> Software-Lautstaerke "lautsprecher", Regler "Lautsprecher"
+#   2. /etc/asound.conf: Mischer (dmix) -> Software-Lautstaerke "lautsprecher", Regler "Lautsprecher",
+#      dazwischen der Equalizer "peppa_klang" (Klang auf der Eltern-Seite), wenn er nachweislich laeuft
 #      (der MAX98357A hat keinen eigenen Regler, Spotify steht fest auf 100 %)
 #   3. Dienst peppa-stille: spielt dauerhaft Stille in den Mischer, damit der Takt nie abreisst und
 #      der Verstaerker wach bleibt (sonst knackt es bei jedem Abspielbeginn). Reihenfolge gegen das
@@ -64,6 +65,56 @@ fi
 echo "Verstaerker-Karte: $KARTE"
 KH_KARTE="$(sed -n 's/^ *[0-9][0-9]* \[\(Headphones\) *\]:.*/\1/p' "$KARTEN" | head -n 1)"
 
+# Befehl so ausfuehren, wie Raspotify laeuft (root ohne Rechte, eigener Benutzer-Namensraum,
+# schreibgeschuetztes System, kein /home); ohne systemd-run einfach als root
+wie_raspotify() {
+    if ! command -v systemd-run > /dev/null; then
+        sudo /bin/sh -c "$1" > /dev/null
+        return
+    fi
+    sudo systemd-run --quiet --wait --pipe --collect \
+        -p ProtectSystem=strict -p ProtectHome=true -p PrivateTmp=true -p PrivateUsers=true \
+        -p ProtectProc=invisible -p ProcSubset=pid -p NoNewPrivileges=true -p MemoryDenyWriteExecute=true \
+        -p LockPersonality=true -p RestrictRealtime=true -p RestrictNamespaces=true \
+        -p "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK" -p SystemCallArchitectures=native \
+        -p SystemCallFilter=@system-service -p "SystemCallFilter=~@privileged @resources" \
+        -p SystemCallErrorNumber=EPERM -p DevicePolicy=strict -p "DeviceAllow=char-alsa rw" \
+        -p "DeviceAllow=/dev/null rw" -p SupplementaryGroups=audio -p CapabilityBoundingSet= \
+        /bin/sh -c "$1" > /dev/null
+}
+
+# --- Equalizer (Klang, Eltern-Seite): alsaequal + LADSPA-Modul Eq10 (Pakete libasound2-plugin-equal, caps).
+#     Nur einbauen, wenn er unter den Schutzregeln von Raspotify nachweislich laeuft; sonst ohne.
+EQ=0
+if [ -n "$PEPPA_EQ" ]; then                  # nur Tests: 1 = vorhanden, 0 = nicht
+    EQ="$PEPPA_EQ"
+elif [ -z "$PEPPA_TROCKEN" ]; then
+    if ! ls /usr/lib/*/alsa-lib/libasound_module_pcm_equal.so > /dev/null 2>&1; then
+        echo "Installiere Equalizer (libasound2-plugin-equal, caps) ..."
+        sudo apt-get install -y --no-install-recommends libasound2-plugin-equal > /dev/null 2>&1 \
+            || { sudo apt-get update > /dev/null 2>&1 && \
+                 sudo apt-get install -y --no-install-recommends libasound2-plugin-equal > /dev/null 2>&1; } \
+            || echo "Equalizer nicht installiert (Klang-Einstellung fehlt dann)."
+    fi
+    if ls /usr/lib/*/alsa-lib/libasound_module_pcm_equal.so > /dev/null 2>&1; then
+        PROBE="$(mktemp -d)"
+        { cat /usr/share/alsa/alsa.conf
+          echo 'pcm.peppa_probe_null { type null }'
+          echo 'pcm.peppa_probe { type equal slave.pcm "peppa_probe_null" controls "/dev/shm/peppa-box-klang-probe.bin" }'
+        } > "$PROBE/alsa.conf"
+        chmod 0755 "$PROBE"; chmod 0644 "$PROBE/alsa.conf"
+        sudo cp "$PROBE/alsa.conf" /run/peppa-box-klang-probe.conf
+        if wie_raspotify "ALSA_CONFIG_PATH=/run/peppa-box-klang-probe.conf timeout 10 aplay -q -D plug:peppa_probe -t raw -f S16_LE -r 44100 -c 2 -d 1 /dev/zero"; then
+            EQ=1
+        else
+            echo "WARNUNG: Equalizer laeuft unter den Schutzregeln von Raspotify nicht – Lautsprecher ohne Equalizer."
+        fi
+        sudo rm -f /run/peppa-box-klang-probe.conf /dev/shm/peppa-box-klang-probe.bin
+        rm -rf "$PROBE"
+    fi
+fi
+KLANG_DATEI=/dev/shm/peppa-box-klang.bin
+
 # --- 2. /etc/asound.conf (eigener Block zwischen Markierungen)
 ANFANG="# >>> peppa-box lautsprecher"
 ENDE="# <<< peppa-box lautsprecher"
@@ -92,20 +143,47 @@ pcm.peppa_plug {
     type plug
     slave.pcm "peppa_dmix"
 }
+EOF
+if [ "$EQ" = 1 ]; then
+    MONO_ZIEL="peppa_klang_plug"; MONO_ANTEIL="0.25"     # 6 dB Reserve: Equalizer hebt in Mittelstellung ca. 3 dB
+else
+    MONO_ZIEL="peppa_plug"; MONO_ANTEIL="0.5"
+fi
+cat >> "$TMP" <<EOF
 # SD liegt fest auf 3,3 V = Verstaerker spielt den linken Kanal. Darum hier L+R gemischt auf beide Kanaele.
 pcm.peppa_mono {
     type route
-    slave.pcm "peppa_plug"
+    slave.pcm "$MONO_ZIEL"
     slave.channels 2
-    ttable.0.0 0.5
-    ttable.1.0 0.5
-    ttable.0.1 0.5
-    ttable.1.1 0.5
+    ttable.0.0 $MONO_ANTEIL
+    ttable.1.0 $MONO_ANTEIL
+    ttable.0.1 $MONO_ANTEIL
+    ttable.1.1 $MONO_ANTEIL
 }
 pcm.peppa_mono_plug {
     type plug
     slave.pcm "peppa_mono"
 }
+EOF
+if [ "$EQ" = 1 ]; then
+    cat >> "$TMP" <<EOF
+# Klang: Equalizer 10 Baender (Eltern-Seite, klang.py); Werte im Arbeitsspeicher, Raspotify darf lesen
+pcm.peppa_klang_plug {
+    type plug
+    slave.pcm "peppa_klang"
+}
+pcm.peppa_klang {
+    type equal
+    slave.pcm "peppa_plug"
+    controls "$KLANG_DATEI"
+}
+ctl.peppa_klang {
+    type equal
+    controls "$KLANG_DATEI"
+}
+EOF
+fi
+cat >> "$TMP" <<EOF
 pcm.lautsprecher {
     type softvol
     slave.pcm "peppa_mono_plug"
@@ -140,6 +218,11 @@ fi
 
 # --- 3. Dienst peppa-stille
 PINCTRL="$(command -v pinctrl || echo /usr/bin/pinctrl)"
+KLANG_START=""
+if [ "$EQ" = 1 ]; then   # Equalizer-Werte anlegen (root), dann fuer Player/Eltern-Seite beschreibbar
+    AMIXER="$(command -v amixer || echo /usr/bin/amixer)"
+    KLANG_START="ExecStartPre=-/bin/sh -c '$AMIXER -q -D peppa_klang controls > /dev/null 2>&1; chmod 0666 $KLANG_DATEI'"
+fi
 APLAY="$(command -v aplay || echo /usr/bin/aplay)"
 TMP="$(mktemp)"
 cat > "$TMP" <<EOF
@@ -153,6 +236,7 @@ Before=raspotify.service peppa-player.service
 [Service]
 Type=simple
 ExecStartPre=$PINCTRL set 16 op dl
+$KLANG_START
 ExecStart=$APLAY -q -D peppa_dmix -t raw -r 44100 -c 2 -f S16_LE /dev/zero
 ExecStartPost=/bin/sh -c 'sleep 0.5; $PINCTRL set 16 op dh'
 ExecStop=$PINCTRL set 16 op dl
@@ -186,19 +270,7 @@ raspotify_setzen() {   # $1 = Name, $2 = Wert; vorhandene Zeile ersetzen, sonst 
 relais_pruefen() {   # 1 s Stille durch die Tonausgabe, mit denselben Schutzregeln wie der Raspotify-Dienst
     if [ -n "$PEPPA_RELAIS_PRUEFUNG" ]; then sh -c "$PEPPA_RELAIS_PRUEFUNG"; return; fi   # nur Tests
     if [ -n "$PEPPA_TROCKEN" ]; then return 0; fi
-    if ! command -v systemd-run > /dev/null; then
-        head -c 176400 /dev/zero | sudo "$RELAIS" > /dev/null
-        return
-    fi
-    sudo systemd-run --quiet --wait --pipe --collect \
-        -p ProtectSystem=strict -p ProtectHome=true -p PrivateTmp=true -p PrivateUsers=true \
-        -p ProtectProc=invisible -p ProcSubset=pid -p NoNewPrivileges=true -p MemoryDenyWriteExecute=true \
-        -p LockPersonality=true -p RestrictRealtime=true -p RestrictNamespaces=true \
-        -p "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK" -p SystemCallArchitectures=native \
-        -p SystemCallFilter=@system-service -p "SystemCallFilter=~@privileged @resources" \
-        -p SystemCallErrorNumber=EPERM -p DevicePolicy=strict -p "DeviceAllow=char-alsa rw" \
-        -p "DeviceAllow=/dev/null rw" -p SupplementaryGroups=audio -p CapabilityBoundingSet= \
-        /bin/sh -c "head -c 176400 /dev/zero | $RELAIS" > /dev/null
+    wie_raspotify "head -c 176400 /dev/zero | $RELAIS"
 }
 if sudo test -f "$RASPOTIFY"; then   # Datei/Ordner nur mit sudo lesbar
     RELAIS_OK=0

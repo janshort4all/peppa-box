@@ -27,6 +27,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import akku
 import automatik
 import einstellungen
+import klang
 import lautstaerke
 import toene
 
@@ -274,6 +275,31 @@ def _ausgabe_jetzt():
     return "\n".join(zeilen) or "(keine Angaben)"
 
 
+def klang_info():
+    return {"da": klang.eingerichtet(), "baender": einstellungen.laden()["klang"]["baender"],
+            "namen": list(klang.BAENDER), "min": klang.MIN_DB, "max": klang.MAX_DB, "vorlagen": klang.VORLAGEN}
+
+
+def klang_setzen(daten):
+    """Equalizer einstellen: {"baender": [10 × dB]} oder {"vorlage": "klein"}; speichern und sofort anwenden."""
+    if isinstance(daten, dict) and daten.get("vorlage") is not None:
+        if daten["vorlage"] not in klang.VORLAGEN:
+            return {"ok": False, "meldung": "Unbekannte Vorlage."}
+        baender = klang.VORLAGEN[daten["vorlage"]]
+    else:
+        baender = daten.get("baender") if isinstance(daten, dict) else None
+    try:
+        cfg = einstellungen.speichern({"klang": {"baender": baender}})
+    except ValueError as e:
+        return {"ok": False, "meldung": str(e)}
+    if TROCKEN:
+        return {"ok": True, "meldung": "Probelauf.", "baender": cfg["klang"]["baender"]}
+    ok = klang.anwenden(cfg["klang"]["baender"], log=log)
+    return {"ok": ok, "baender": cfg["klang"]["baender"],
+            "meldung": "Klang eingestellt." if ok else "Gespeichert, aber der Equalizer ist nicht eingerichtet "
+                                                      "(einmal dienst_einrichten.sh ausführen)."}
+
+
 def diagnose():
     """Alles, was für die Fehlersuche zählt, auf einer Seite (nur lesen, ändert nichts)."""
     teile = []
@@ -502,7 +528,7 @@ AKTIONEN = {"/api/update/pruefen": update_pruefen, "/api/update/starten": update
             "/api/neustart": box_neu, "/api/ausschalten": ausschalten}
 # Aktionen mit Eingabewerten (JSON im Anfragetext). Sie sind schnell und dürfen neben einem
 # laufenden Update ausgeführt werden (z. B. Lautstärke ändern).
-SCHNELL = {"/api/lautstaerke": lautstaerke_setzen, "/api/einstellungen": einstellungen_speichern,
+SCHNELL = {"/api/klang": klang_setzen, "/api/lautstaerke": lautstaerke_setzen, "/api/einstellungen": einstellungen_speichern,
            "/api/timer/starten": timer_starten, "/api/timer/abbrechen": timer_abbrechen,
            "/api/ruhezeit/aussetzen": ruhe_aussetzen, "/api/ruhezeit/wieder": ruhe_wieder,
            "/api/ansage": ansage_spielen}
@@ -544,6 +570,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._antwort(200, einstellungen_lesen())
         if pfad == "/api/meldungen":
             return self._antwort(200, meldungen())
+        if pfad == "/api/klang":
+            return self._antwort(200, klang_info())
         if pfad == "/api/diagnose":
             return self._antwort(200, diagnose())
         name = "index.html" if pfad in ("/", "/index.html") else pfad.lstrip("/")
@@ -575,7 +603,7 @@ class Handler(BaseHTTPRequestHandler):
         if not schnell and not SPERRE.acquire(blocking=False):
             return self._antwort(409, {"ok": False, "meldung": "Es läuft schon eine Aktion, bitte kurz warten."})
         try:
-            if not schnell or self.path != "/api/lautstaerke":      # Regler-Ziehen nicht im Protokoll
+            if self.path not in ("/api/lautstaerke", "/api/klang"):  # Regler-Ziehen nicht im Protokoll
                 log(f"Aktion {self.path}")
             erg = aktion(daten) if schnell else aktion()
         except Exception as e:                      # nie die Seite abstuerzen lassen
@@ -583,7 +611,7 @@ class Handler(BaseHTTPRequestHandler):
         finally:
             if not schnell:
                 SPERRE.release()
-        if not schnell or self.path != "/api/lautstaerke":
+        if self.path not in ("/api/lautstaerke", "/api/klang"):
             log(f"  -> {erg.get('meldung', erg.get('ok'))}")
         self._antwort(200, erg)
 

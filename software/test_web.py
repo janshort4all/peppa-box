@@ -174,6 +174,31 @@ class Seite(unittest.TestCase):
             self.assertEqual(aufrufe[1:], [(peppa_web.SYSTEMCTL, "restart", "raspotify"),
                                            (peppa_web.SYSTEMCTL, "restart", "peppa-player")])
 
+    def test_klang_lesen_und_setzen(self):
+        with mock.patch.object(peppa_web.klang, "eingerichtet", return_value=True):
+            k = self.holen("/api/klang")
+        self.assertTrue(k["da"])
+        self.assertEqual((k["baender"], len(k["namen"]), k["min"], k["max"]), ([0] * 10, 10, -24, 6))
+        st, erg = self.senden("/api/klang", {"vorlage": "klein"})
+        self.assertTrue(erg["ok"], erg)
+        self.assertEqual(einstellungen.laden()["klang"]["baender"], peppa_web.klang.VORLAGEN["klein"])
+        st, erg = self.senden("/api/klang", {"baender": [-3] * 10})
+        self.assertTrue(erg["ok"])
+        self.assertEqual(einstellungen.laden()["klang"]["baender"], [-3] * 10)
+        st, erg = self.senden("/api/klang", {"baender": [50] * 10})
+        self.assertFalse(erg["ok"])
+        st, erg = self.senden("/api/klang", {"vorlage": "disco"})
+        self.assertFalse(erg["ok"])
+        self.assertEqual(einstellungen.laden()["klang"]["baender"], [-3] * 10)
+
+    def test_klang_wird_angewendet(self):
+        with mock.patch.object(peppa_web, "TROCKEN", False), \
+                mock.patch.object(peppa_web.klang, "anwenden", return_value=False) as anwenden:
+            erg = peppa_web.klang_setzen({"vorlage": "weich"})
+        anwenden.assert_called_once()
+        self.assertFalse(erg["ok"])
+        self.assertIn("dienst_einrichten.sh", erg["meldung"])
+
     def test_tonausgabe_gilt_als_einrichtung(self):
         self.assertTrue({"software/ausgabe.py", "software/ereignis.py"} <= peppa_web.EINRICHTUNG)
 

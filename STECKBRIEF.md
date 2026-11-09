@@ -29,7 +29,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 | Druck | **Korpus 04./05.11. gedruckt – perfekt, abgenommen.** Deckel 05.11. (Symbole vertieft) nicht abgenommen; Symbole bleiben vertieft (ertastbar), Variante B (gerichtete Brücken) mit C12 bestätigt; als Nächstes ganzer Deckel, G-Code vorher prüfen (Nachtrag 05.11. (5)) |
 | Verdrahtung | **Komplett verdrahtet, exakt nach Verdrahtungsplan 08.11.** (Jan, 08.11. abends) |
 | Software | **Alle Bedienelemente programmiert (08.11. (3))**: Touchfelder, Drehknopf, Ein-Taste, Kopfhörer-Umschaltung, Akku-Ansage und -Schutz, Ansagen. Am Pi einrichten und testen (Anleitung im Nachtrag) |
-| Gummiecken | **09.11.:** vier einzelne Gummiecken aus orangem TPU, **verschraubt** über die Eckschrauben des Bodens (3,0 × 16 durch PETG-Hülse), Form **C** (20/8 mm), ohne Änderung am Gehäuse (Nachträge 09.11.). Im Modell, geprüft. Als Nächstes: TPU und Schrauben kaufen, C16 + Hülsen drucken |
+| Gummiecken | **09.11.:** vier einzelne Gummiecken aus orangem TPU, **verschraubt** über die Eckschrauben des Bodens (3,0 × 16 durch PETG-Hülse), Form **C** (20/8 mm), ohne Änderung am Gehäuse (Nachträge 09.11.). Im Modell, geprüft. TPU gekauft (TINMORRY 95A Orange, 09.11.). Als Nächstes: Schrauben 3,0 × 16 kaufen, C16 + Hülsen drucken |
 
 ## Hardware (endgültig)
 
@@ -81,7 +81,7 @@ Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine St�
 8. Optional: Lichtleiter für die Lade-LED, Ideen zur optischen Individualisierung (Seitenteile, Deckeleinlage, Magnete).
 9. **Sprachausgaben überarbeiten (Wunsch Jan 08.11.):** Alle Ansagen außer „bereit“ (Sprachausgabe pico2wave) klingen schrecklich. Ziel: alle Ansagen als eigene Aufnahmen in einheitlicher Stimme (wie „bereit“: ElevenLabs, Stimme „Helmut“), gleiche Lautheit. Texte in `software/ansagen/TEXTE.md`. Details folgen von Jan.
 10. Spotify-Anmeldung über die Eltern-Seite statt im Terminal (für künftiges Neuaufsetzen).
-11. **Gummiecken:** TPU 95A orange und 4 × Senkschraube 3,0 × 16 kaufen; Coupon C16 (Wulst 0,4 / 0,5 / 0,6, je eine vollständige Ecke) und 5 Hülsen drucken, an einer vorderen und einer hinteren Ecke probieren, `ECK_WULST` festlegen, dann die restlichen Ecken drucken (Nachtrag 09.11. (2)).
+11. **Gummiecken:** TPU gekauft (TINMORRY 95A Orange, Nachtrag 09.11. (4)); 4 × Senkschraube 3,0 × 16 kaufen; TPU trocknen (70 °C, 8 h); Coupon C16 (Wulst 0,4 / 0,5 / 0,6, je eine vollständige Ecke) und 5 Hülsen drucken, an einer vorderen und einer hinteren Ecke probieren, `ECK_WULST` festlegen, dann die restlichen Ecken drucken (Nachtrag 09.11. (2)).
 
 ## Links (Artefakte, bleiben dauerhaft erhalten)
 
@@ -817,3 +817,10 @@ Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) l�
 - **Alternative (Sparen, wenn der Versand bei colorFabb teuer ist):** 3DJAKE TPU A95 Orange 750 g (Made in EU, RAL 2008, sehr gut bewertet; laut einer Bewertung etwas härter als Polymaker PolyFlex). Kingroon (vorher in der Einkaufsliste) nicht mehr empfohlen: kein Hersteller in der EU, Qualität unbekannt.
 - Nicht geeignet: Extrudr TPU medium Neon Orange (98A, Neonfarbe), Recreus Filaflex (82A, zu weich für Wulst und Hülse).
 - Farbton gegen das vorhandene orange PETG nicht geprüft. Einkaufsliste angepasst.
+
+## Nachtrag 09.11.2026 (4) – Farbton und gekauftes TPU
+
+- **Frage Jan:** Welcher RAL-Ton ist das Elegoo-Orange? **Antwort:** Elegoo nennt keinen RAL-Ton. Hex-Wert laut einer Farbliste der Elegoo-Töne auf MakerWorld #fd7c18 (gilt für PLA, PLA+ und Rapid PETG). Farbabstand ΔE2000 (eigene Rechnung, Näherung über Bildschirmwerte): RAL 2003 Pastellorange 2,0 (praktisch gleich), RAL 2011 Tieforange 3,0, RAL 2000 Gelborange 3,2, RAL 2008 Hellrotorange 10,0 (sichtbar röter), RAL 2004 Reinorange 13,8. Kein TPU 95A in RAL 2003/2011/2000 bei Shops in DE/NL gefunden; 3DJAKE TPU A95 (RAL 2008) ist röter, Extrudr Neon (RAL 2005, 98A) scheidet aus.
+- **Gekauft (Jan, 09.11.):** TINMORRY TPU 95A Orange („Brandschutz Orange“), 1,75 mm / 1 kg, Amazon.de, 15,98 €. Kein RAL-/Hex-Wert angegeben; der Name lässt eher ein rötliches Sicherheitsorange erwarten (nicht geprüft).
+- **Herstellerangaben (Amazon-Angebot):** Düse 210–240 °C, Druckbett 30–50 °C, unter 60 mm/s, trocknen 70 °C / 8 h, Spule zufällig aus Karton oder Kunststoff. Das Profil „Elegoo TPU 95A @ECC2“ (225 °C / 35 °C) und die Geschwindigkeiten aus dem README (Volumenstrom 3,2 mm³/s ≈ 38 mm/s) liegen darin, also keine Änderung an den Einstellungen.
+- **Vorgehen:** zuerst C16 drucken und bei Tageslicht an die Box halten, dann erst die restlichen Ecken. Einkaufsliste (TPU als bestellt) und README angepasst.

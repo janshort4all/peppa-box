@@ -416,7 +416,7 @@ der Box. Hülse und Schraubenkopf enden 0,5 mm über der Standfläche – die Bo
 
 **Drucker (TPU):** nicht über den normalen CANVAS-Weg laden. Elegoo: Adapter für flexibles Filament einsetzen (Datei und Anleitung auf dem
 USB-Stick bzw. bei Nexprint „Flexible Filament Printing Adapter for Centauri Carbon 2 Combo“) und vor dem Druck das CANVAS-Kabel abziehen.
-Rolle vorher trocknen (TPU zieht Wasser; feuchtes TPU zieht Fäden und blüht auf).
+Rolle vorher trocknen, TINMORRY: 70 °C, 8 h (TPU zieht Wasser; feuchtes TPU zieht Fäden und blüht auf).
 
 Ausgangspunkt Ecken: Drucker „Elegoo Centauri Carbon 2 0.4 nozzle“, Filament „Elegoo TPU 95A @ECC2“, Prozess „0.20mm Standard @Elegoo CC2 0.4 nozzle“,
 Druckbetttyp „Texturierte PEI-Platte“. In Klammern: Profilwert vorher.
@@ -438,7 +438,7 @@ Druckbetttyp „Texturierte PEI-Platte“. In Klammern: Profilwert vorher.
 | Unterstützung | Stützen | aus (bleibt) |
 | Sonstiges → Umrandung | Randtyp | **Keine Umrandung** (Automatisch) – die Füße haften flächig |
 | Sonstiges → Fuzzy Skin | Fuzzy Skin | Keine (bleibt) – glattes Orange neben dem körnigen Beige |
-| Filament (Elegoo TPU 95A @ECC2) | Düse / Druckbett / Lüfter / Rückzug | 225 °C / 35 °C / 100 % ab Schicht 2 / 0,4 mm (alles Profilwerte, bleiben). Düse innerhalb der Herstellerangabe deiner Rolle halten (colorFabb 220–230 °C, Kingroon 210–230 °C) |
+| Filament (Elegoo TPU 95A @ECC2) | Düse / Druckbett / Lüfter / Rückzug | 225 °C / 35 °C / 100 % ab Schicht 2 / 0,4 mm (alles Profilwerte, bleiben). Liegt innerhalb der Herstellerangabe deiner Rolle (TINMORRY TPU 95A: Düse 210–240 °C, Druckbett 30–50 °C, unter 60 mm/s) |
 | Drucker → Extruder | Z-Hub-Höhe | 0,4 (bleibt) |
 
 Je Ecke ca. 4 g TPU, Druckmaß 28 × 28 × 23 mm. Nach dem Druck abkühlen lassen und die Platte biegen; TPU haftet fest.

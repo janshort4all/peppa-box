@@ -235,6 +235,16 @@ class Probelauf(unittest.TestCase):
             self.runde()
         self.assertEqual(self.ansager.gesagt[-1], "moment")
 
+    def test_kein_moment_wenn_musik_schon_fliesst(self):
+        # Befund 09.11.: „Einen Moment …“ kam, obwohl die Musik schon 2–3 s lief (Prüfung bestätigt später)
+        st = self.pl.st
+        st.wartezeit = lambda: self.warte
+        st.wunsch_zeit, st.problem_art = 5.0, None
+        self.pl.rueck.verarbeiten({"q": "ausgabe", "art": "fluss", "ziel": "lautsprecher", "bytes": 176400})
+        for self.warte in (2, 9, 12):
+            self.runde()
+        self.assertNotIn("moment", self.ansager.gesagt)
+
     def test_bereit_ansage_einmal_und_nicht_in_ruhezeit(self):
         self.pl._bereit()
         self.pl._bereit()

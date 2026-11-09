@@ -900,3 +900,4 @@ Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) l�
 - **Von vorn:** Play-Feld **2 s halten**, oder die Karte wurde zu Ende gehört (letzter Titel lief aus).
 - Tests: 300 grün (Stelle merken/sparsam speichern/vergessen/veraltet, Position aus Ereignissen, Start an der Stelle, nach Reparatur an der Stelle, unbrauchbare Stelle → von vorn, Von-vorn-Geste).
 - **Am Pi:** nur Update über die Eltern-Seite (keine Einrichtung nötig).
+- **Korrektur 22:05 (Befund Jan):** „Einen Moment, die Musik kommt gleich“ kam manchmal, obwohl die Musik schon 2–3 s lief. Ursache: Die Ansage kommt 8 s nach dem Auflegen, wenn die Prüfung den Start noch nicht bestätigt hat; die Prüfung braucht zwei Proben im Abstand von 2 s (ab 2 s nach dem Befehl), bei verzögertem Start also über 8 s. **Jetzt:** Meldet die Tonausgabe Tonfluss, entfällt die Ansage für diesen Start. Test dazu; nur Update über die Seite.

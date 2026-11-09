@@ -348,6 +348,8 @@ class Player:
             self._moment_gesagt = self._netz_gesagt = False
             if w is None:
                 return
+        if self.rueck.fliesst():                   # Musik ist schon zu hören (Tonausgabe meldet Ton), nur die
+            self._moment_gesagt = True              # Prüfung bestätigt noch: kein „Einen Moment …“ (Befund 09.11.)
         if w >= MOMENT_NACH_S and not self._moment_gesagt:
             self._moment_gesagt = True
             self.ansager.sagen("moment")

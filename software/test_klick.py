@@ -238,7 +238,7 @@ class Mischer(unittest.TestCase):
 
 class Einstellung(unittest.TestCase):
     def test_standard_und_grenzen(self):
-        self.assertEqual(einstellungen.STANDARD["bedienung"]["klick"], 15)
+        self.assertEqual(einstellungen.STANDARD["bedienung"]["klick"], 30)
         self.assertEqual(einstellungen.bereinigen({"bedienung": {"klick": 0}}, einstellungen.STANDARD)["bedienung"]["klick"], 0)
         with self.assertRaises(ValueError):
             einstellungen.bereinigen({"bedienung": {"klick": 101}}, einstellungen.STANDARD)

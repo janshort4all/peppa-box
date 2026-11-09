@@ -44,7 +44,7 @@ STANDARD = {
         "kopfhoerer_erkennung": True,
         "klinke_eingesteckt_bei": "hoch",     # Pegel an P26 bei eingestecktem Stecker
         # Klick beim Antippen von zurück, Play und vor: Prozent der Aufnahme (klaenge/klick.wav), 0 = aus
-        "klick": 15,
+        "klick": 30,
     },
     # Klang des Lautsprechers: Equalizer mit 10 Bändern (31 Hz … 16 kHz), je -24 … +6 dB (klang.py)
     "klang": {"baender": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},

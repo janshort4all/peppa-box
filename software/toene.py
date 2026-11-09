@@ -373,7 +373,7 @@ def mischen(pfad, log=print):
 KLICK_DATEI = os.path.join(os.path.dirname(os.path.abspath(__file__)), "klaenge", "klick.wav")
 KLICK_AUFTRAG = os.environ.get("PEPPA_KLICK_AUFTRAG") or "/dev/shm/peppa-box-klick.json"
 KLICK_PCM = os.environ.get("PEPPA_KLICK_PCM") or "/dev/shm/peppa-box-klick.raw"
-KLICK_STANDARD = 15            # Prozent der Aufnahme (Wunsch Jan 09.11.: sehr weich und dezent)
+KLICK_STANDARD = 30            # Prozent der Aufnahme (Jan 09.11.: 15 % zu leise, doppelt so laut)
 _klick_sperre = threading.Lock()
 _klick_proc = None
 

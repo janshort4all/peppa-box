@@ -673,7 +673,7 @@ function bedienungFuellen() {
   $('bschritt').value = b.drehknopf_schritt; $('bschrittw').textContent = b.drehknopf_schritt + '\u00a0%';
   $('bumkehren').checked = b.drehknopf_umkehren; $('bkerkennung').checked = b.kopfhoerer_erkennung;
   $('bkpolung').value = b.klinke_eingesteckt_bei;
-  const kl = (b.klick === undefined) ? 15 : b.klick;
+  const kl = (b.klick === undefined) ? 30 : b.klick;
   $('bklick').value = kl; $('bklickw').textContent = kl + '\u00a0%';
   FELDER.forEach(([f]) => { $('z-' + f).value = b.felder[f]; });
 }

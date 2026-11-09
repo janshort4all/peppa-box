@@ -114,8 +114,8 @@ def handedness(name):
     return int(np.sign(d1 * d0))
 def orient(name, m):
     """Gibt das Teil so zurück, wie es auf der Platte liegt (z=0 unten)."""
-    if name in ("korpus", "boden", "riemen_gegenplatte_flat", "gummiecken"):
-        pass                                          # gummiecken: wie im Einbau, Fußflächen unten (M.gummiecken_druck)
+    if name in ("korpus", "boden", "riemen_gegenplatte_flat", "gummiecken", "eckhuelsen"):
+        pass                                          # Gummiecken und Hülsen: wie im Einbau, Fuß bzw. Bund unten
     if name in ("deckel_orange", "deckel_beige"):
         m = m.rotate([0, 180, 0])                     # kopfüber: Oberseite auf die Platte (wie M.deckel_kopfueber)
     elif name == "deckelrahmen":
@@ -196,23 +196,33 @@ def insertion_bottom(parts, ph):
 
 
 def gummiecken_pruefung(parts):
-    """Gummiecken-Rahmen: sitzt ohne Überschneidung auf Korpus und Boden (ohne Vorspannung), Abstand zur Fase des Gittersitzes,
-    Rastwulst greift unter die Fuge, ein zusammenhängendes Teil, Blickwinkel, unter dem der Ring sichtbar wird."""
+    """Gummiecken (vier einzelne, verschraubt): sitzen ohne Überschneidung auf Korpus und Boden, Hülsen liegen am Boden an und
+    berühren das TPU nicht, Abstand zur Fase des Gittersitzes, Rastwulst unter der Fuge, Schraubenlänge, Wandstärken."""
     from manifold3d import JoinType
-    g = parts["gummiecken"]
-    r = {"teile": len(g.decompose()), "volumen": g.volume(), "masse_g": g.volume() / 1000 * 1.21}
+    g, h = parts["gummiecken"], parts["eckhuelsen"]
+    r = {"teile": len(g.decompose()), "volumen_ecke": M.gummiecke().volume(), "volumen_huelse": M.eckhuelse().volume()}
     r["ueberschneidung_korpus"] = inter_vol(g, parts["korpus"])
     r["ueberschneidung_boden"] = inter_vol(g, parts["boden"])
+    r["huelse_boden"] = inter_vol(h, parts["boden"])
+    r["huelse_anlage"] = h.min_gap(parts["boden"], 1.0)                      # 0 = liegt an
+    r["huelse_tpu"] = h.min_gap(g, 2.0)
     sx0, sx1, sz0, sz1 = M.SEAT
     c = M.SEAT_CH
     seat = M.ext_xz(M.rr(sx0 - c, sz0 - c, sx1 + c, sz1 + c, M.SEAT_R + c), -5, 0.5)
     r["abstand_gittersitz"] = g.min_gap(seat, 20.0)
-    # Wulst: Material des Rahmens innerhalb der Kontur zwischen Fasenbeginn am Boden und Fuge (z 3,2–4,0)
     band = M.slab(M.OUT.offset(-0.05, JoinType.Round) - M.OUT.offset(-1.0, JoinType.Round), M.BASE_T - M.EDGE_V, M.BASE_T)
     r["wulst_volumen"] = (g ^ band).volume()
-    a, b, t = M.ECK_RING
-    r["ring_blickwinkel"] = math.degrees(math.atan((M.ECK_FUSS - t) / (a - M.BASE_CHAMF)))
-    r["druck"] = M.gummiecken_druck(M.gummiecken()).bounding_box()
+    # Schraube: Kopf bündig in der Hülse, Spitze im Kernloch des Doms (12 tief ab Boden-Oberseite)
+    hd = M.ECK_HUELSE
+    z_kopf = -M.ECK_FUSS + hd["luft_unten"]
+    r["einschraubtiefe"] = z_kopf + M.ECK_SCHRAUBE - M.BASE_T
+    r["kernloch_rest"] = (M.BASE_T + 12.0) - (z_kopf + M.ECK_SCHRAUBE)
+    # Wandstärken an der Hülse: Abstand Eckschraube ↔ Außenrundung, TPU unten zwischen Aussparung und Außenfläche, Hülsenwand am Kopf
+    (x, y) = M.BASE_BOSSES[0]
+    a = M.R - math.hypot(M.R - x, M.R - y)
+    r["tpu_unten"] = a - (hd["d_bund"] / 2 + hd["spiel"]) + (M.ECK_WAND - M.ECK_KANTE)
+    r["huelse_wand"] = (hd["d_bund"] - M.CSK[0]) / 2
+    r["druck_ecke"] = M.gummiecken_druck(M.gummiecke()).bounding_box()
     return r
 
 
@@ -264,14 +274,18 @@ if __name__ == "__main__":
     print(f"  Buchstaben: {g['teile']} Teile, {g['stifte']} Stifte, Abstand auf der Platte mindestens {g['abstand_platte']:.1f} mm, "
           f"Platte {g['platte'][3]:.0f} × {g['platte'][4]:.0f} mm; Schicht 1: {b1['flaeche']:.0f} mm², schmaler als 0,4: {b1['d04']:.2f} mm²")
     print(f"  Stifte im Gitter: Überschneidung {g['sitz']:.3f} mm³ (soll 0)")
-    print("== Gummiecken mit Füßen (TPU, ein Teil) ==")
+    print("== Gummiecken (4 einzelne, verschraubt, PETG-Hülsen) ==")
     gp = gummiecken_pruefung(parts)
-    print(f"  {gp['teile']} Teil, {gp['volumen'] / 1000:.1f} cm³ ≈ {gp['masse_g']:.0f} g TPU; Druckmaß {gp['druck'][3] - gp['druck'][0]:.1f} × "
-          f"{gp['druck'][4] - gp['druck'][1]:.1f} × {gp['druck'][5] - gp['druck'][2]:.1f} mm")
-    print(f"  Überschneidung mit Korpus / Boden: {gp['ueberschneidung_korpus']:.2f} / {gp['ueberschneidung_boden']:.2f} mm³ (soll 0)")
+    d = gp["druck_ecke"]
+    print(f"  {gp['teile']} Ecken je {gp['volumen_ecke'] / 1000:.2f} cm³ ≈ {gp['volumen_ecke'] / 1000 * 1.21:.1f} g TPU (Druckmaß {d[3] - d[0]:.1f} × "
+          f"{d[4] - d[1]:.1f} × {d[5] - d[2]:.1f} mm); Hülse {gp['volumen_huelse']:.0f} mm³ PETG")
+    print(f"  Überschneidung Ecken mit Korpus / Boden: {gp['ueberschneidung_korpus']:.2f} / {gp['ueberschneidung_boden']:.2f} mm³ (soll 0)")
+    print(f"  Hülse ∩ Boden {gp['huelse_boden']:.2f} mm³, Abstand zum Boden {gp['huelse_anlage']:.2f} (soll 0 = liegt an), Luft zum TPU {gp['huelse_tpu']:.2f} mm")
     print(f"  Abstand zur Fase des Gittersitzes: {gp['abstand_gittersitz']:.2f} mm (soll ≥ 1)" + ("" if gp['abstand_gittersitz'] >= 1.0 else "  ZU KNAPP"))
     print(f"  Rastwulst unter der Fuge: {gp['wulst_volumen']:.1f} mm³ (soll > 0)")
-    print(f"  Ring unter dem Boden erst unter {gp['ring_blickwinkel']:.0f}° Blickwinkel von der Seite zu sehen")
+    print(f"  Schraube 3,0 × {M.ECK_SCHRAUBE:g}: {gp['einschraubtiefe']:.1f} mm im Dom, Kernloch noch {gp['kernloch_rest']:.1f} mm tiefer"
+          + ("" if gp['kernloch_rest'] > 0.3 else "  ZU LANG"))
+    print(f"  TPU unten zwischen Hülsenaussparung und Außenfläche: {gp['tpu_unten']:.2f} mm; Hülsenwand am Kopf {gp['huelse_wand']:.2f} mm")
     print("== Fuzzy Skin (Nachbildung ElegooSlicer je 0,2-mm-Schicht, Modifier 01f Außenhaut) ==")
     import fuzzy_check as FC
     rows = FC.analyse(korpus=parts["korpus"])

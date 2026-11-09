@@ -67,7 +67,8 @@ Keine Überschneidung zwischen Druckteilen und Bauteilen.
 | 08_ein_taste_orange.stl | 17 × 17 × 13 | – |
 | 09_riemen_gegenplatte.stl | 18 × 24 × 4 | – |
 | 11_niederhalter_stiftleiste.stl | 65 × 20 × 18 | – |
-| 12_gummiecken_TPU_orange.stl | 145 × 145 × 19 | – |
+| 12_gummiecke_TPU_orange.stl | 145 × 145 × 23 | – |
+| 13_eckhuelse_PETG.stl | 133 × 133 × 2 | – |
 
 Alle anderen Flächen sind steiler als 45° oder liegen auf der Platte. Kein Teil braucht Stützmaterial.
 

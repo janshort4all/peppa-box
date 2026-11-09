@@ -22,7 +22,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `NH_KABEL` | 2 | Luft über den Steckern für das direkt über dem Stecker zur Seite geknickte Kabel; das Dach drückt über den Knick auf den Stecker. Nachmessen: Platine bis Oberkante geknicktes Kabel, minus ca. 0,3 Vorspannung |
 | `NH_PCB_Z` | 54 | Acrylplatte bis Oberseite blaue Platine des Aufsatzes, nur für die Prüfung. Aus Stiftspitzen (60) und Steckerhöhe (12) eingegrenzt auf ca. 49–54; oberer Wert = ungünstigster Fall nach oben |
 
-## Mit Probedruck einstellen (18)
+## Mit Probedruck einstellen (17)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -43,7 +43,6 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `GR_FORM_SPIEL` | 0,1 | Spiel je Seite für die geformten Stifte der drei Strahlen über dem a (Stift = Strahl 0,7 kleiner, unverändert). Mit 0,2 wie bei den runden Stiften saßen die Strahlen spürbar locker (Druck Jan 07.11.), runde Stifte passten gut |
 | `GR_PIN_D` | 3,9 | Stift Ø (Loch im Korpus PIN_HOLE 4,1; mit C14 am Korpus prüfen) |
 | `ECK_WULST` | 0,5 | Rastwulst (Sägezahn) unter der Fuge Boden/Korpus: untere Flanke 45° parallel zur Fase der Boden-Oberkante (0,14 Luft), Oberseite waagerecht 0,1 unter der Korpus-Unterkante (z 3,9), so tief. Passt in beide Fugenformen am gedruckten Korpus: V-Fuge an Seiten, Rückseite und den hinteren Teilen der Rundungen; vorne (x 9–131) hat der Korpus keine Fase, dort ist es eine Stufe (Fase nur am Boden, Korpus-Unterkante waagerecht). Coupon C16: 0,4 / 0,5 / 0,6 |
-| `ECK_VOR` | 0,25 | Vorspannung: Rahmen je Seite um so viel kleiner gebaut. Beim Aufsetzen dehnt sich der Ring je Seite um 2 × 0,25; dazu drücken die Fuzzy-Spitzen (±0,2) in das TPU |
 
 ## Von dir gemessen (23)
 
@@ -93,7 +92,7 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `WAGO5` | 30 / 18,6 / 8,4 | WAGO 221-425 B, T, H |
 | `WAGO3` | 18,6 / 18,6 / 8,4 | WAGO 221-423 B, T, H |
 
-## Gestaltung festgelegt (130)
+## Gestaltung festgelegt (131)
 
 | Name | Wert (mm) | Bedeutung |
 | --- | --- | --- |
@@ -220,10 +219,11 @@ Jeder Wert steht in `model.py` ganz oben. Ändert sich ein Wert, rechnet das Mod
 | `NH_KRAGEN` | 7,2 | Säule ab Senkungsboden aufwärts dicker (Wand 0,8 um die Senkung); darunter Ø 6. Kragen beginnt 0,9 über der Steckeroberkante, Abstand zum Kabel des ersten Steckers ca. 0,1–0,5 |
 | `NH_FREI` | 17 / 15 | Aussparung an den beiden hinteren Dachecken über den Klemmblöcken der Schmalseiten: Länge ab Platinenende, Dach dort nur bis so weit ab Vorderkante. Klemmblöcke laut Foto 07.11. ca. 13–15 mm lang, beginnen ca. 18 mm hinter der Vorderkante (aus Foto geschätzt) |
 | `ECK_WAND` | 2,4 | Wandstärke der Eckschuhe (TPU, ca. 5 Linien à 0,45) |
-| `ECK_H` | 16 / 8 | Oberkante der Eckschuhe über der Bodenunterseite: in der Mitte der Rundung, an den Schenkelenden; dazwischen weicher Übergang (cos²). Grenze vorne: Fase des Gittersitzes (z 11,4 ab x 21, an der Sitzrundung R 9 höher); Abstand dazu mindestens 1 mm (check.py) |
+| `ECK_H` | 20 / 8 | Oberkante der Eckschuhe über der Bodenunterseite: in der Mitte der Rundung, an den Schenkelenden; dazwischen weicher Übergang (cos²). Variante C (Jan 09.11.). Grenze vorne: Fase des Gittersitzes (z 11,4 ab x 21, an der Sitzrundung R 9 höher); Abstand mindestens 1 mm (check.py) |
 | `ECK_SCHENKEL` | 10 | Schenkel auf den geraden Flächen hinter dem Ende der Eckrundung R 16 (je Seite) |
 | `ECK_END_R` | 5 | Rundung der Schenkelenden oben (in der Ansicht); auf diesen letzten Millimetern bleibt die Höhe gleich |
 | `ECK_KANTE` | 1,2 | Obere Außenkante gerundet mit diesem Radius; untere Außenkante am Fuß Fase 45° gleicher Größe (druckbar, nimmt den Elefantenfuß) |
 | `ECK_FUSS` | 3 | Fuß unter dem Boden: so viel steht die Box höher; nur die vier Ecken tragen |
-| `ECK_FUSS_IN` | 20 | Fuß reicht so weit unter den Boden (ab Außenkante); deckt die Eckschrauben (8,6 / 8,6) |
-| `ECK_RING` | 12 / 7,5 / 1,2 | Ring unter dem Boden: Abstand zur Außenkante, Breite, Dicke. Liegt auf der Druckplatte (ohne Stütze), trägt nicht: zwischen Ring und Boden bleiben ECK_FUSS − 1,2 = 1,8 mm Luft. 12 mm hinter der Kante, innen 0,5 vor dem Rand der Füße: erst unter ca. 9° Blickwinkel von der Seite zu sehen |
+| `ECK_FUSS_IN` | 20 | Fuß reicht so weit unter den Boden (ab Außenkante); trägt die Hülse an der Eckschraube (8,6 / 8,6) |
+| `ECK_HUELSE` | d_bund 9,8; bund_bis -1,5; d_hals 8,2; hals_ab -0,7; luft_unten 0,5; spiel 0,25 | PETG-Hülse an der Eckschraube (z wie im Einbau, Oberseite z 0 liegt am Boden an): Bund Ø 9,8 bis z −1,5, Kegel 45° bis Ø 8,2 bei z −0,7, Hals Ø 8,2 bis z 0. Unterseite 0,5 über der Standfläche (Kopf und Hülse berühren den Tisch nicht). Senkung für den Kopf wie im Boden (CSK). Ø-Grenze: Eckschraube liegt 5,53 hinter der Außenrundung, unten bleiben 1,6 mm TPU. Aussparung im TPU radial 0,25 größer |
+| `ECK_SCHRAUBE` | 16 | Senkschraube 3,0 × 16 (Länge inkl. Kopf) statt 3,0 × 12: Hülse 2,5 + Boden 4 + 9,5 im Dom (bisher 8; Kernloch 12 tief) |

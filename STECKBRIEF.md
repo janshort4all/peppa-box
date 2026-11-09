@@ -29,7 +29,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 | Druck | **Korpus 04./05.11. gedruckt – perfekt, abgenommen.** Deckel 05.11. (Symbole vertieft) nicht abgenommen; Symbole bleiben vertieft (ertastbar), Variante B (gerichtete Brücken) mit C12 bestätigt; als Nächstes ganzer Deckel, G-Code vorher prüfen (Nachtrag 05.11. (5)) |
 | Verdrahtung | **Komplett verdrahtet, exakt nach Verdrahtungsplan 08.11.** (Jan, 08.11. abends) |
 | Software | **Alle Bedienelemente programmiert (08.11. (3))**: Touchfelder, Drehknopf, Ein-Taste, Kopfhörer-Umschaltung, Akku-Ansage und -Schutz, Ansagen. Am Pi einrichten und testen (Anleitung im Nachtrag) |
-| Gummiecken | **Neu 09.11.:** Gummiecken mit Füßen aus orangem TPU, ein Teil, ohne Änderung am Gehäuse (Nachtrag 09.11.). Im Modell, geprüft. Als Nächstes: TPU kaufen, Coupon C16 drucken, Form (A/B/C) wählen |
+| Gummiecken | **09.11.:** vier einzelne Gummiecken aus orangem TPU, **verschraubt** über die Eckschrauben des Bodens (3,0 × 16 durch PETG-Hülse), Form **C** (20/8 mm), ohne Änderung am Gehäuse (Nachträge 09.11.). Im Modell, geprüft. Als Nächstes: TPU und Schrauben kaufen, C16 + Hülsen drucken |
 
 ## Hardware (endgültig)
 
@@ -56,7 +56,7 @@ Diese Datei fasst alle Entscheidungen bis hierher zusammen. Sie gehört in das P
 - **Rechts:** Drehknopf (y 84, z 60) und Klinke (y 84, z 24). **Links:** Riemen (z 118). **Hinten:** USB-C-Einbaubuchse x 114, z 60, innen höchstens 20 mm tief (Produkt offen; Stecker am Akku-Board gewinkelt oder ≤ 20 mm), Lüftungsschlitze.
 - **Front:** gedrucktes Gitter statt Stoff, **einfarbig beige**; Logo groß in der Mitte als **eigene orange Buchstaben, 1,2 mm erhaben, aufgeklebt** (Stifte in Sacklöchern), beiges Feld um das Logo ohne lose Löcher (`GR_HALO`): `06a` Gitter, `06b` alle Buchstaben, Bilder `out/gitter_ansicht.png`, `out/gitter_vorne_nah.png` (Nachträge 05.11. (6), 06.11. (1), (2), (4)).
 - Höhen: Klemmen 77,5 mm, Kartenfach ab 86,8 mm, Deckel-Module ab 117,4 mm.
-- **Gummiecken (TPU, seit 09.11.):** Rahmen `12_gummiecken_TPU_orange.stl` = 4 Eckschuhe + Ring unter dem Boden, Füße 3 mm. Hält per Rastwulst unter der Fuge Boden/Korpus, Fuß unter dem Boden und Ring (Vorspannung). Parameter `ECK_*` in `v4/model.py`.
+- **Gummiecken (TPU, seit 09.11.):** 4 × `12_gummiecke_TPU_orange.stl` + 4 × `13_eckhuelse_PETG.stl`, Füße 3 mm, Form C (20/8). Jede Ecke an der Eckschraube des Bodens (Senkschraube **3,0 × 16** durch die Hülse; die 2 Schrauben an der Kammerwand bleiben 3,0 × 12), dazu Rastwulst unter der Fuge Boden/Korpus. Parameter `ECK_*` in `v4/model.py`.
 
 Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine Stützen. Fuzzy Skin 0,20 / 0,30 Classic **nur über den Modifier `01f_…FUZZY_aussenhaut`** (Prozess „Nur lackiert“, Modifier „Kontur“; alle Korpus-Einstellungen in `v4/out/README.md`); der alte Modifier `01m_…` ist ungültig (siehe Nachtrag 04.11.).
 
@@ -81,7 +81,7 @@ Druck (Stand 04.11.): Düse 0,4, 0,2 mm, 3 Wandschleifen, 15 % Gyroid, keine St�
 8. Optional: Lichtleiter für die Lade-LED, Ideen zur optischen Individualisierung (Seitenteile, Deckeleinlage, Magnete).
 9. **Sprachausgaben überarbeiten (Wunsch Jan 08.11.):** Alle Ansagen außer „bereit“ (Sprachausgabe pico2wave) klingen schrecklich. Ziel: alle Ansagen als eigene Aufnahmen in einheitlicher Stimme (wie „bereit“: ElevenLabs, Stimme „Helmut“), gleiche Lautheit. Texte in `software/ansagen/TEXTE.md`. Details folgen von Jan.
 10. Spotify-Anmeldung über die Eltern-Seite statt im Terminal (für künftiges Neuaufsetzen).
-11. **Gummiecken:** TPU 95A orange kaufen, Coupon C16 (Wulst 0,4 / 0,5 / 0,6) drucken und an einer vorderen und einer hinteren Ecke probieren, Form wählen (A flach 10/10, B geschwungen 16/8 = Standard, C 20/8), Außenmaß der Box knapp über der Fuge messen, dann Rahmen drucken (Nachtrag 09.11.).
+11. **Gummiecken:** TPU 95A orange und 4 × Senkschraube 3,0 × 16 kaufen; Coupon C16 (Wulst 0,4 / 0,5 / 0,6, je eine vollständige Ecke) und 5 Hülsen drucken, an einer vorderen und einer hinteren Ecke probieren, `ECK_WULST` festlegen, dann die restlichen Ecken drucken (Nachtrag 09.11. (2)).
 
 ## Links (Artefakte, bleiben dauerhaft erhalten)
 
@@ -800,3 +800,13 @@ Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) l�
 - **Filament (orange TPU 95A, Elegoo hat kein Orange):** Kingroon TPU95A Orange 1 kg (3DJake, günstig) oder colorFabb TPU 95A Orange 700 g (niederländischer Hersteller, ca. doppelter Preis). Farbton gegen das vorhandene Orange nicht geprüft. Bedarf ca. 20 g + Coupons ca. 12 g.
 - **Dämpfung (ehrlich):** TPU 95A ist recht hart. Die Füße verhindern Klappern und Rutschen und dämpfen etwas; die Gyroid-Füllung in den Füßen macht sie weicher. Echte Entkopplung wie bei Lautsprecher-Absorbern ist das nicht.
 - **Offen:** C16 drucken und an einer vorderen und einer hinteren Ecke prüfen (Klick, Sitz, kein Spalt oben), `ECK_WULST` festlegen; Form wählen; **Außenmaß der Box messen** (Messschieber links–rechts und vorne–hinten, ca. 8 mm über der Standfläche; Modell 140,0 + Fuzzy-Spitzen), danach `ECK_VOR` bestätigen; Rahmen drucken.
+
+## Nachtrag 09.11.2026 (2) – Gummiecken verschraubt, vier einzelne Ecken, Form C
+
+- **Frage Jan:** Die Ecken über die bestehenden Eckschrauben am Boden anschrauben – stabiler? **Antwort:** Ja, aber nicht direkt durch das TPU: Unter dem Schraubenkopf würde das TPU dauerhaft nachgeben, die Schraube verlöre Spannung, und sie hält den Boden mit der ganzen Elektronik (lockerer Boden, Klappern). Lösung: **PETG-Hülse im Fuß**. Die Schraube drückt nur auf Hartes (Kopf → Hülse → Boden → Dom), das TPU sitzt auf dem 45°-Kegel der Hülse (gefangen, nicht gepresst). **Entscheidung Jan:** verschraubt, **Form C** (`ECK_H` 20/8).
+- **Folge:** Ring unter dem Boden und Vorspannung entfallen (`ECK_RING`, `ECK_VOR` gelöscht). Vier gleiche, einzeln druck- und ersetzbare Ecken; ohne Werkzeug nicht abziehbar. Rastwulst bleibt (hält die Schenkelenden an der Box).
+- **Hülse (`eckhuelse()`, `ECK_HUELSE`):** Bund Ø 9,8 bis z −1,5, Kegel 45° bis Ø 8,2 bei z −0,7, Hals Ø 8,2 bis z 0 (liegt am Boden an), Unterseite z −2,5 = 0,5 über der Standfläche (Kopf und Hülse berühren den Tisch nicht). Senkung für den Kopf wie im Boden (`CSK` 6,2 / 3,4), Kopf bündig. Ø begrenzt, weil die Eckschraube nur 5,53 mm hinter der Außenrundung liegt: unten bleiben 1,58 mm TPU, Hülsenwand am Kopf 1,8 mm. Aussparung im TPU radial 0,25 größer (0,18 mm Luft). Druck: Bund unten, Senkung = 45°-Überhang, ohne Stützen.
+- **Schraube (`ECK_SCHRAUBE`):** Senkschraube **3,0 × 16** statt 3,0 × 12: Hülse 2,5 + Boden 4 + **9,5 mm im Dom** (bisher 8), Kernloch noch 2,5 mm tiefer. Vorschlag: SPAX Universalschraube 3,0 × 16, Senkkopf T10 (Kopf Ø 6,0, passt zur Senkung 6,2) als 25er-Packung im Baumarkt (toom 1630650) – kein Versand. Gewinde im Dom wird weiterverwendet; von Hand eindrehen, bis der Kopf anliegt.
+- **Montage je Ecke** (Ecke ragt über die Tischkante): Eckschraube heraus (die anderen 5 halten den Boden), Hülse von unten in den Fuß, Ecke aufdrücken bis der Wulst einrastet, Schraube 3,0 × 16 eindrehen.
+- **Prüfungen:** keine Überschneidung Ecken ↔ gedruckter Korpus/Boden, Hülse liegt am Boden an (0,00) und berührt das TPU nicht, Abstand Gittersitz 1,59 mm (Form C, Grenze 1), Überhang 0, keine Kollision; Ecke, Hülse und C16 dicht, ohne entartete Dreiecke. Je Ecke 3,9 g TPU, Druckmaß 28,4 × 28,4 × 23 mm; Hülse 0,15 g PETG.
+- **Dateien:** `12_gummiecke_TPU_orange.stl` (eine Ecke, 4 × drucken; ersetzt `12_gummiecken_TPU_orange.stl`), `13_eckhuelse_PETG.stl` (5 ×, eine Reserve), C16 neu als drei vollständige Ecken (Form C, verschraubt; die passende ist schon eine der vier), Bilder neu (Schnitt jetzt auch durch die Schraube), README-Abschnitt „Gummiecken“ mit Einstellungen für TPU-Ecken und PETG-Hülsen und Montage; Schraubentabelle ergänzt.

@@ -36,7 +36,8 @@ DRUCK = {   # Teil: (Datei, Farbe, Hinweis)
     "ein_taste": ("08_ein_taste_orange.stl", "Orange", "Kopf unten"),
     "riemen_gegenplatte": ("09_riemen_gegenplatte.stl", "Schwarz/Grau", "flach"),
     "niederhalter": ("11_niederhalter_stiftleiste.stl", "Schwarz/Grau", "Dachoberseite mit den Schraubensenkungen auf der Platte, Säulen nach oben; Steg über der gelben Stiftleiste"),
-    "gummiecken": ("12_gummiecken_TPU_orange.stl", "Orange, TPU 95A", "Fußflächen auf der Platte, wie im Einbau; ein Teil (4 Eckschuhe + Ring), mit Vorspannung gebaut. Einstellungen: Abschnitt „Gummiecken“"),
+    "gummiecken": ("12_gummiecke_TPU_orange.stl", "Orange, TPU 95A", "eine Ecke, **4 × drucken** (alle gleich); Fußfläche auf der Platte, wie im Einbau. Einstellungen: Abschnitt „Gummiecken“"),
+    "eckhuelsen": ("13_eckhuelse_PETG.stl", "PETG (beliebig)", "eine Hülse, **5 × drucken** (eine Reserve); Bund unten. Sitzt im Fuß der Gummiecke an der Eckschraube"),
 }
 
 
@@ -50,7 +51,9 @@ def export_parts(parts):
         elif k == "gitter_logo":
             o = M.buchstaben_druck(parts[k])
         elif k == "gummiecken":
-            o = M.gummiecken_druck(M.gummiecken())          # Druckdatei mit Vorspannung ECK_VOR (parts: ohne, für Prüfungen)
+            o = M.gummiecken_druck(M.gummiecke())           # eine Ecke (parts: alle vier auf der Box)
+        elif k == "eckhuelsen":
+            o = M.eckhuelse_druck(M.eckhuelse())
         else:
             o = K.orient(k, parts[k])
         p = os.path.join(OUT, fn)

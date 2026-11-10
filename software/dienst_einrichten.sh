@@ -2,6 +2,7 @@
 # Richtet die Dienste der Peppa Box ein. Beide starten beim Einschalten und nach Fehlern neu.
 #   peppa-player  Karten lesen, Spotify steuern
 #   peppa-web     Eltern-Seite (Zustand, Neustart, Ausschalten, Update), Port 80 und 8080
+#   peppa-startton  Startton sofort nach dem Einschalten (ohne auf WLAN/Spotify zu warten)
 # Dazu: sudo-Freigabe nur fuer die Befehle, die die Eltern-Seite braucht (/etc/sudoers.d/peppa-box),
 # und die Gruppen fuer Akku/Touch (i2c), Protokoll (adm), Stromversorgung (video), Lautstaerke (audio),
 # Ein-Taste/Klinke/Verstaerker (gpio), Kartenleser (spi) und Drehknopf (input).
@@ -108,12 +109,37 @@ if [ -d /etc/cloud ] && [ ! -f /etc/cloud/cloud-init.disabled ]; then
     echo "cloud-init abgeschaltet (schnellerer Start ab dem naechsten Einschalten)."
 fi
 
-# --- Alter Startton-Dienst (02.11.2026 kurz eingebaut, ersetzt durch die Ansage im Player): entfernen
-if [ -f /etc/systemd/system/peppa-startton.service ]; then
-    sudo systemctl disable peppa-startton > /dev/null 2>&1 || true
-    sudo rm -f /etc/systemd/system/peppa-startton.service
-    echo "Alter Startton-Dienst entfernt."
-fi
+# --- Startton: sofort nach dem Einschalten, sobald der Ton laeuft (peppa-stille), ohne auf WLAN, Spotify
+#     oder den Player zu warten. Grund (10.11.2026): "bereit" kommt erst, wenn Spotify die Box kennt, bis dahin
+#     passierte fuer das Kind nach dem Druck auf die Ein-Taste lange nichts. Spielt toene.py start:
+#     erst die Startlautstaerke, dann ansagen/start.wav (sonst zwei kurze Toene).
+sudo tee /etc/systemd/system/peppa-startton.service > /dev/null <<EOF
+[Unit]
+Description=Peppa Box Startton (sofort, ohne auf das Netz zu warten)
+After=peppa-stille.service sound.target alsa-restore.service
+Wants=peppa-stille.service
+
+[Service]
+Type=oneshot
+User=$BENUTZER
+WorkingDirectory=$ORDNER
+ExecStart=/usr/bin/python3 $ORDNER/toene.py start
+TimeoutStartSec=20
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# --- Zeitfresser beim Start abschalten: apt-daily und apt-daily-upgrade liefen bei jedem Einschalten (die Box
+#     ist meist aus, die Zeitgeber holen es dann nach) und brauchten am Pi 3A+ zusammen ca. 9 s (Messung
+#     10.11.2026), man-db und dpkg-db-backup nochmal ca. 2 s. Die Box aktualisiert sich dann nicht von selbst:
+#     Betriebssystem-Updates von Hand (sudo apt update && sudo apt upgrade), Programm-Updates ueber die
+#     Eltern-Seite. Rueckgaengig: sudo systemctl enable --now <name>.timer
+for T in apt-daily.timer apt-daily-upgrade.timer man-db.timer dpkg-db-backup.timer; do
+    if systemctl cat "$T" > /dev/null 2>&1 && systemctl is-enabled "$T" > /dev/null 2>&1; then
+        sudo systemctl disable --now "$T" > /dev/null 2>&1 && echo "Zeitgeber $T abgeschaltet (schnellerer Start)."
+    fi
+done
 
 # --- Eltern-Seite
 sudo tee /etc/systemd/system/peppa-web.service > /dev/null <<EOF
@@ -274,7 +300,7 @@ sh "$ORDNER/lautsprecher_einrichten.sh" || echo "Lautsprecher-Einrichtung mit Fe
 sh "$ORDNER/bedienung_einrichten.sh" || echo "Bedienung-Einrichtung mit Fehler beendet (siehe oben)."
 
 sudo systemctl daemon-reload
-sudo systemctl enable peppa-player peppa-web
+sudo systemctl enable peppa-player peppa-web peppa-startton
 if [ "$SUCHE_NEU" = 1 ]; then
     sudo systemctl enable peppa-wlan-suche > /dev/null 2>&1
     sudo systemctl restart peppa-wlan-suche

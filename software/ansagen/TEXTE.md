@@ -8,6 +8,7 @@ Probehören: Eltern-Seite → Bedienung → Ansagen anhören, oder `python3 ~/pe
 
 | Datei | Text | wann |
 | --- | --- | --- |
+| `start.wav` | Hallo! Ich werde gerade wach. | sofort nach dem Einschalten, sobald der Ton läuft (Dienst `peppa-startton`); ohne Aufnahme zwei kurze Töne, nie die Sprachausgabe. Kurz halten (ca. 1–2 s), Kind soll merken: Knopf gewirkt |
 | `peppa_box_bereit.wav` | Peppa Box bereit – viel Spaß! | Spotify kennt die Box, einmal je Einschalten |
 | `tschuess.wav` | Tschüss, bis bald! | Ein-Taste 2 s gehalten |
 | `karte_leer.wav` | Auf dieser Karte ist noch keine Musik. | Karte ohne (Spotify-)Link |

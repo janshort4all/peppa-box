@@ -260,5 +260,104 @@ class Ansager(Basis):
         self.assertTrue(self.a.lebt())
 
 
+class Startton(Basis):
+    """Früher Startton (Dienst peppa-startton): Lautstärke zuerst, nie in unbekannter Lautstärke."""
+
+    def setUp(self):
+        super().setUp()
+        self.folge = []                                   # Reihenfolge der Schritte
+        self.eingerichtet = True
+        self.karte = True
+        self.regler_da_nach_anlegen = True
+        self.gesperrt = False
+
+        def beim_start(_self):
+            self.folge.append("lautstaerke")
+
+        def spielen(name, warten=False, log=print):
+            self.folge.append(("spielen", name, warten))
+            return True
+
+        def anlegen(log=print):
+            self.folge.append("anlegen")
+            if self.regler_da_nach_anlegen:
+                self.eingerichtet = True
+            return self.eingerichtet
+
+        for obj, name, ersatz in (
+                (toene.einstellungen, "musik_gesperrt", lambda cfg, t: self.gesperrt),
+                (toene.einstellungen, "laden", lambda: {}),
+                (toene.lautstaerke, "eingerichtet", lambda a: self.eingerichtet),
+                (toene.lautstaerke, "karte_da", lambda a: self.karte),
+                (toene, "spielen", spielen),
+                (toene, "_regler_anlegen", anlegen),
+                (toene.automatik.Automatik if hasattr(toene, "automatik") else __import__("automatik").Automatik,
+                 "beim_start", beim_start)):
+            p = mock.patch.object(obj, name, ersatz)
+            p.start()
+            self.addCleanup(p.stop)
+
+    def test_erst_lautstaerke_dann_ton(self):
+        self.assertTrue(toene.startton(log=lambda m: None))
+        self.assertEqual(self.folge, ["lautstaerke", ("spielen", "start", True)])
+
+    def test_regler_fehlt_wird_angelegt_dann_ton(self):
+        self.eingerichtet = False
+        self.assertTrue(toene.startton(log=lambda m: None))
+        self.assertEqual(self.folge, ["anlegen", "lautstaerke", ("spielen", "start", True)])
+
+    def test_regler_nicht_anlegbar_dann_still(self):
+        self.eingerichtet = False
+        self.regler_da_nach_anlegen = False
+        meldungen = []
+        self.assertFalse(toene.startton(log=meldungen.append))
+        self.assertEqual(self.folge, ["anlegen"])                                  # nichts gespielt
+        self.assertTrue(any("kein Startton" in m for m in meldungen))
+
+    def test_ohne_lautsprecherkarte_weiter_mit_klinke(self):
+        self.eingerichtet = False
+        self.karte = False
+        self.regler_da_nach_anlegen = False
+        self.assertTrue(toene.startton(log=lambda m: None))
+        self.assertEqual(self.folge[-1], ("spielen", "start", True))
+
+    def test_ruhezeit_keine_musik_bleibt_still(self):
+        self.gesperrt = True
+        self.assertTrue(toene.startton(log=lambda m: None))
+        self.assertEqual(self.folge, [])
+
+    def test_start_ist_ansage_mit_text_und_ton(self):
+        self.assertIn("start", toene.ANSAGEN)
+        self.assertIn("start", toene.TOENE)
+
+
+class StarttonQuelle(Basis):
+    def test_ohne_aufnahme_nie_sprachausgabe_sondern_ton(self):
+        self.programm("pico2wave", 'echo "darf nicht laufen" >&2; exit 9')
+        with self.nur("pico2wave"), mock.patch.object(toene, "datei", lambda n: os.path.join(self.tmp.name, f"{n}.wav")):
+            pfad, art = toene.quelle("start")
+            self.assertEqual(art, "ton")
+            self.assertEqual(toene.quelle_ohne_erzeugen("start"), "ton")
+        with wave.open(pfad) as w:
+            self.assertEqual((w.getnchannels(), w.getframerate()), (1, 44100))
+            self.assertLess(w.getnframes() / w.getframerate(), 1.0)                  # kurz, Kind soll nicht warten
+
+    def test_aufnahme_hat_vorrang(self):
+        aufn = os.path.join(self.tmp.name, "start.wav")
+        with wave.open(aufn, "wb") as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(44100)
+            w.writeframes(b"\0\0" * 4410)
+        with mock.patch.object(toene, "datei", lambda n: aufn):
+            self.assertEqual(toene.quelle("start"), (aufn, "aufnahme"))
+
+    def test_andere_ansagen_behalten_die_sprachausgabe(self):
+        self.programm("pico2wave", 'ziel=""; while [ $# -gt 0 ]; do [ "$1" = -w ] && ziel="$2"; shift; done\n'
+                      'cp "' + toene.datei("bereit") + '" "$ziel"')
+        with self.nur("pico2wave"):
+            self.assertEqual(toene.quelle("tschuess")[1], "sprache")
+
+
 if __name__ == "__main__":
     unittest.main()

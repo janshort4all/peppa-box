@@ -18,7 +18,11 @@ neueste, z. B. beim Weiterschalten des Schlummer-Timers). Der Aufrufer wartet ni
 Klicker: leiser Klick beim Antippen von zurück, Play und vor (klaenge/klick.wav, Lautstärke in
 den Einstellungen, bedienung.klick in Prozent der Aufnahme, 0 = aus).
 
+Startton: Dienst peppa-startton (dienst_einrichten.sh) spielt „start“ sofort nach dem Hochfahren des
+Tons, ohne auf WLAN oder Spotify zu warten. Aufnahme software/ansagen/start.wav, sonst zwei kurze Töne.
+
 Von Hand:  python3 ~/peppa-box/software/toene.py bereit        (eine Ansage)
+           python3 ~/peppa-box/software/toene.py start         (der Startton wie beim Einschalten)
            python3 ~/peppa-box/software/toene.py klick         (der Klick der Touchfelder)
            python3 ~/peppa-box/software/toene.py --alle        (alle nacheinander, mit Quelle)
 """
@@ -44,6 +48,7 @@ SPITZE = 0.708                        # -3 dBFS, wie die Aufnahme „bereit“
 STILLE_VORNE_S = 0.15
 
 ANSAGEN = {
+    "start": "Hallo! Ich werde gerade wach.",
     "bereit": "Peppa Box bereit – viel Spaß!",
     "tschuess": "Tschüss, bis bald!",
     "karte_leer": "Auf dieser Karte ist noch keine Musik.",
@@ -68,9 +73,13 @@ ZAHLWORT = {10: "zehn", 20: "zwanzig", 30: "dreißig", 40: "vierzig", 50: "fünf
 for _p, _w in ZAHLWORT.items():
     ANSAGEN[f"akku_{_p}"] = f"Akku: {_w} Prozent."
 DATEINAMEN = {"bereit": "peppa_box_bereit.wav"}          # ältere Aufnahme mit eigenem Namen
+# Ohne Aufnahme nie die Sprachausgabe (klingt schlecht, und das erste Erzeugen kostet beim Start ca. 1 s):
+# dann lieber der kurze Ton
+NUR_AUFNAHME_ODER_TON = {"start"}
 
 # Töne, falls es keine Sprachausgabe gibt: (Frequenz Hz, Dauer s); 0 Hz = Pause
 TOENE = {
+    "start": [(659, .12), (880, .25)],              # zwei weiche, aufsteigende Töne (E5–A5), bis es eine Aufnahme gibt
     "bereit": [(523, .12), (659, .12), (784, .2)],
     "tschuess": [(784, .15), (659, .15), (523, .3)],
     "akku_leer": [(392, .2), (330, .2), (262, .4)],
@@ -199,7 +208,7 @@ def quelle(name, log=print):
     p = datei(name)
     if os.path.isfile(p):
         return p, "aufnahme"
-    p = _sprache(name, log)
+    p = None if name in NUR_AUFNAHME_ODER_TON else _sprache(name, log)
     if p:
         return p, "sprache"
     try:
@@ -213,6 +222,8 @@ def quelle_ohne_erzeugen(name):
     """Wie quelle(), erzeugt aber nichts (für die Eltern-Seite: was würde gerade gespielt?)."""
     if os.path.isfile(datei(name)):
         return "aufnahme"
+    if name in NUR_AUFNAHME_ODER_TON:
+        return "ton"
     for art, exe in (("pico", "pico2wave"), ("espeak", "espeak-ng")):
         if shutil.which(exe):
             return "sprache"
@@ -675,6 +686,39 @@ class Ansager:
         threading.Thread(target=lauf, name="ansagen-vorbereiten", daemon=True).start()
 
 
+def _regler_anlegen(log=print):
+    """Der Software-Regler „Lautsprecher“ (softvol) entsteht erst, wenn jemand das Gerät öffnet.
+    Nach dem Einschalten ist das beim frühen Startton noch nicht passiert: 1 s Stille öffnen."""
+    aplay = shutil.which("aplay")
+    if not aplay or not lautstaerke.karte_da("lautsprecher"):
+        return False
+    try:
+        subprocess.run([aplay, "-q", "-D", "lautsprecher", "-d", "1", "-f", "S16_LE", "-r", "44100", "-c", "2",
+                        "/dev/zero"], capture_output=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        log(f"Startton: Regler ließ sich nicht anlegen: {e!r}")
+    lautstaerke.neu_suchen()
+    return lautstaerke.eingerichtet("lautsprecher")
+
+
+def startton(log=print):
+    """Für den Dienst peppa-startton: so früh wie möglich nach dem Einschalten ein Ton, damit das Kind
+    merkt, dass der Knopf gewirkt hat (Spotify und WLAN brauchen noch Sekunden, erst dann kommt „bereit“).
+    Vorher die Startlautstärke setzen (sonst klänge er in der Lautstärke vom letzten Mal). Ist der Regler
+    nicht da und nicht anlegbar, bleibt es still: lieber kein Ton als einer in voller Lautstärke.
+    In der Ruhezeit mit Modus 'keine Musik' bleibt es auch still."""
+    import automatik
+    if einstellungen.musik_gesperrt(einstellungen.laden(), time.time()):
+        log("Ruhezeit (keine Musik): kein Startton")
+        return True
+    if not lautstaerke.eingerichtet("lautsprecher") and not _regler_anlegen(log):
+        if lautstaerke.karte_da("lautsprecher"):
+            log("Startton: Lautsprecher-Regler fehlt, kein Startton (Lautstärke unbekannt)")
+            return False
+    automatik.Automatik(None, lautstaerke, einstellungen, log=log).beim_start()
+    return spielen("start", warten=True, log=log)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--alle":
         for n in ANSAGEN:
@@ -692,4 +736,5 @@ if __name__ == "__main__":
     name = sys.argv[1] if len(sys.argv) > 1 else "bereit"
     if name not in ANSAGEN:
         sys.exit(f"Unbekannte Ansage '{name}', möglich: {', '.join(ANSAGEN)}")
-    sys.exit(0 if spielen(name, warten=True) else 1)
+    # "start" wie im Dienst peppa-startton: erst die Startlautstärke, dann der Ton
+    sys.exit(0 if (startton() if name == "start" else spielen(name, warten=True)) else 1)

@@ -67,6 +67,19 @@ def eingerichtet(ausgang):
     return _ausgang(ausgang) is not None
 
 
+def karte_da(ausgang):
+    """Gibt es die Soundkarte des Ausgangs (unabhängig davon, ob der Regler schon angelegt ist)?"""
+    a = AUSGABEN.get(ausgang)
+    if not a:
+        return False
+    return "karte" in a or _karte_suchen(a["suche"]) is not None
+
+
+def neu_suchen():
+    """Beim nächsten Zugriff sofort neu suchen (statt frühestens nach NEU_SUCHEN_S)."""
+    _zuletzt_gesucht.clear()
+
+
 def aktive_ausgabe():
     """Welcher Ausgang gerade Ton macht. Der Player schreibt nach jeder Umschaltung (Kopfhörer an P26)
     den Ausgang nach /dev/shm/peppa-box-ausgang.json. Fehlt die Angabe: der Lautsprecher, sobald er

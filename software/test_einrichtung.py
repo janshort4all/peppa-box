@@ -118,6 +118,16 @@ class Syntax(unittest.TestCase):
                      "python3-pil", "fonts-dejavu-core"):
             self.assertIn(teil, s)
 
+    def test_startton_dienst_und_zeitfresser(self):
+        with open(os.path.join(HIER, "dienst_einrichten.sh")) as f:
+            s = f.read()
+        for teil in ("/etc/systemd/system/peppa-startton.service", "After=peppa-stille.service",
+                     "ExecStart=/usr/bin/python3 $ORDNER/toene.py start", "enable peppa-player peppa-web peppa-startton",
+                     "apt-daily.timer", "apt-daily-upgrade.timer"):
+            self.assertIn(teil, s)
+        self.assertNotIn("network-online", s[s.index("peppa-startton.service"):s.index("# --- Eltern-Seite")])
+        self.assertNotIn("Alter Startton-Dienst entfernt", s)                        # wird nicht mehr abgeraeumt
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Peppa Box – Player: Karte auflegen = Spotify-Link auf der Karte spielt, Karte weg = Pause,
 dieselbe Karte wieder auflegen = weiter, andere Karte = neue Playlist.
-Den Link schreibt man mit einer Handy-App (z. B. NFC Tools: Schreiben -> URL) auf die Karte.
+Den Link schreibt die Box selbst auf die Karte (Eltern-Seite -> Karten -> Neue Karte bespielen, hier:
+_auftrag_ausfuehren) oder man schreibt ihn mit einer Handy-App (z. B. NFC Tools: Schreiben -> URL).
+Hat eine Karte keinen lesbaren Link, gilt die Zuordnung Kartennummer -> Playlist aus karten.json (karten.py).
 
 Im Player laufen (je ein Faden, alle überwacht und bei Ausfall neu gestartet):
   Kartenleser     Hauptschleife, 1 × je Sekunde (rc522.py); liest der Leser wiederholt falsch oder
@@ -40,6 +42,7 @@ import drehgeber
 import einstellungen
 import fortschritt
 import i2c
+import karten
 import klang
 import lautstaerke
 import rueckmeldung
@@ -315,13 +318,23 @@ class Player:
         jetzt = self.jetzt()
         if uid:
             self.letzte_sicht = jetzt
+            try:
+                auftrag = karten.auftrag_offen()
+            except Exception as e:                      # ein kaputter Auftrag darf das Kartenlesen nie stoppen
+                self.log(f"Auftrag lesen: {e!r}")
+                auftrag = None
+            if auftrag:
+                self._auftrag_ausfuehren(uid, auftrag)
+                return
             if uid != self.aktuell:
                 self.aktuell = uid
                 link = self._link_lesen()
+                if not link:                            # kein Link auf der Karte: Zuordnung in der Box (karten.json)
+                    link = karten.link_fuer_uid(uid)
                 self.zustand["link"] = link
                 uri = None
                 if not link:
-                    self.log(f"Karte {uid}: kein Link gefunden. Mit NFC Tools eine Spotify-URL auf die Karte schreiben.")
+                    self.log(f"Karte {uid}: kein Link gefunden. In der Eltern-Seite unter „Karten“ bespielen.")
                     self.ansager.sagen("karte_leer")
                 else:
                     try:
@@ -341,6 +354,50 @@ class Player:
             self.st.karte_weg()
             self.aktuell = None
             self.zustand["link"] = None
+
+    # ------------------------------------------------------------ Karte bespielen (Auftrag der Eltern-Seite)
+
+    def _auftrag_ausfuehren(self, uid, auftrag):
+        """Die Eltern-Seite hat "Karte bespielen" gestartet und jetzt liegt eine Karte im Fach: Link auf die
+        Karte schreiben (NTAG), die Zuordnung zusätzlich in karten.json merken (gilt auch, wenn sich die Karte
+        nicht beschreiben lässt) und das Ergebnis zurückmelden. Eine Karte mit anderem Link wird nur nach
+        ausdrücklicher Bestätigung überschrieben. Spielt nichts ab: die Karte wird gerade neu bespielt."""
+        self.aktuell = uid
+        self.st.karte_weg()
+        try:
+            vorher = self._link_lesen() or karten.link_fuer_uid(uid)
+            if vorher and vorher.rstrip("/") != auftrag["link"] and not auftrag.get("ueberschreiben"):
+                try:
+                    vorher_uri = self.sp.link_zu_uri(vorher)
+                except ValueError:
+                    vorher_uri = None
+                self.log(f"Karte {uid}: trägt schon einen anderen Link, wartet auf Bestätigung zum Überschreiben.")
+                karten.auftrag_ergebnis(auftrag, status="belegt", uid=uid, vorher_link=vorher, vorher_uri=vorher_uri,
+                                        meldung="Auf dieser Karte ist schon etwas anderes. Überschreiben?")
+                return
+            if vorher and vorher.rstrip("/") == auftrag["link"]:
+                erg = {"ok": True, "grund": "schon", "typ": None, "meldung": "Die Karte war schon richtig bespielt."}
+            else:
+                erg = self.leser.beschreiben(auftrag["link"])
+                if erg.get("grund") == "keine_karte":   # Karte kurz weg: beim nächsten Durchlauf noch einmal
+                    return
+            auf_karte = bool(erg.get("ok"))
+            if not auf_karte and erg.get("grund") in ("lesefehler", "schreibfehler", "pruefung", "zu_gross"):
+                self.log(f"Karte {uid}: Schreiben ging nicht ({erg['grund']}).")
+                karten.auftrag_ergebnis(auftrag, status="fehler", uid=uid, grund=erg["grund"], meldung=erg["meldung"])
+                return
+            meta = karten.meta_lesen(auftrag["uri"]) or {}
+            karten.eintragen(uid, auftrag["uri"], titel=meta.get("titel"), auf_karte=auf_karte, typ=erg.get("typ"))
+            self.zustand["link"] = auftrag["link"]
+            hinweis = erg["meldung"] if auf_karte else (
+                erg["meldung"] + " Die Box hat sich die Karte gemerkt: Sie spielt diese Playlist, aber nur an dieser Box.")
+            self.log(f"Karte {uid}: bespielt ({'auf der Karte' if auf_karte else 'nur in der Box'}, {erg.get('typ')}).")
+            karten.auftrag_ergebnis(auftrag, status="fertig", uid=uid, auf_karte=auf_karte, typ=erg.get("typ"),
+                                    grund=erg.get("grund"), meldung=hinweis)
+        except Exception as e:                          # nie das Kartenlesen mitreißen
+            self.log(f"Karte bespielen: Fehler {e!r}")
+            karten.auftrag_ergebnis(auftrag, status="fehler", uid=uid, grund="intern",
+                                    meldung="Beim Bespielen ist ein Fehler aufgetreten. Bitte noch einmal versuchen.")
 
     # ------------------------------------------------------------ Rückmeldung, wenn Musik auf sich warten lässt
 

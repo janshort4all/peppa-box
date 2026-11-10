@@ -22,12 +22,17 @@ import subprocess
 import sys
 import threading
 import time
+import unicodedata
+import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import akku
 import automatik
 import bedienung
+import cover
 import einstellungen
+import etikett
+import karten
 import klang
 import lautstaerke
 import toene
@@ -51,8 +56,11 @@ SYSTEMCTL = shutil.which("systemctl") or "/usr/bin/systemctl"
 SPERRE = threading.Lock()          # immer nur eine Aktion (Update, Neustart ...) gleichzeitig
 
 DATEITYPEN = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8",
-              ".webmanifest": "application/manifest+json", ".png": "image/png",
-              ".svg": "image/svg+xml"}
+              ".css": "text/css; charset=utf-8", ".webmanifest": "application/manifest+json",
+              ".png": "image/png", ".svg": "image/svg+xml"}
+BILD_MAX = 8_000_000               # größtes Bild, das die Seite als eigenes Cover annimmt (Bytes)
+COVER_PAUSE_S = 300                # gleiche Adresse: höchstens alle 5 Minuten neu im Netz suchen
+_COVER_LAEUFT, _COVER_VERSUCH, _COVER_SPERRE = set(), {}, threading.Lock()
 
 
 def log(text):
@@ -349,6 +357,263 @@ def _lesen(pfad):
         return repr(e)
 
 
+# ---------------------------------------------------------------- Karten, Cover, Etiketten
+
+def cover_im_hintergrund(uri):
+    """Cover und Titel im Hintergrund holen, ohne die Seite warten zu lassen. Dieselbe Adresse wird
+    höchstens alle COVER_PAUSE_S Sekunden gesucht (kein Dauerfeuer bei Fehlern)."""
+    jetzt = time.time()
+    with _COVER_SPERRE:
+        if uri in _COVER_LAEUFT or jetzt - _COVER_VERSUCH.get(uri, 0) < COVER_PAUSE_S:
+            return False
+        _COVER_LAEUFT.add(uri)
+        _COVER_VERSUCH[uri] = jetzt
+
+    def lauf():
+        try:
+            cover.nachschlagen(uri)
+        except Exception as e:                      # Netzfehler dürfen nie bis zur Seite durchschlagen
+            log(f"Cover für {uri}: {e!r}")
+        finally:
+            with _COVER_SPERRE:
+                _COVER_LAEUFT.discard(uri)
+
+    threading.Thread(target=lauf, daemon=True).start()
+    return True
+
+
+def _cover_url(uri, meta):
+    if not meta or not meta.get("hat_cover"):
+        return None
+    return f"/cover/{karten.schluessel(uri)}.jpg?v={meta.get('zeit', 0)}"
+
+
+def kartendaten(z):
+    """Die Karte im Kartenfach für die Eltern-Seite: Titel, Cover, ob die Box sie kennt.
+    Eine Karte mit lesbarem Spotify-Link, die die Box noch nicht kennt, wird dabei gleich in die
+    Kartenliste aufgenommen und ihr Cover im Hintergrund geholt."""
+    uid, link = z.get("karte"), z.get("link")
+    if not uid:
+        return None
+    treffer = cover.LINK_RE.search(link) if link else None
+    uri = f"spotify:{treffer.group(1).lower()}:{treffer.group(2)}" if treffer else None
+    try:
+        bekannt = karten.laden().get(uid)
+        if uri is None and bekannt:
+            uri = bekannt["uri"]
+        erg = {"uid": uid, "bekannt": bool(bekannt), "link_auf_karte": bool(link), "uri": uri,
+               "titel": None, "cover": None, "schluessel": None}
+        if uri is None:
+            return erg
+        if not bekannt or bekannt["uri"] != uri:
+            bekannt = karten.eintragen(uid, uri, auf_karte=bool(treffer) or None)
+            erg["bekannt"] = True
+        meta = karten.meta_lesen(uri)
+        if not meta or not meta.get("titel") or not meta.get("hat_cover"):
+            if cover_im_hintergrund(uri):
+                meta = karten.meta_lesen(uri)
+        erg.update(titel=bekannt.get("titel") or (meta or {}).get("titel"), cover=_cover_url(uri, meta),
+                   schluessel=karten.schluessel(uri), typ=uri.split(":")[1])
+        return erg
+    except Exception as e:                           # die Kartenanzeige darf die Seite nie stören
+        log(f"Kartendaten: {e!r}")
+        return {"uid": uid, "bekannt": False, "link_auf_karte": bool(link), "uri": uri,
+                "titel": None, "cover": None, "schluessel": None}
+
+
+def auftrag_info():
+    """Stand von "Karte bespielen" für die Eltern-Seite, mit Titel und Cover der Playlist (und der bisherigen
+    Playlist, wenn die Karte schon belegt war)."""
+    a = karten.auftrag_status()
+    try:
+        for schl, pre in (("uri", ""), ("vorher_uri", "vorher_")):
+            uri = a.get(schl)
+            if not uri:
+                continue
+            meta = karten.meta_lesen(uri) or {}
+            a[pre + "titel"] = meta.get("titel") or next(
+                (k["titel"] for k in karten.liste() if k["uri"] == uri), None)
+            a[pre + "cover"] = _cover_url(uri, meta)
+    except ValueError:                                  # unlesbare Adresse im Ergebnis: ohne Titel zeigen
+        pass
+    return a
+
+
+def _etikett_einst():
+    return einstellungen.laden()["etikett"]
+
+
+def _bogen_plaetze():
+    try:
+        spalten, zeilen = etikett.plaetze(_etikett_einst())
+    except Exception:
+        return 0, 0
+    return spalten, zeilen
+
+
+def _offene_etiketten():
+    """Karten, deren Etikett noch nicht gedruckt ist (je Spotify-Adresse eine), älteste zuerst."""
+    gesehen, erg = set(), []
+    for k in sorted(karten.liste(), key=lambda k: (k["angelegt"], k["uid"])):
+        if not k["gedruckt"] and k["uri"] not in gesehen:
+            gesehen.add(k["uri"])
+            erg.append(k)
+    return erg
+
+
+def karten_liste():
+    spalten, zeilen = _bogen_plaetze()
+    plaetze = spalten * zeilen
+    liste = karten.liste()
+    for k in liste:
+        meta = karten.meta_lesen(k["uri"])
+        k["cover"] = _cover_url(k["uri"], meta)
+        k["etikett"] = f"/etikett/{k['schluessel']}.png"
+    offen = _offene_etiketten()
+    return {"ok": True, "karten": liste,
+            "etikett": {"verfuegbar": etikett.verfuegbar(), "groesse_mm": _etikett_einst()["groesse_mm"],
+                        "spalten": spalten, "zeilen": zeilen, "plaetze": plaetze,
+                        "offen": len(offen), "naechster_bogen": [k["uid"] for k in offen[:plaetze]]}}
+
+
+def _uid(daten):
+    """Kartennummer aus der Anfrage: '19:81:15:20' oder '19811520'."""
+    wert = daten.get("uid") if isinstance(daten, dict) else None
+    if not isinstance(wert, str):
+        raise ValueError("Kartennummer fehlt.")
+    return wert.upper() if ":" in wert else karten.uid_aus_url(wert)
+
+
+def karten_pruefen(daten):
+    """Eingefügten Spotify-Link prüfen; Titel und Cover suchen (oder aus dem Speicher nehmen)."""
+    text = daten.get("text") if isinstance(daten, dict) else None
+    if not isinstance(text, str) or not text.strip():
+        return {"ok": False, "meldung": "Bitte zuerst einen Spotify-Link einfügen."}
+    erg = cover.aufloesen(text.strip()[:500], neu=bool(daten.get("neu")))
+    if erg.get("ok"):
+        erg["cover"] = _cover_url(erg["uri"], karten.meta_lesen(erg["uri"]))
+    return erg
+
+
+def karten_bespielen(daten):
+    """Auftrag an den Player: die nächste Karte im Kartenfach bekommt diese Playlist."""
+    uri = daten.get("uri") if isinstance(daten, dict) else None
+    try:
+        karten.uri_pruefen(uri)
+    except ValueError as e:
+        return {"ok": False, "meldung": str(e)}
+    p = player_zustand()
+    if not p.get("laeuft"):
+        return {"ok": False, "meldung": "Die Box-Software läuft gerade nicht. Bitte kurz warten oder die Box neu starten."}
+    if p.get("leser"):
+        return {"ok": False, "meldung": str(p["leser"])}
+    karten.auftrag_stellen(uri, ueberschreiben=bool(daten.get("ueberschreiben")))
+    cover_im_hintergrund(uri)
+    return {"ok": True, "meldung": "Bitte jetzt die Karte in das Kartenfach legen.", "auftrag": auftrag_info()}
+
+
+def karten_abbrechen(daten=None):
+    karten.auftrag_abbrechen()
+    return {"ok": True, "meldung": "Abgebrochen."}
+
+
+def karten_umbenennen(daten):
+    try:
+        uid = _uid(daten)
+    except ValueError as e:
+        return {"ok": False, "meldung": str(e)}
+    titel = daten.get("titel")
+    if not isinstance(titel, str):
+        return {"ok": False, "meldung": "Name fehlt."}
+    if not karten.umbenennen(uid, titel):
+        return {"ok": False, "meldung": "Diese Karte kennt die Box nicht."}
+    return {"ok": True, "meldung": "Name gespeichert."}
+
+
+def karten_entfernen(daten):
+    try:
+        uid = _uid(daten)
+    except ValueError as e:
+        return {"ok": False, "meldung": str(e)}
+    if not karten.entfernen(uid):
+        return {"ok": False, "meldung": "Diese Karte kennt die Box nicht."}
+    return {"ok": True, "meldung": "Aus der Liste entfernt. Die Karte selbst bleibt unverändert; "
+                                   "liegt sie wieder im Fach, erscheint sie wieder."}
+
+
+def karten_gedruckt(daten):
+    uids = daten.get("uids") if isinstance(daten, dict) else None
+    if not isinstance(uids, list) or len(uids) > 500:
+        return {"ok": False, "meldung": "Liste der Karten fehlt."}
+    try:
+        uids = [_uid({"uid": u}) for u in uids]
+    except ValueError as e:
+        return {"ok": False, "meldung": str(e)}
+    karten.gedruckt_setzen(uids, bool(daten.get("wert", True)))
+    return {"ok": True, "meldung": "Gespeichert."}
+
+
+def cover_neu(daten):
+    """Cover und Titel noch einmal bei Spotify suchen (ersetzt auch ein früher gefundenes Cover,
+    aber kein selbst hochgeladenes Bild; dafür 'eigenes' zurücksetzen)."""
+    uri = daten.get("uri") if isinstance(daten, dict) else None
+    try:
+        karten.uri_pruefen(uri)
+    except ValueError as e:
+        return {"ok": False, "meldung": str(e)}
+    erg = cover.nachschlagen(uri, neu=True)
+    erg["cover"] = _cover_url(uri, karten.meta_lesen(uri))
+    return erg
+
+
+def cover_hochladen(roh, abfrage):
+    """Eigenes Bild als Cover: Anfragetext = die Bilddatei, ?s=<schluessel der Playlist>."""
+    try:
+        uri = karten.uri_aus_schluessel((abfrage.get("s") or [""])[0])
+    except ValueError as e:
+        return {"ok": False, "meldung": str(e)}
+    erg = cover.eigenes_bild(uri, roh)
+    if erg.get("ok"):
+        erg["cover"] = _cover_url(uri, karten.meta_lesen(uri))
+    return erg
+
+
+def _titel_zu_uri(uri):
+    for k in karten.liste():
+        if k["uri"] == uri and k["eigener_titel"]:
+            return k["titel"]
+    return (karten.meta_lesen(uri) or {}).get("titel") or "Peppa Box"
+
+
+def _dateiname(text, vorlage="etikett"):
+    t = unicodedata.normalize("NFKD", text or "").encode("ascii", "ignore").decode()
+    t = "".join(c if c.isalnum() else "-" for c in t).strip("-")
+    return (t[:40] or vorlage).lower()
+
+
+def etikett_antwort(name, abfrage):
+    """PNG für /etikett/<name>.png; Rückgabe (Bytes, Dateiname). Wirft ValueError bei unbekanntem Namen."""
+    einst = _etikett_einst()
+    if name == "testbogen":
+        return etikett.png_bytes(etikett.testbogen(einst)), "peppa-box-testbogen.png"
+    if name == "bogen":
+        gewuenscht = [s for s in (abfrage.get("s") or [""])[0].split(",") if s]
+        if gewuenscht:
+            uris = [karten.uri_aus_schluessel(s) for s in gewuenscht]
+        else:
+            uris = [k["uri"] for k in _offene_etiketten()]
+        spalten, zeilen = _bogen_plaetze()
+        uris = uris[:spalten * zeilen]
+        if not uris:
+            raise ValueError("Keine Karten für den Bogen.")
+        bilder = [etikett.etikett(karten.cover_bytes(u), _titel_zu_uri(u), einst) for u in uris]
+        return etikett.png_bytes(etikett.bogen(bilder, einst)), "peppa-box-etiketten.png"
+    uri = karten.uri_aus_schluessel(name)
+    titel = _titel_zu_uri(uri)
+    bild = etikett.etikett(karten.cover_bytes(uri), titel, einst)
+    return etikett.png_bytes(bild), f"etikett-{_dateiname(titel)}.png"
+
+
 # ---------------------------------------------------------------- Aktionen
 
 def update_pruefen():
@@ -535,7 +800,14 @@ AKTIONEN = {"/api/update/pruefen": update_pruefen, "/api/update/starten": update
 SCHNELL = {"/api/klang": klang_setzen, "/api/lautstaerke": lautstaerke_setzen, "/api/einstellungen": einstellungen_speichern,
            "/api/timer/starten": timer_starten, "/api/timer/abbrechen": timer_abbrechen,
            "/api/ruhezeit/aussetzen": ruhe_aussetzen, "/api/ruhezeit/wieder": ruhe_wieder,
-           "/api/ansage": ansage_spielen}
+           "/api/ansage": ansage_spielen,
+           "/api/karten/pruefen": karten_pruefen, "/api/karten/bespielen": karten_bespielen,
+           "/api/karten/abbrechen": karten_abbrechen, "/api/karten/umbenennen": karten_umbenennen,
+           "/api/karten/entfernen": karten_entfernen, "/api/karten/gedruckt": karten_gedruckt,
+           "/api/cover/neu": cover_neu}
+# Aktionen, deren Anfragetext eine Datei ist (kein JSON); die Parameter stehen in der Adresse (?s=...)
+ROH = {"/api/cover/hochladen": cover_hochladen}
+GROESSE = {"/api/cover/hochladen": BILD_MAX}                # sonst gilt 4096 Bytes
 
 
 # ---------------------------------------------------------------- Webserver
@@ -544,24 +816,60 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
-    def _antwort(self, code, daten, typ="application/json; charset=utf-8", cache=False):
+    def _antwort(self, code, daten, typ="application/json; charset=utf-8", cache=False, datei=None):
         body = daten if isinstance(daten, bytes) else json.dumps(daten, ensure_ascii=False).encode()
         self.send_response(code)
         self.send_header("Content-Type", typ)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "max-age=3600" if cache else "no-store")
+        if datei:
+            self.send_header("Content-Disposition", f'attachment; filename="{datei}"')
         self.end_headers()
         self.wfile.write(body)
 
+    def _bild(self, pfad, abfrage):
+        """/cover/<schluessel>.jpg und /etikett/<schluessel|bogen|testbogen>.png"""
+        teile = pfad.split("/")
+        if len(teile) != 3:
+            return self._antwort(404, {"fehler": "nicht gefunden"})
+        art = teile[1]
+        stamm, _, endung = teile[2].rpartition(".")
+        try:
+            if art == "cover" and endung == "jpg":
+                daten = karten.cover_bytes(karten.uri_aus_schluessel(stamm))
+                if daten is None:
+                    return self._antwort(404, {"fehler": "kein Cover"})
+                return self._antwort(200, daten, "image/jpeg", cache=True)
+            if art == "etikett" and endung == "png":
+                if not etikett.verfuegbar():
+                    return self._antwort(503, {"ok": False, "meldung": "Zum Erstellen der Etiketten fehlt auf der Box das "
+                                               "Bildprogramm (Pillow). Einmal am Pi 'sh ~/peppa-box/software/dienst_einrichten.sh' ausführen."})
+                png, name = etikett_antwort(stamm, abfrage)
+                laden = (abfrage.get("laden") or [""])[0] == "1"
+                return self._antwort(200, png, "image/png", datei=name if laden else None)
+        except ValueError as e:
+            return self._antwort(404, {"ok": False, "meldung": str(e)})
+        except Exception as e:
+            log(f"Bild {pfad}: {e!r}")
+            return self._antwort(500, {"ok": False, "meldung": f"Bild ließ sich nicht erstellen: {e!r}"})
+        return self._antwort(404, {"fehler": "nicht gefunden"})
+
     def do_GET(self):
-        pfad = self.path.split("?")[0]
-        if pfad in ("/api/karte", "/api/zustand"):
+        url = urllib.parse.urlsplit(self.path)
+        pfad, abfrage = url.path, urllib.parse.parse_qs(url.query)
+        if pfad in ("/api/karte", "/api/zustand", "/api/karten"):
             einstellungen.lauf_beruehren("seite")        # Eltern-Seite ist offen: Auto-Aus wartet
         if pfad == "/api/karte":
             z = player_zustand()
             erg = {k: z.get(k) for k in ("karte", "link", "laeuft", "spotify_bereit", "ausgang", "leser")}
             erg["bedienung"] = bedienung_live()
+            erg["kartendaten"] = kartendaten(z)          # Titel und Cover der Karte im Fach
+            erg["auftrag"] = auftrag_info()              # läuft gerade "Karte bespielen"?
             return self._antwort(200, erg)
+        if pfad == "/api/karten":
+            return self._antwort(200, karten_liste())
+        if pfad.startswith(("/cover/", "/etikett/")):
+            return self._bild(pfad, abfrage)
         if pfad == "/api/bedienung":                    # Prüfansicht offen: Player liest Rohwerte des Touch-Chips
             einstellungen.lauf_beruehren("seite")
             einstellungen.lauf_beruehren("seite-bedienung")
@@ -593,35 +901,45 @@ class Handler(BaseHTTPRequestHandler):
             self._antwort(200, f.read(), DATEITYPEN[endung], cache=endung == ".png")
 
     def do_POST(self):
-        schnell = self.path in SCHNELL
-        aktion = SCHNELL.get(self.path) or AKTIONEN.get(self.path)
+        url = urllib.parse.urlsplit(self.path)
+        pfad, abfrage = url.path, urllib.parse.parse_qs(url.query)
+        roh = ROH.get(pfad)
+        schnell = pfad in SCHNELL or roh is not None
+        aktion = roh or SCHNELL.get(pfad) or AKTIONEN.get(pfad)
         if not aktion:
             return self._antwort(404, {"fehler": "nicht gefunden"})
         # Eigener Kopfeintrag: fremde Webseiten im Browser koennen ihn nicht setzen (Schutz vor
         # untergeschobenen Klicks, z. B. "Ausschalten" ueber einen Link auf einer anderen Seite).
         if self.headers.get("X-Peppa-Box") != "1":
             return self._antwort(403, {"ok": False, "meldung": "Nur über die Peppa-Box-Seite."})
-        daten = {}
-        laenge = int(self.headers.get("Content-Length") or 0)
-        if laenge > 4096:
-            return self._antwort(413, {"ok": False, "meldung": "Anfrage zu groß."})
+        daten = b"" if roh else {}
+        try:
+            laenge = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            return self._antwort(400, {"ok": False, "meldung": "Ungültige Anfrage."})
+        if laenge > GROESSE.get(pfad, 4096):
+            return self._antwort(413, {"ok": False, "meldung": "Die Datei ist zu groß." if roh else "Anfrage zu groß."})
         if laenge:
-            try:
-                daten = json.loads(self.rfile.read(laenge))
-            except ValueError:
-                return self._antwort(400, {"ok": False, "meldung": "Ungültige Anfrage."})
+            koerper = self.rfile.read(laenge)
+            if roh:
+                daten = koerper
+            else:
+                try:
+                    daten = json.loads(koerper)
+                except ValueError:
+                    return self._antwort(400, {"ok": False, "meldung": "Ungültige Anfrage."})
         if not schnell and not SPERRE.acquire(blocking=False):
             return self._antwort(409, {"ok": False, "meldung": "Es läuft schon eine Aktion, bitte kurz warten."})
         try:
-            if self.path not in ("/api/lautstaerke", "/api/klang"):  # Regler-Ziehen nicht im Protokoll
-                log(f"Aktion {self.path}")
-            erg = aktion(daten) if schnell else aktion()
+            if pfad not in ("/api/lautstaerke", "/api/klang"):  # Regler-Ziehen nicht im Protokoll
+                log(f"Aktion {pfad}")
+            erg = aktion(daten, abfrage) if roh else aktion(daten) if schnell else aktion()
         except Exception as e:                      # nie die Seite abstuerzen lassen
             erg = {"ok": False, "meldung": f"Interner Fehler: {e!r}"}
         finally:
             if not schnell:
                 SPERRE.release()
-        if self.path not in ("/api/lautstaerke", "/api/klang"):
+        if pfad not in ("/api/lautstaerke", "/api/klang"):
             log(f"  -> {erg.get('meldung', erg.get('ok'))}")
         self._antwort(200, erg)
 

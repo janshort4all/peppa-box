@@ -7,74 +7,13 @@ import time
 
 import spidev
 
+from ndef import FEHLT, URI_PREFIX, ndef_aus_tlv, uri_aus_ndef   # noqa: F401  (hier weiter importierbar)
+
 CMD, COMIRQ, ERR, FIFO, FIFOLVL, BITFRAME, COLL = 0x01, 0x04, 0x06, 0x09, 0x0A, 0x0D, 0x0E
 MODE, RXMODE, TXCTRL, TXASK = 0x11, 0x13, 0x14, 0x15
 TMODE, TPRESC, TRELH, TRELL, VERSION = 0x2A, 0x2B, 0x2C, 0x2D, 0x37
 STATUS2 = 0x08
 NDEF_KEY = bytes.fromhex("D3F7D3F7D3F7")   # oeffentlicher NFC-Forum-Schluessel fuer NDEF-Sektoren (MIFARE Classic)
-FEHLT = object()                            # Marker: TLV noch nicht vollstaendig gelesen
-
-URI_PREFIX = ["", "http://www.", "https://www.", "http://", "https://", "tel:", "mailto:",
-              "ftp://anonymous:anonymous@", "ftp://ftp.", "ftps://", "sftp://", "smb://", "nfs://",
-              "ftp://", "dav://", "news:", "telnet://", "imap:", "rtsp://", "urn:", "pop:", "sip:",
-              "sips:", "tftp:", "btspp://", "btl2cap://", "btgoep://", "tcpobex://", "irdaobex://",
-              "file://", "urn:epc:id:", "urn:epc:tag:", "urn:epc:pat:", "urn:epc:raw:", "urn:epc:",
-              "urn:nfc:"]
-
-
-def ndef_aus_tlv(daten):
-    """Sucht im TLV-Bereich die NDEF-Nachricht. Gibt Bytes, None (keine) oder FEHLT (mehr lesen) zurueck."""
-    i = 0
-    while i < len(daten):
-        t = daten[i]
-        if t == 0x00:                          # Fuellbyte
-            i += 1
-            continue
-        if t == 0xFE:                          # Ende
-            return None
-        if i + 1 >= len(daten):
-            return FEHLT
-        laenge, kopf = daten[i + 1], 2
-        if laenge == 0xFF:
-            if i + 3 >= len(daten):
-                return FEHLT
-            laenge, kopf = (daten[i + 2] << 8) | daten[i + 3], 4
-        if i + kopf + laenge > len(daten):
-            return FEHLT
-        if t == 0x03:
-            return bytes(daten[i + kopf:i + kopf + laenge])
-        i += kopf + laenge                     # andere TLVs (Lock, Memory) ueberspringen
-    return FEHLT
-
-
-def uri_aus_ndef(nachricht):
-    """Erster URI-Datensatz (oder Text, der wie ein Link aussieht) aus einer NDEF-Nachricht."""
-    i = 0
-    while i < len(nachricht):
-        kopf = nachricht[i]
-        tnf, kurz, mit_id = kopf & 0x07, kopf & 0x10, kopf & 0x08
-        typ_l = nachricht[i + 1]
-        j = i + 2
-        if kurz:
-            nutz_l = nachricht[j]; j += 1
-        else:
-            nutz_l = int.from_bytes(nachricht[j:j + 4], "big"); j += 4
-        id_l = 0
-        if mit_id:
-            id_l = nachricht[j]; j += 1
-        typ = nachricht[j:j + typ_l]; j += typ_l + id_l
-        nutz = nachricht[j:j + nutz_l]
-        if tnf == 1 and typ == b"U" and nutz:
-            vorne = URI_PREFIX[nutz[0]] if nutz[0] < len(URI_PREFIX) else ""
-            return vorne + nutz[1:].decode("utf-8", "replace")
-        if tnf == 1 and typ == b"T" and nutz:
-            text = nutz[1 + (nutz[0] & 0x3F):].decode("utf-8", "replace").strip()
-            if "spotify" in text:
-                return text
-        if kopf & 0x40:                        # letzter Datensatz
-            break
-        i = j + nutz_l
-    return None
 
 
 def crc_a(data):
@@ -186,6 +125,40 @@ class RC522:
             if irq & 0x01 or time.time() - t0 > 0.05:
                 return False
         return bool(self.r(STATUS2) & 0x08)
+
+    # ---- Schreiben (Typ 2: NTAG21x / Ultralight). Nur über kartenschreiber.py benutzen.
+
+    def lese16(self, seite):
+        """16 Byte ab einer Seite (READ). None bei Fehler."""
+        return self._read_block(seite)
+
+    def schreibe4(self, seite, daten):
+        """4 Byte auf eine Seite schreiben (WRITE 0xA2). True, wenn die Karte mit ACK (0xA) antwortet."""
+        if len(daten) != 4:
+            raise ValueError("eine Seite hat 4 Byte")
+        cmd = [0xA2, seite] + list(daten)
+        antwort = self._transceive(cmd + crc_a(cmd))
+        return bool(antwort) and (antwort[0] & 0x0F) == 0x0A
+
+    def beschreiben(self, link):
+        """Wählt die aufliegende Karte und schreibt den Link (NDEF) darauf, soweit sie das kann.
+        Gibt dict(uid, typ, ok, grund, meldung) zurück; `typ` ist "ntag", "classic" oder "andere"."""
+        auswahl = self._select()
+        if not auswahl:
+            return {"uid": None, "typ": None, "ok": False, "grund": "keine_karte",
+                    "meldung": "Keine Karte erkannt."}
+        uid, sak, _ = auswahl
+        text = ":".join(f"{b:02X}" for b in uid)
+        try:
+            if sak & 0x7F == 0x00:                                # NTAG / Ultralight (Typ 2)
+                import kartenschreiber
+                erg = kartenschreiber.ntag_beschreiben(self, link)
+                return dict(erg, uid=text, typ="ntag")
+            typ = "classic" if sak & 0x08 else "andere"
+            return {"uid": text, "typ": typ, "ok": False, "grund": "typ",
+                    "meldung": "Dieser Kartentyp lässt sich hier nicht beschreiben."}
+        finally:
+            self._halt()
 
     def _ndef_ntag(self):
         daten = []

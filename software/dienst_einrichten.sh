@@ -257,6 +257,16 @@ if ! command -v pico2wave > /dev/null && ! command -v espeak-ng > /dev/null; the
     fi
 fi
 
+# --- Bildprogramm (Pillow) und Schrift fuer die Cover und die 40x40-Etiketten der Karten. Ohne geht
+#     alles andere weiter; die Eltern-Seite zeigt dann bei den Etiketten einen Hinweis.
+if ! python3 -c "import PIL" > /dev/null 2>&1 || ! fc-list 2> /dev/null | grep -qi dejavu; then
+    echo "Installiere Bildprogramm fuer Etiketten (python3-pil) ..."
+    sudo apt-get install -y --no-install-recommends python3-pil fonts-dejavu-core > /dev/null 2>&1 \
+        || { sudo apt-get update > /dev/null 2>&1 || true
+             sudo apt-get install -y --no-install-recommends python3-pil fonts-dejavu-core > /dev/null 2>&1 \
+                 || echo "Bildprogramm nicht installiert (Etiketten gehen erst nach 'sudo apt install python3-pil')."; }
+fi
+
 # --- Lautsprecher (I2S, Software-Lautstaerke, Raspotify-Ausgabe) und Kopfhoerer-Mischer
 sh "$ORDNER/lautsprecher_einrichten.sh" || echo "Lautsprecher-Einrichtung mit Fehler beendet (siehe oben)."
 

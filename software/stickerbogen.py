@@ -32,17 +32,19 @@ def px(mm):
     return int(round(mm / 25.4 * DPI))
 
 
-def raster(groesse_mm):
+def raster(groesse_mm, rand_mm=None, abstand_mm=None):
     """Spalten, Zeilen und linke obere Ecken (mm) für quadratische Sticker, auf dem Bogen zentriert."""
+    rand_mm = RAND_MM if rand_mm is None else rand_mm
+    abstand_mm = ABSTAND_MM if abstand_mm is None else abstand_mm
     b, h = BOGEN_MM
-    spalten = int((b - 2 * RAND_MM + ABSTAND_MM) // (groesse_mm + ABSTAND_MM))
-    zeilen = int((h - 2 * RAND_MM + ABSTAND_MM) // (groesse_mm + ABSTAND_MM))
+    spalten = int((b - 2 * rand_mm + abstand_mm + 1e-9) // (groesse_mm + abstand_mm))
+    zeilen = int((h - 2 * rand_mm + abstand_mm + 1e-9) // (groesse_mm + abstand_mm))
     if spalten < 1 or zeilen < 1:
         raise ValueError(f"{groesse_mm} mm passt nicht auf den Bogen {b:g} × {h:g} mm")
-    breite = spalten * groesse_mm + (spalten - 1) * ABSTAND_MM
-    hoehe = zeilen * groesse_mm + (zeilen - 1) * ABSTAND_MM
+    breite = spalten * groesse_mm + (spalten - 1) * abstand_mm
+    hoehe = zeilen * groesse_mm + (zeilen - 1) * abstand_mm
     x0, y0 = (b - breite) / 2, (h - hoehe) / 2
-    ecken = [(x0 + s * (groesse_mm + ABSTAND_MM), y0 + z * (groesse_mm + ABSTAND_MM))
+    ecken = [(x0 + s * (groesse_mm + abstand_mm), y0 + z * (groesse_mm + abstand_mm))
              for z in range(zeilen) for s in range(spalten)]
     return spalten, zeilen, ecken
 
@@ -88,9 +90,9 @@ def cover_quadrat(pfad, groesse_mm):
     return img.resize((px(groesse_mm), px(groesse_mm)), Image.LANCZOS)
 
 
-def bogen(sticker, groesse_mm):
+def bogen(sticker, groesse_mm, rand_mm=None, abstand_mm=None):
     """Sticker-Bilder auf einen transparenten Bogen legen; gibt (Bild, Anzahl Plätze) zurück."""
-    _, _, ecken = raster(groesse_mm)
+    _, _, ecken = raster(groesse_mm, rand_mm, abstand_mm)
     if len(sticker) > len(ecken):
         raise ValueError(f"{len(sticker)} Sticker, aber nur {len(ecken)} Plätze bei {groesse_mm:g} mm")
     bild = Image.new("RGBA", (px(BOGEN_MM[0]), px(BOGEN_MM[1])), (0, 0, 0, 0))

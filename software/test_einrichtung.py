@@ -114,7 +114,8 @@ class Syntax(unittest.TestCase):
                      "/usr/local/lib/peppa-box/ausgabe", "/usr/local/lib/peppa-box/ereignis",
                      "Storage=persistent", "gpio spi input",
                      "bedienung_einrichten.sh", "RuntimeWatchdogSec=15", "libttspico-utils", "TimeoutStopSec=",
-                     "/usr/local/lib/peppa-box/wlan_suche", "peppa-wlan-suche", "autoconnect-retries=0"):
+                     "/usr/local/lib/peppa-box/wlan_suche", "peppa-wlan-suche", "autoconnect-retries=0",
+                     "python3-pil", "fonts-dejavu-core"):
             self.assertIn(teil, s)
 
 

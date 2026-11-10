@@ -10,6 +10,7 @@ from unittest import mock
 
 import ausgang
 import einstellungen
+import karten
 import peppa_player
 
 
@@ -27,6 +28,18 @@ class FakeLeser:
         self.fehler = 0
         self.schlaeft = False
         self.geschlossen = False
+        self.schreiben = []            # Links, die auf die Karte geschrieben wurden
+        self.schreib_antwort = {"ok": True, "grund": "ok", "typ": "ntag", "meldung": "Der Link steht jetzt auf der Karte."}
+        self.schreib_fehler = None
+
+    def beschreiben(self, link):
+        if self.schreib_fehler:
+            raise self.schreib_fehler
+        self.schreiben.append(link)
+        erg = dict(self.schreib_antwort)
+        if erg["ok"] and self.karte:
+            self.karte = (self.karte[0], link)
+        return erg
 
     def read_uid(self):
         if self.fehler:
@@ -253,6 +266,131 @@ class Probelauf(unittest.TestCase):
         self.pl.auto.sperrt = lambda: True
         self.pl._bereit()
         self.assertEqual(self.ansager.gesagt, ["bereit"])
+
+    # ---- Karte per Kartennummer (karten.json) und Bespielen-Auftrag der Eltern-Seite
+
+    PL = "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M"
+    AL = "spotify:album:4aawyAB9vmqN3uQ7FjRGTy"
+
+    def test_karte_ohne_link_spielt_laut_zuordnung_in_der_box(self):
+        karten.eintragen("AA:BB:CC:DD", self.PL, auf_karte=False)
+        self.leser.karte = ("AA:BB:CC:DD", None)
+        self.runde(2)
+        self.pl.st.karte_auf.assert_called_once_with(self.PL)
+        self.assertEqual(self.ansager.gesagt, [])
+
+    def test_link_auf_der_karte_geht_vor_der_zuordnung(self):
+        karten.eintragen("AA:BB:CC:DD", self.AL)
+        self.leser.karte = ("AA:BB:CC:DD", "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M")
+        self.runde()
+        self.pl.st.karte_auf.assert_called_once_with(self.PL)
+
+    def test_unbekannte_karte_ohne_link_sagt_leer(self):
+        self.leser.karte = ("11:22:33:44", None)
+        self.runde()
+        self.assertEqual(self.ansager.gesagt, ["karte_leer"])
+
+    def auftrag(self, uri=None, ueberschreiben=False):
+        return karten.auftrag_stellen(uri or self.PL, ueberschreiben=ueberschreiben)
+
+    def test_auftrag_beschreibt_leere_karte_ohne_musik(self):
+        a = self.auftrag()
+        self.leser.karte = ("04:AA:BB:CC", None)
+        self.runde(2)
+        self.assertEqual(self.leser.schreiben, ["https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M"])
+        st = karten.auftrag_status()
+        self.assertEqual((st["status"], st["uid"], st["auf_karte"]), ("fertig", "04:AA:BB:CC", True))
+        self.assertEqual(karten.liste()[0]["uid"], "04:AA:BB:CC")
+        self.pl.st.karte_auf.assert_not_called()                          # beim Bespielen spielt nichts
+        self.assertEqual(self.ansager.gesagt, [], "keine Ansage 'Karte leer' beim Bespielen")
+        self.assertEqual(len(self.leser.schreiben), 1, "nicht ein zweites Mal schreiben")
+        self.assertEqual(self.pl.zustand["link"], "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M")
+        # Karte abheben und wieder auflegen: jetzt spielt sie
+        self.leser.karte = None
+        self.runde(3)
+        self.leser.karte = ("04:AA:BB:CC", "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M")
+        self.runde(2)
+        self.pl.st.karte_auf.assert_called_once_with(self.PL)
+
+    def test_auftrag_wartet_bis_eine_karte_liegt(self):
+        self.auftrag()
+        self.runde(3)
+        self.assertEqual(karten.auftrag_status()["status"], "wartet")
+        self.assertEqual(self.leser.schreiben, [])
+        self.leser.karte = ("04:AA:BB:CC", None)
+        self.runde()
+        self.assertEqual(karten.auftrag_status()["status"], "fertig")
+
+    def test_belegte_karte_nur_nach_bestaetigung_ueberschreiben(self):
+        self.leser.karte = ("04:AA:BB:CC", "https://open.spotify.com/album/4aawyAB9vmqN3uQ7FjRGTy")
+        self.auftrag()
+        self.runde(2)
+        st = karten.auftrag_status()
+        self.assertEqual(st["status"], "belegt")
+        self.assertEqual(st["vorher_uri"], self.AL)
+        self.assertEqual(self.leser.schreiben, [], "ohne Bestätigung nichts überschreiben")
+        self.pl.st.karte_auf.assert_not_called()
+        self.auftrag(ueberschreiben=True)                                  # Eltern bestätigen
+        self.runde()
+        self.assertEqual(karten.auftrag_status()["status"], "fertig")
+        self.assertEqual(len(self.leser.schreiben), 1)
+
+    def test_schon_richtig_bespielte_karte_wird_nicht_neu_geschrieben(self):
+        self.leser.karte = ("04:AA:BB:CC", "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M")
+        self.auftrag()
+        self.runde()
+        st = karten.auftrag_status()
+        self.assertEqual((st["status"], st["grund"]), ("fertig", "schon"))
+        self.assertEqual(self.leser.schreiben, [])
+        self.assertEqual(len(karten.liste()), 1)
+
+    def test_karte_die_sich_nicht_beschreiben_laesst_wird_in_der_box_gemerkt(self):
+        self.leser.schreib_antwort = {"ok": False, "grund": "typ", "typ": "classic", "meldung": "Dieser Kartentyp lässt sich hier nicht beschreiben."}
+        self.leser.karte = ("19:81:15:20", None)
+        self.auftrag()
+        self.runde()
+        st = karten.auftrag_status()
+        self.assertEqual((st["status"], st["auf_karte"], st["typ"]), ("fertig", False, "classic"))
+        self.assertIn("nur an dieser Box", st["meldung"])
+        self.assertTrue(karten.link_fuer_uid("19:81:15:20"))
+        self.leser.karte = None
+        self.runde(3)
+        self.leser.karte = ("19:81:15:20", None)                           # später: spielt über die Zuordnung
+        self.runde(2)
+        self.pl.st.karte_auf.assert_called_once_with(self.PL)
+
+    def test_schreibfehler_wird_gemeldet_und_nichts_gemerkt(self):
+        self.leser.schreib_antwort = {"ok": False, "grund": "schreibfehler", "typ": "ntag", "meldung": "Karte hat nicht geantwortet."}
+        self.leser.karte = ("04:AA:BB:CC", None)
+        self.auftrag()
+        self.runde()
+        st = karten.auftrag_status()
+        self.assertEqual((st["status"], st["grund"]), ("fehler", "schreibfehler"))
+        self.assertEqual(karten.liste(), [])
+
+    def test_karte_kurz_weg_beim_schreiben_versucht_es_weiter(self):
+        self.leser.schreib_antwort = {"ok": False, "grund": "keine_karte", "typ": None, "meldung": "Keine Karte erkannt."}
+        self.leser.karte = ("04:AA:BB:CC", None)
+        self.auftrag()
+        self.runde()
+        self.assertEqual(karten.auftrag_status()["status"], "wartet")
+
+    def test_fehler_im_leser_stoppt_den_player_nicht(self):
+        self.leser.schreib_fehler = OSError("SPI")
+        self.leser.karte = ("04:AA:BB:CC", None)
+        self.auftrag()
+        self.runde()
+        self.assertEqual(karten.auftrag_status()["status"], "fehler")
+        self.runde(2)                                                      # Schleife läuft weiter
+
+    def test_laufende_musik_der_karte_wird_beim_bespielen_pausiert(self):
+        self.leser.karte = ("04:AA:BB:CC", "https://open.spotify.com/album/4aawyAB9vmqN3uQ7FjRGTy")
+        self.runde(2)
+        self.pl.st.karte_auf.assert_called_once_with(self.AL)
+        self.pl.st.karte_weg.reset_mock()
+        self.auftrag(ueberschreiben=True)
+        self.runde()
+        self.pl.st.karte_weg.assert_called()
 
 
 class Faeden(unittest.TestCase):

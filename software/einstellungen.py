@@ -48,6 +48,10 @@ STANDARD = {
     },
     # Klang des Lautsprechers: Equalizer mit 10 Bändern (31 Hz … 16 kHz), je -24 … +6 dB (klang.py)
     "klang": {"baender": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]},
+    # Etiketten für die Karten (Freiform-Sticker an der Fotostation, Bogen 90 × 140 mm): Kantenlänge,
+    # Mindestabstand zum Bogenrand und zwischen den Stickern (Annahmen, mit dem Testbogen prüfen),
+    # weißer Rand um das Cover (Schnittzugabe) und Eckenradius, alles in Millimetern
+    "etikett": {"groesse_mm": 40, "rand_mm": 3, "abstand_mm": 4, "weiss_mm": 0.5, "ecke_mm": 3},
 }
 KLANG_MIN_DB, KLANG_MAX_DB = -24, 6
 
@@ -70,6 +74,15 @@ def _ganzzahl(wert, name, lo, hi):
     if not lo <= wert <= hi:
         raise ValueError(f"{name}: erlaubt sind {lo} bis {hi}")
     return wert
+
+
+def _zahl(wert, name, lo, hi):
+    """Kommazahl (z. B. Millimeter), auf 0,1 gerundet."""
+    if isinstance(wert, bool) or not isinstance(wert, (int, float)) or wert != wert:
+        raise ValueError(f"{name}: Zahl erwartet")
+    if not lo <= wert <= hi:
+        raise ValueError(f"{name}: erlaubt sind {lo:g} bis {hi:g}")
+    return round(float(wert), 1)
 
 
 def _zeit(wert, name):
@@ -178,11 +191,27 @@ def bereinigen(neu, basis):
             if not isinstance(v, list) or len(v) != 10:
                 raise ValueError("Klang: 10 Bänder erwartet")
             erg["klang"]["baender"] = [_ganzzahl(x, "Klang-Band", KLANG_MIN_DB, KLANG_MAX_DB) for x in v]
+    etikett = neu.get("etikett")
+    if etikett is not None:
+        if not isinstance(etikett, dict):
+            raise ValueError("etikett: Objekt erwartet")
+        grenzen = {"groesse_mm": ("Etikett-Größe", 20, 80), "rand_mm": ("Etikett-Bogenrand", 0, 20),
+                   "abstand_mm": ("Etikett-Abstand", 0, 20), "weiss_mm": ("Etikett-Weißrand", 0, 3),
+                   "ecke_mm": ("Etikett-Ecken", 0, 12)}
+        for k, v in etikett.items():
+            if k not in grenzen:
+                raise ValueError(f"etikett: unbekannter Wert '{k}'")
+            erg["etikett"][k] = _zahl(v, *grenzen[k])
+        e = erg["etikett"]
+        if e["groesse_mm"] > 90 - 2 * e["rand_mm"]:
+            raise ValueError("Etikett: so groß passt es nicht auf den Bogen (90 mm breit, Rand abziehen)")
+        if e["ecke_mm"] > e["groesse_mm"] / 2 - 1:
+            raise ValueError("Etikett: Ecken zu rund für diese Größe")
     b = erg["bedienung"]
     if b["touch_loslassen"] >= b["touch_schwelle"]:
         b["touch_loslassen"] = max(1, b["touch_schwelle"] // 2)
 
-    unbekannt = set(neu) - {"lautstaerke", "ruhezeit", "auto_aus", "bedienung", "klang"}
+    unbekannt = set(neu) - {"lautstaerke", "ruhezeit", "auto_aus", "bedienung", "klang", "etikett"}
     if unbekannt:
         raise ValueError("Unbekannte Einstellung: " + ", ".join(sorted(unbekannt)))
     return erg

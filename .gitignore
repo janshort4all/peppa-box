@@ -6,3 +6,4 @@ __pycache__/
 software/ansagen/*.wav
 !software/ansagen/peppa_box_bereit.wav
 !software/ansagen/start.wav
+!software/ansagen/netzteil.wav

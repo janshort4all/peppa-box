@@ -137,6 +137,8 @@ class Probelauf(unittest.TestCase):
         self.sp = FakeSp()
         self.aus = []
         self.aus_ok = True
+        self.spar = []
+        self.spar_ok = True
 
         def fabrik():
             if self.fabrik_fehler:
@@ -145,6 +147,7 @@ class Probelauf(unittest.TestCase):
             return self.leser
         self.pl = peppa_player.Player(sp=self.sp, leser_fabrik=fabrik, ansager=self.ansager, hardware=self.hw,
                                       ausschalten=lambda: (self.aus.append(1) or (self.aus_ok, "x")),
+                                      sparen=lambda: (self.spar.append(1) or (self.spar_ok, "x")),
                                       jetzt=self.uhr, schlaf=lambda s: None, log=lambda t: None)
         self.pl.st.karte_auf = mock.Mock(wraps=self.pl.st.karte_auf)
         self.pl.st.karte_weg = mock.Mock(wraps=self.pl.st.karte_weg)
@@ -219,13 +222,44 @@ class Probelauf(unittest.TestCase):
         self.pl.herunterfahren("Akku leer", "akku_leer")
         self.assertEqual(len(self.aus), 2)
 
-    def test_auto_aus_nutzt_herunterfahren_ohne_ansage(self):
+    def test_auto_aus_geht_in_den_sparzustand_ohne_ansage(self):
         einstellungen.speichern({"auto_aus": {"an": True, "minuten": 5}})
         self.pl.auto.letzte_aktivitaet = time.time() - 400
         self.pl.auto.spotify.spielt = lambda dev: False
         self.runde()
-        self.assertEqual(self.aus, [1])
+        self.assertEqual((self.spar, self.aus), ([1], []))
         self.assertNotIn("tschuess", self.ansager.gesagt)
+
+    def test_sparzustand_einmal_mit_aufraeumen_und_zuruecksetzen(self):
+        self.runde()
+        self.pl.st.dev = "D"
+        einstellungen.lauf_schreiben("gestartet", {"zeit": 1})
+        open(einstellungen.lauf_pfad("ansage-bereit"), "w").close()
+        self.pl.sparzustand("Ein-Taste", None)
+        self.pl.sparzustand("Ein-Taste", None)
+        self.assertEqual((self.spar, self.aus), ([1], []))               # nicht ausgeschaltet, nur einmal
+        self.assertEqual(self.ansager.gewartet, [None])                  # „Tschüss“ zu Ende abwarten
+        self.assertTrue(self.hw.schlaeft and self.leser.schlaeft)
+        self.assertEqual(self.sp.pausen, ["D"])
+        # wie ein Einschalten: Startlautstärke und „bereit“ gelten nach dem Aufwachen wieder
+        self.assertIsNone(einstellungen.lauf_lesen("gestartet"))
+        self.assertFalse(os.path.exists(einstellungen.lauf_pfad("ansage-bereit")))
+
+    def test_sparzustand_fehlschlag_neuer_versuch_moeglich(self):
+        self.spar_ok = False
+        self.pl.sparzustand("Ein-Taste", None)
+        self.assertFalse(self.pl.faehrt_runter)
+        self.pl.sparzustand("Ein-Taste", None)
+        self.assertEqual(len(self.spar), 2)
+
+    def test_akku_leer_schaltet_ganz_aus_nicht_sparzustand(self):
+        self.pl.herunterfahren("Akku leer", "akku_leer")
+        self.assertEqual((self.aus, self.spar), ([1], []))
+
+    def test_ausschalten_setzt_nichts_zurueck(self):
+        einstellungen.lauf_schreiben("gestartet", {"zeit": 1})
+        self.pl.herunterfahren("Eltern", None)
+        self.assertIsNotNone(einstellungen.lauf_lesen("gestartet"))
 
     def test_moment_und_kein_internet(self):
         st = self.pl.st

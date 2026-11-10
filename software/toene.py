@@ -49,6 +49,7 @@ STILLE_VORNE_S = 0.15
 
 ANSAGEN = {
     "start": "Hallo! Ich werde gerade wach.",
+    "ganz_aus": "Ich schalte mich jetzt ganz aus.",
     "bereit": "Peppa Box bereit – viel Spaß!",
     "tschuess": "Tschüss, bis bald!",
     "karte_leer": "Auf dieser Karte ist noch keine Musik.",
@@ -75,10 +76,11 @@ for _p, _w in ZAHLWORT.items():
 DATEINAMEN = {"bereit": "peppa_box_bereit.wav"}          # ältere Aufnahme mit eigenem Namen
 # Ohne Aufnahme nie die Sprachausgabe (klingt schlecht, und das erste Erzeugen kostet beim Start ca. 1 s):
 # dann lieber der kurze Ton
-NUR_AUFNAHME_ODER_TON = {"start"}
+NUR_AUFNAHME_ODER_TON = {"start", "ganz_aus"}
 
 # Töne, falls es keine Sprachausgabe gibt: (Frequenz Hz, Dauer s); 0 Hz = Pause
 TOENE = {
+    "ganz_aus": [(784, .15), (587, .15), (392, .35)],   # absteigend
     "start": [(659, .12), (880, .25)],              # zwei weiche, aufsteigende Töne (E5–A5), bis es eine Aufnahme gibt
     "bereit": [(523, .12), (659, .12), (784, .2)],
     "tschuess": [(784, .15), (659, .15), (523, .3)],

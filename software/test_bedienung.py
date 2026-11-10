@@ -109,6 +109,7 @@ class Basis(unittest.TestCase):
         self.regler = mock.Mock()
         self.gesagt = []
         self.aus = []
+        self.spar = []
         self.karte_liegt = (False, None)
         self.akku = {"spannung": 3.9, "prozent": 64, "richtung": "akku"}
         self.b = Bedienung(self.st, self.auto, self.regler, einstellungen, self.gesagt.append,
@@ -277,6 +278,70 @@ class EinTaste(Basis):
         self.lauf(16, taste=True)
         self.lauf(0.1, taste=False)
         self.assertEqual(self.aus, [])
+
+
+class EinTasteSparzustand(Basis):
+    """Mit Sparzustand: 2 s halten = Sparzustand, 10 s halten = ganz aus (beides erst beim Loslassen)."""
+
+    def drueck(self, dauer):
+        self.b.ein_taste(False, self.uhr.t)                 # Startwert: los
+        self.lauf(dauer, taste=True)
+        self.lauf(0.1, taste=False)
+
+    def setUp(self):
+        super().setUp()
+        self.b = Bedienung(self.st, self.auto, self.regler, einstellungen, self.gesagt.append,
+                           akku_info=lambda: self.akku, herunterfahren=lambda g, a: self.aus.append((g, a)),
+                           karte=lambda: self.karte_liegt, jetzt=self.uhr, uhr=self.wand,
+                           log=lambda t: None, timer=FakeTimer(einstellungen), laut=self.laut,
+                           sparzustand=lambda g, a: self.spar.append((g, a)))
+
+    def test_zwei_sekunden_sparzustand_beim_loslassen(self):
+        self.b.ein_taste(False, self.uhr.t)
+        self.lauf(2.1, taste=True)
+        self.assertEqual(self.gesagt, ["tschuess"])
+        self.assertIn(("pausieren",), self.st.aufrufe)
+        self.assertEqual((self.spar, self.aus), ([], []))                # noch gedrückt: noch nichts
+        self.lauf(3.0, taste=True)                                       # 5 s: immer noch Sparzustand
+        self.assertEqual((self.spar, self.aus), ([], []))
+        self.lauf(0.1, taste=False)
+        self.assertEqual((self.spar, self.aus), ([("Ein-Taste", None)], []))
+        self.assertEqual(self.gesagt, ["tschuess"])
+
+    def test_zehn_sekunden_ganz_aus_beim_loslassen(self):
+        self.b.ein_taste(False, self.uhr.t)
+        self.lauf(10.2, taste=True)
+        self.assertEqual(self.gesagt, ["tschuess", "ganz_aus"])
+        self.assertEqual((self.spar, self.aus), ([], []))
+        self.lauf(0.1, taste=False)
+        self.assertEqual((self.spar, self.aus), ([], [("Ein-Taste", None)]))
+
+    def test_kurz_bleibt_akkustand(self):
+        self.drueck(0.3)
+        self.assertEqual(self.gesagt, ["akku_60"])
+        self.assertEqual((self.spar, self.aus), ([], []))
+
+    def test_klemmt_weder_sparzustand_noch_aus(self):
+        self.b.ein_taste(False, self.uhr.t)
+        self.lauf(16, taste=True)
+        self.lauf(0.1, taste=False)
+        self.assertEqual((self.spar, self.aus), ([], []))
+
+    def test_nach_sparzustand_wieder_normal(self):
+        self.b.ein_taste(False, self.uhr.t)
+        self.lauf(2.1, taste=True)
+        self.lauf(0.1, taste=False)
+        self.gesagt.clear()
+        self.drueck(0.3)
+        self.assertEqual(self.gesagt, ["akku_60"])                       # Merker zurückgesetzt
+        self.lauf(10.2, taste=True)
+
+    def test_belegung_nennt_beide_gesten(self):
+        import bedienung
+        taste = [x for x in bedienung.belegung(einstellungen.laden())["elemente"] if x["id"] == "taste"][0]
+        texte = " ".join(g["wie"] + " " + g["was"] for g in taste["gesten"])
+        self.assertIn("Sparzustand", texte)
+        self.assertIn("ganz aus", texte)
 
     def test_beim_start_gedrueckt_wird_ignoriert(self):
         self.b.ein_taste(True, self.uhr.t)

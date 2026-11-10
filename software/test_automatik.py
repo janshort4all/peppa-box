@@ -94,6 +94,12 @@ class EinstellungenTest(Basis):
         self.assertEqual(c["lautstaerke"]["kopfhoerer"]["max"], 50)
         self.assertEqual(c["lautstaerke"]["lautsprecher"], einst.STANDARD["lautstaerke"]["lautsprecher"])
 
+    def test_sparzustand_standard_6_stunden_und_aenderbar(self):
+        self.assertEqual(einst.laden()["sparzustand"], {"aus_nach_h": 6})
+        einst.speichern({"sparzustand": {"aus_nach_h": 12}})
+        self.assertEqual(einst.laden()["sparzustand"]["aus_nach_h"], 12)
+        self.assertTrue(einst.laden()["auto_aus"]["minuten"])                 # Rest bleibt
+
     def test_start_nie_ueber_maximum(self):
         einst.speichern({"lautstaerke": {"kopfhoerer": {"max": 20}}})   # Start stand auf 30
         self.assertEqual(einst.laden()["lautstaerke"]["kopfhoerer"]["start"], 20)
@@ -103,7 +109,9 @@ class EinstellungenTest(Basis):
                     {"lautstaerke": {"kopfhoerer": {"max": "laut"}}}, {"lautstaerke": {"kopfhoerer": {"max": True}}},
                     {"lautstaerke": {"radio": {"max": 50}}}, {"ruhezeit": {"von": "25:00"}},
                     {"ruhezeit": {"von": "19:30", "bis": "19:30"}}, {"ruhezeit": {"modus": "stumm"}},
-                    {"auto_aus": {"minuten": 1}}, {"auto_aus": {"an": "ja"}}, {"unbekannt": 1}, [], "x"]
+                    {"auto_aus": {"minuten": 1}}, {"auto_aus": {"an": "ja"}}, {"unbekannt": 1}, [], "x",
+                    {"sparzustand": {"aus_nach_h": 0}}, {"sparzustand": {"aus_nach_h": 49}},
+                    {"sparzustand": {"aus_nach_h": "viel"}}, {"sparzustand": {"anders": 1}}, {"sparzustand": 6}]
         for s in schlecht:
             with self.assertRaises(ValueError, msg=str(s)):
                 einst.speichern(s)

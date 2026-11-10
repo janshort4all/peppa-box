@@ -31,6 +31,9 @@ STANDARD = {
     # Box ausschalten, wenn so lange nichts gespielt wird. Standard aus, damit sie nicht mitten in
     # einer Wartung (Update, Test) von selbst herunterfährt.
     "auto_aus": {"an": False, "minuten": 30},
+    # Sparzustand (Ein-Taste 2 s halten, oder Auto-Aus): WLAN, Raspotify, Player und Eltern-Seite sind aus,
+    # nur die Ein-Taste wird beachtet. Nach dieser Zeit schaltet sich die Box ganz aus (Akku schonen).
+    "sparzustand": {"aus_nach_h": 6},
     # Bedienung am Gerät (Touchfelder, Drehknopf, Kopfhörer-Erkennung)
     "bedienung": {
         # MPR121: Berührung zählt, wenn der Messwert um so viel unter der Grundlinie liegt;
@@ -151,6 +154,16 @@ def bereinigen(neu, basis):
             else:
                 raise ValueError(f"auto_aus: unbekannter Wert '{k}'")
 
+    spar = neu.get("sparzustand")
+    if spar is not None:
+        if not isinstance(spar, dict):
+            raise ValueError("sparzustand: Objekt erwartet")
+        for k, v in spar.items():
+            if k == "aus_nach_h":
+                erg["sparzustand"]["aus_nach_h"] = _ganzzahl(v, "Sparzustand aus_nach_h", 1, 48)
+            else:
+                raise ValueError(f"sparzustand: unbekannter Wert '{k}'")
+
     bed = neu.get("bedienung")
     if bed is not None:
         if not isinstance(bed, dict):
@@ -211,7 +224,7 @@ def bereinigen(neu, basis):
     if b["touch_loslassen"] >= b["touch_schwelle"]:
         b["touch_loslassen"] = max(1, b["touch_schwelle"] // 2)
 
-    unbekannt = set(neu) - {"lautstaerke", "ruhezeit", "auto_aus", "bedienung", "klang", "etikett"}
+    unbekannt = set(neu) - {"lautstaerke", "ruhezeit", "auto_aus", "sparzustand", "bedienung", "klang", "etikett"}
     if unbekannt:
         raise ValueError("Unbekannte Einstellung: " + ", ".join(sorted(unbekannt)))
     return erg

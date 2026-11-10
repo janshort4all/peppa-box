@@ -3,6 +3,7 @@
 #   peppa-player  Karten lesen, Spotify steuern
 #   peppa-web     Eltern-Seite (Zustand, Neustart, Ausschalten, Update), Port 80 und 8080
 #   peppa-startton  Startton sofort nach dem Einschalten (ohne auf WLAN/Spotify zu warten)
+#   peppa-standby / peppa-aufwachen  Sparzustand (Ein-Taste 2 s halten): WLAN aus, nur die Ein-Taste wacht
 # Dazu: sudo-Freigabe nur fuer die Befehle, die die Eltern-Seite braucht (/etc/sudoers.d/peppa-box),
 # und die Gruppen fuer Akku/Touch (i2c), Protokoll (adm), Stromversorgung (video), Lautstaerke (audio),
 # Ein-Taste/Klinke/Verstaerker (gpio), Kartenleser (spi) und Drehknopf (input).
@@ -141,6 +142,60 @@ for T in apt-daily.timer apt-daily-upgrade.timer man-db.timer dpkg-db-backup.tim
     fi
 done
 
+# --- Sparzustand (10.11.2026): Ein-Taste 2 s halten oder Auto-Aus. Der Pi 3A+ kann nicht schlafen, darum:
+#     Player, Eltern-Seite, Raspotify und WLAN-Suche beenden, WLAN aus, kleine Wache (sparzustand.py) wartet
+#     auf die Ein-Taste und schaltet nach der eingestellten Zeit (Standard 6 Std) ganz aus.
+#     Aufwachen: Startton sofort, parallel WLAN an und Dienste starten (peppa-aufwachen).
+#     Root-Helfer als root-eigene Kopie (die Dienste laufen als root, die Datei im Repository darf der Benutzer aendern).
+sudo install -d -m 0755 -o root -g root /usr/local/lib/peppa-box
+sudo install -m 0755 -o root -g root "$ORDNER/sparen.sh" /usr/local/lib/peppa-box/sparen
+sudo tee /etc/systemd/system/peppa-standby.service > /dev/null <<EOF
+# Peppa Box (erzeugt von dienst_einrichten.sh): Sparzustand. Nicht aktiviert: wird vom Player gestartet.
+[Unit]
+Description=Peppa Box Sparzustand (WLAN aus, wartet auf die Ein-Taste)
+After=peppa-stille.service NetworkManager.service
+
+[Service]
+Type=simple
+User=$BENUTZER
+WorkingDirectory=$ORDNER
+# "+" = als root. Beenden und WLAN aus; beim Verlassen (auch beim Ausschalten) WLAN wieder an, denn
+# NetworkManager merkt sich "WLAN aus" ueber einen Neustart
+ExecStartPre=+/usr/local/lib/peppa-box/sparen ein
+ExecStart=/usr/bin/python3 $ORDNER/sparzustand.py
+ExecStopPost=+/usr/local/lib/peppa-box/sparen wlan-an
+Environment=PYTHONUNBUFFERED=1
+Restart=no
+EOF
+sudo tee /etc/systemd/system/peppa-aufwachen.service > /dev/null <<EOF
+# Peppa Box (erzeugt von dienst_einrichten.sh): aus dem Sparzustand aufwachen. Wird von sparzustand.py gestartet.
+[Unit]
+Description=Peppa Box aufwachen (WLAN an, Dienste starten)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/peppa-box/sparen aus
+TimeoutStartSec=60
+EOF
+# Sicherung: ging die Box (leerer Akku, Netzteil gezogen) im Sparzustand aus, ohne dass "WLAN an" lief,
+# kaeme sie sonst ohne WLAN hoch (NetworkManager merkt sich "aus"). Beim Hochfahren immer WLAN an.
+if command -v nmcli > /dev/null; then
+    sudo tee /etc/systemd/system/peppa-wlan-an.service > /dev/null <<EOF
+# Peppa Box (erzeugt von dienst_einrichten.sh): nach dem Hochfahren WLAN sicher an (Sicherung zum Sparzustand)
+[Unit]
+Description=Peppa Box WLAN sicher an
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=-$(command -v nmcli) radio wifi on
+
+[Install]
+WantedBy=multi-user.target
+EOF
+fi
+
 # --- Eltern-Seite
 sudo tee /etc/systemd/system/peppa-web.service > /dev/null <<EOF
 [Unit]
@@ -177,7 +232,7 @@ sudo install -m 0755 -o root -g root "$ORDNER/ereignis.py" /usr/local/lib/peppa-
 TMP="$(mktemp)"
 cat > "$TMP" <<EOF
 # Peppa Box: Befehle fuer Eltern-Seite (peppa-web) und Selbstreparatur des Players. Erzeugt von dienst_einrichten.sh.
-$BENUTZER ALL=(root) NOPASSWD: $SYSTEMCTL poweroff, $SYSTEMCTL reboot, $SYSTEMCTL restart peppa-player, $SYSTEMCTL restart raspotify, $SYSTEMCTL restart peppa-stille, $HELFER zeigen, $HELFER neustart, $HELFER lautsprecher, $HELFER kopfhoerer
+$BENUTZER ALL=(root) NOPASSWD: $SYSTEMCTL poweroff, $SYSTEMCTL reboot, $SYSTEMCTL restart peppa-player, $SYSTEMCTL restart raspotify, $SYSTEMCTL restart peppa-stille, $SYSTEMCTL start --no-block peppa-standby.service, $SYSTEMCTL start --no-block peppa-aufwachen.service, $HELFER zeigen, $HELFER neustart, $HELFER lautsprecher, $HELFER kopfhoerer
 EOF
 if sudo visudo -cf "$TMP" > /dev/null; then
     sudo install -m 0440 -o root -g root "$TMP" /etc/sudoers.d/peppa-box
@@ -301,6 +356,7 @@ sh "$ORDNER/bedienung_einrichten.sh" || echo "Bedienung-Einrichtung mit Fehler b
 
 sudo systemctl daemon-reload
 sudo systemctl enable peppa-player peppa-web peppa-startton
+command -v nmcli > /dev/null && sudo systemctl enable peppa-wlan-an > /dev/null 2>&1
 if [ "$SUCHE_NEU" = 1 ]; then
     sudo systemctl enable peppa-wlan-suche > /dev/null 2>&1
     sudo systemctl restart peppa-wlan-suche

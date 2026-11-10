@@ -131,11 +131,13 @@ export function zeiten(w, signal) {
           <input type="range" id="rleise" min="5" max="100" step="5" aria-label="Höchstlautstärke in der Ruhezeit"></div>
         <p class="leise klein" id="ruhr"></p>
         <button class="btn haupt" id="rspeichern">Speichern</button></details></section>
-    <section class="k"><label class="zeile"><span><span class="wert">Automatisch ausschalten</span><br><span class="leise klein" id="atext">–</span></span>
-        <input type="checkbox" class="schalter" id="aan" aria-label="Automatisch ausschalten"></label>
-      <label class="zeile"><span>Ausschalten nach</span><select id="amin"><option value="10">10 Min</option><option value="20">20 Min</option>
+    <section class="k"><label class="zeile"><span><span class="wert">Automatisch in den Sparzustand</span><br><span class="leise klein" id="atext">–</span></span>
+        <input type="checkbox" class="schalter" id="aan" aria-label="Automatisch in den Sparzustand"></label>
+      <label class="zeile"><span>Sparzustand nach</span><select id="amin"><option value="10">10 Min</option><option value="20">20 Min</option>
         <option value="30">30 Min</option><option value="60">60 Min</option><option value="120">2 Std</option></select></label>
-      <p class="leise klein" style="margin-bottom:0">Die Box schaltet sich aus, wenn so lange keine Musik läuft. Solange diese Seite geöffnet ist, bleibt sie an.</p></section>`;
+      <label class="zeile"><span>Im Sparzustand ganz aus nach</span><select id="smin"><option value="2">2 Std</option><option value="6">6 Std</option>
+        <option value="12">12 Std</option><option value="24">24 Std</option></select></label>
+      <p class="leise klein" style="margin-bottom:0">Wenn so lange keine Musik läuft, geht die Box in den Sparzustand: WLAN aus, diese Seite nicht erreichbar, nur die Ein-Taste wacht und weckt sofort (mit Startton). Dasselbe passiert, wenn man die Ein-Taste 2 Sekunden hält. Nach der unteren Zeit schaltet sie sich dort ganz aus; 10 Sekunden halten schaltet sofort ganz aus. Solange diese Seite geöffnet ist, bleibt sie an.</p></section>`;
   timerBinden(w, signal);
   einstLaden();
 
@@ -148,6 +150,7 @@ export function zeiten(w, signal) {
   $('#ran', w).addEventListener('change', e => speichern({ruhezeit: {an: e.target.checked}}), {signal});
   $('#aan', w).addEventListener('change', e => speichern({auto_aus: {an: e.target.checked}}), {signal});
   $('#amin', w).addEventListener('change', e => speichern({auto_aus: {minuten: +e.target.value}}), {signal});
+  $('#smin', w).addEventListener('change', e => speichern({sparzustand: {aus_nach_h: +e.target.value}}), {signal});
   $('#rspeichern', w).addEventListener('click', async () => {
     const e = await speichern({ruhezeit: {von: $('#rvon', w).value, bis: $('#rbis', w).value, modus: $('#rmodus', w).value, leise_max: +$('#rleise', w).value}}, true);
     if (e.ok) geaendert = false;                              // bei Fehler: Eingaben stehen lassen
@@ -163,7 +166,7 @@ export function zeiten(w, signal) {
   });
   abo(signal, 'zustand', () => {
     const t = S.zustand && S.zustand.zeiten; if (!t) return;
-    const r = t.ruhezeit, a = t.auto_aus, aktiv = document.activeElement;
+    const r = t.ruhezeit, a = t.auto_aus, sp = t.sparzustand || {aus_nach_h: 6}, aktiv = document.activeElement;
     if (aktiv !== $('#ran', w)) $('#ran', w).checked = r.an;
     $('#rtext', w).textContent = !r.an ? 'aus' : `${r.von} bis ${r.bis} Uhr · ` + (r.modus === 'leiser' ? `leiser, höchstens ${r.leise_max}${NB}%` : 'keine Musik');
     $('#raktiv', w).classList.toggle('versteckt', !(r.aktiv || r.ausgesetzt));
@@ -176,7 +179,11 @@ export function zeiten(w, signal) {
       if (![...$('#amin', w).options].some(o => +o.value === a.minuten)) $('#amin', w).add(new Option(a.minuten + ' Min', a.minuten));
       $('#amin', w).value = a.minuten;
     }
-    $('#atext', w).textContent = a.an ? `nach ${a.minuten} Min ohne Musik` : 'aus';
+    if (aktiv !== $('#smin', w)) {
+      if (![...$('#smin', w).options].some(o => +o.value === sp.aus_nach_h)) $('#smin', w).add(new Option(sp.aus_nach_h + ' Std', sp.aus_nach_h));
+      $('#smin', w).value = sp.aus_nach_h;
+    }
+    $('#atext', w).textContent = a.an ? `Sparzustand nach ${a.minuten} Min ohne Musik, ganz aus nach ${sp.aus_nach_h} Std` : 'aus (die Ein-Taste geht trotzdem)';
   });
 }
 

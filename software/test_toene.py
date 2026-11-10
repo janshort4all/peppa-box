@@ -330,6 +330,11 @@ class Startton(Basis):
         self.assertIn("start", toene.ANSAGEN)
         self.assertIn("start", toene.TOENE)
 
+    def test_ganz_aus_ist_ansage_ohne_sprachausgabe(self):
+        self.assertIn("ganz_aus", toene.ANSAGEN)
+        self.assertIn("ganz_aus", toene.TOENE)
+        self.assertIn("ganz_aus", toene.NUR_AUFNAHME_ODER_TON)
+
 
 class StarttonQuelle(Basis):
     def test_ohne_aufnahme_nie_sprachausgabe_sondern_ton(self):

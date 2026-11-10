@@ -12,7 +12,9 @@ Belegung (Verdrahtungsplan 08.11.2026; welche Elektrode welches Feld ist, steht 
   Drehknopf   Lautstärke (2 % je Raste, Einstellung), nie über die Höchstlautstärke, nie unter 5 %
   Ein-Taste   ausgeschaltet: einschalten (das macht der Pi selbst: GPIO 3 nach Masse weckt ihn)
               kurz drücken: Akkustand ansagen
-              2 s halten: „Tschüss“, Musik pausiert, beim Loslassen ausschalten
+              2 s halten: „Tschüss“, Musik pausiert, beim Loslassen in den Sparzustand
+              (WLAN aus, nur die Ein-Taste wacht; sparzustand.py; weckt sofort mit Startton)
+              10 s halten: „Ich schalte mich jetzt ganz aus“, beim Loslassen ganz aus
               (erst beim Loslassen, sonst weckte die noch gedrückte Taste den Pi sofort wieder)
 Schutz gegen Fehlbedienung: Berührungen unter 70 ms lösen nichts aus (Rauschen, kein Finger; das
 Protokoll zählt sie zusammengefasst); mehrere Felder gleichzeitig (Hand auf dem Deckel) lösen nichts aus;
@@ -45,7 +47,8 @@ KLICK_FELDER = ("zurueck", "play", "vor")   # nicht "schlaf" (Mond), nicht die E
 TIPP_MIN_S = 0.07         # kürzer = kein Finger, sondern Rauschen (Phantom-Berührung, Befund 09.11.2026)
 KURZ_MELDEN_S = 60.0      # ignorierte Phantom-Berührungen höchstens so oft zusammengefasst melden
 AKKU_HALTEN_S = 5.0
-AUS_HALTEN_S = 2.0
+AUS_HALTEN_S = 2.0           # Ein-Taste: Sparzustand
+GANZ_AUS_HALTEN_S = 10.0     # Ein-Taste: ganz ausschalten (Eltern)
 TASTE_MIN_S = 0.05
 TASTE_KLEMMT_S = 15.0
 TIMER_STUFEN = (15, 30, 45, 60)
@@ -68,7 +71,9 @@ LIVE_MIN_S, LIVE_MAX_S = 0.2, 2.0
 
 class Bedienung:
     def __init__(self, st, auto, regler, einst, sagen, akku_info, herunterfahren, karte,
-                 jetzt=time.monotonic, uhr=time.time, log=print, timer=automatik, laut=None, klick=None):
+                 jetzt=time.monotonic, uhr=time.time, log=print, timer=automatik, laut=None, klick=None,
+                 sparzustand=None):
+        self.sparzustand = sparzustand   # (Grund, Ansage) -> Sparzustand; ohne: die Ein-Taste schaltet ganz aus
         self.st, self.auto, self.regler, self.einst = st, auto, regler, einst
         self.sagen_roh, self.akku_info, self.herunterfahren, self.karte = sagen, akku_info, herunterfahren, karte
         self.jetzt, self.uhr, self.log, self.timer, self.laut = jetzt, uhr, log, timer, laut
@@ -83,6 +88,7 @@ class Bedienung:
         self.taste_gesperrt = None       # None = noch kein Wert; True = beim Start gedrückt, erst loslassen
         self.taste_start = None
         self.taste_aus = False
+        self.taste_ganz_aus = False
         self.taste_klemmt = False
 
     # ------------------------------------------------------------ Hilfen
@@ -218,14 +224,20 @@ class Bedienung:
             dauer = t - self.taste_start
             if dauer >= TASTE_KLEMMT_S:
                 if not self.taste_klemmt:
-                    self.taste_klemmt, self.taste_aus = True, False
+                    self.taste_klemmt, self.taste_aus, self.taste_ganz_aus = True, False, False
                     self.log("Ein-Taste über 15 s gedrückt – klemmt sie? Es wird nicht ausgeschaltet.")
                 return
             if dauer >= AUS_HALTEN_S and not self.taste_aus and not self.taste_klemmt:
                 self.taste_aus = True
-                self.log("Ein-Taste 2 s gehalten: Box geht beim Loslassen aus.")
+                ziel = "in den Sparzustand" if self.sparzustand else "aus"
+                self.log(f"Ein-Taste 2 s gehalten: Box geht beim Loslassen {ziel}.")
                 self.st.pausieren()
                 self._sagen("tschuess")
+            if (dauer >= GANZ_AUS_HALTEN_S and self.taste_aus and not self.taste_ganz_aus
+                    and not self.taste_klemmt and self.sparzustand):
+                self.taste_ganz_aus = True
+                self.log("Ein-Taste 10 s gehalten: Box schaltet beim Loslassen ganz aus.")
+                self._sagen("ganz_aus")
             return
         # losgelassen
         if self.taste_gesperrt:
@@ -238,8 +250,11 @@ class Bedienung:
             self.taste_klemmt = False
             return
         if self.taste_aus:
-            self.taste_aus = False
-            self.herunterfahren("Ein-Taste", None)        # „Tschüss“ lief schon
+            ganz, self.taste_aus, self.taste_ganz_aus = self.taste_ganz_aus, False, False
+            if ganz or not self.sparzustand:
+                self.herunterfahren("Ein-Taste", None)    # „Tschüss“ bzw. „ganz aus“ lief schon
+            else:
+                self.sparzustand("Ein-Taste", None)
             return
         if dauer >= TASTE_MIN_S:
             self.akku_ansagen()
@@ -370,7 +385,9 @@ def belegung(cfg=None):
         {"id": "taste", "symbol": "⏻", "name": "Ein-Taste", "ort": "Deckel hinten rechts", "klick": False,
          "gesten": [g("drücken, wenn aus", "einschalten"),
                     g("kurz drücken", "Akkustand ansagen"),
-                    g(f"{_s(AUS_HALTEN_S)} halten", "„Tschüss“, Musik pausiert, beim Loslassen ausschalten", True)]},
+                    g(f"{_s(AUS_HALTEN_S)} halten", "„Tschüss“, Musik pausiert, beim Loslassen in den Sparzustand "
+                                                     "(WLAN aus, die Ein-Taste weckt sofort)", True),
+                    g(f"{_s(GANZ_AUS_HALTEN_S)} halten", "„Ich schalte mich jetzt ganz aus“, beim Loslassen ganz aus", True)]},
         {"id": "karte", "symbol": "▭", "name": "Karte", "ort": "Kartenschlitz", "klick": False,
          "gesten": [g("einstecken", "Playlist der Karte startet an der gemerkten Stelle (zu Ende gehört: von vorn)"),
                     g("herausnehmen", "Pause; Stelle wird gemerkt")]},

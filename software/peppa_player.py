@@ -20,7 +20,8 @@ Zustand für die Eltern-Seite: /dev/shm/peppa-box-status.json (jede Sekunde) und
 Hängt ein Faden über 30 s, beendet sich der Player; systemd startet ihn neu (Restart=always). Hängt
 die Hauptschleife, startet ihn der systemd-Watchdog neu (WatchdogSec=30).
 Ausschalten (Ein-Taste, Auto-Aus, Akku leer): Musik pausieren, ggf. Ansage, Touch-Chip und
-Kartenleser schlafen legen, dann systemctl poweroff.
+Kartenleser schlafen legen, dann systemctl poweroff. Ein-Taste 2 s und Auto-Aus gehen stattdessen in den
+Sparzustand (sparzustand.py): gleiche Schritte, dann Dienst peppa-standby (WLAN aus, dieser Player endet).
 
 Start von Hand: python3 ~/peppa-box/software/peppa_player.py   (läuft sonst als Dienst peppa-player)
 """
@@ -153,10 +154,19 @@ def poweroff():
     return r.returncode == 0, (r.stdout + r.stderr).strip()
 
 
+def in_sparzustand():
+    """Dienst peppa-standby starten (WLAN aus, Betrieb beenden, Wache für die Ein-Taste). --no-block: der
+    Dienst beendet unter anderem diesen Player, der Aufruf darf nicht darauf warten."""
+    r = subprocess.run(["sudo", "-n", SYSTEMCTL, "start", "--no-block", "peppa-standby.service"],
+                       capture_output=True, text=True, timeout=30)
+    return r.returncode == 0, (r.stdout + r.stderr).strip()
+
+
 class Player:
     def __init__(self, sp=spotify, leser_fabrik=leser_einrichten, ansager=None, hardware=None, klicker=None,
-                 ausschalten=poweroff, jetzt=time.monotonic, schlaf=time.sleep, log=log):
+                 ausschalten=poweroff, jetzt=time.monotonic, schlaf=time.sleep, log=log, sparen=in_sparzustand):
         self.sp, self.leser_fabrik, self.ausschalten_befehl = sp, leser_fabrik, ausschalten
+        self.sparen_befehl = sparen
         self.jetzt, self.schlaf, self.log = jetzt, schlaf, log
         self.zustand = {"karte": None, "link": None, "spotify_bereit": False, "problem": None, "leser": None}
         self.ansager = ansager or toene.Ansager(log=log)
@@ -170,7 +180,7 @@ class Player:
                             fortschritt=self.fortschritt)
         self._spielte = None                    # Karte, die im letzten Durchlauf lief
         self.auto = automatik.Automatik(SpotifyFuerAutomatik(self.st, sp), lautstaerke, einstellungen, log=log,
-                                        ausschalten=lambda: self.herunterfahren("Auto-Aus", None))
+                                        ausschalten=lambda: self.sparzustand("Auto-Aus", None))
         self.regler = bedienung.Regler(lautstaerke, einstellungen, log=log)
         self.akkuwache = akku.Akkuwache(lesen=akku_lesen_gesperrt, ansage=self.ansager.sagen,
                                         ausschalten=self.herunterfahren, log=log)
@@ -179,7 +189,8 @@ class Player:
         self.bed = bedienung.Bedienung(self.st, self.auto, self.regler, einstellungen, sagen=self.ansager.sagen,
                                        akku_info=lambda: self.akkuwache.status,
                                        herunterfahren=self.herunterfahren, karte=self.karte_info,
-                                       log=log, laut=lautstaerke, klick=self.klicker.klick)
+                                       log=log, laut=lautstaerke, klick=self.klicker.klick,
+                                       sparzustand=self.sparzustand)
         self.drehgeber = drehgeber.Drehgeber(self.bed.drehen, log=log)
         self.hw = hardware or bedienung.Hardware(self.bed, self.ausgang, self.akkuwache, einstellungen,
                                                  drehgeber=self.drehgeber, log=log)
@@ -421,12 +432,26 @@ class Player:
 
     # ------------------------------------------------------------ Ausschalten
 
-    def herunterfahren(self, grund, ansage="tschuess"):
+    def sparzustand(self, grund, ansage="tschuess"):
+        """In den Sparzustand (Ein-Taste 2 s, Auto-Aus): wie Ausschalten, aber der Pi läuft weiter, WLAN und
+        Dienste sind aus, nur die Ein-Taste wacht (sparzustand.py). Aufwachen wie ein Einschalten:
+        Startlautstärke und „bereit“ gelten wieder."""
+        self.herunterfahren(grund, ansage, ziel="sparen")
+
+    def _fuers_aufwachen_zuruecksetzen(self):
+        einstellungen.lauf_loeschen("gestartet")                      # Startlautstärke wieder setzen
+        try:
+            os.remove(einstellungen.lauf_pfad("ansage-bereit"))      # „bereit“ wieder ansagen
+        except OSError:
+            pass
+
+    def herunterfahren(self, grund, ansage="tschuess", ziel="aus"):
         with self._aus_sperre:
             if self.faehrt_runter:
                 return
             self.faehrt_runter = True
-        self.log(f"Ausschalten ({grund}).")
+        sparen = ziel == "sparen"
+        self.log(f"{'Sparzustand' if sparen else 'Ausschalten'} ({grund}).")
         self.st.pausieren()
         dev = self.st.dev
 
@@ -444,9 +469,11 @@ class Player:
             self.ansager.warten(5)              # z. B. „Tschüss“ der Ein-Taste zu Ende sprechen lassen
         p.join(3)
         self.aufraeumen()
-        ok, aus = self.ausschalten_befehl()
+        if sparen:
+            self._fuers_aufwachen_zuruecksetzen()
+        ok, aus = (self.sparen_befehl if sparen else self.ausschalten_befehl)()
         if not ok:
-            self.log(f"Ausschalten fehlgeschlagen: {aus}")
+            self.log(f"{'Sparzustand' if sparen else 'Ausschalten'} fehlgeschlagen: {aus}")
             with self._aus_sperre:
                 self.faehrt_runter = False
 

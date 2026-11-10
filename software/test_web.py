@@ -523,7 +523,7 @@ class Seite(unittest.TestCase):
         doppelt = {i: [g["wie"] for g in e["gesten"] if g["doppelt"]] for i, e in el.items()}
         self.assertEqual(doppelt["play"], ["2 s halten"])
         self.assertEqual(doppelt["schlaf"], ["5 s halten"])
-        self.assertEqual(doppelt["taste"], ["2 s halten"])
+        self.assertEqual(doppelt["taste"], ["2 s halten", "10 s halten"])
         self.assertEqual(doppelt["vor"], ["halten (ab 0,7 s)"])
         self.assertEqual(doppelt["drehknopf"], [])
         self.assertIn("15 → 30 → 45 → 60 Min → aus", el["schlaf"]["gesten"][0]["was"])
@@ -546,6 +546,12 @@ class Seite(unittest.TestCase):
         self.assertEqual(el["play"]["gesten"][1]["wie"], "3 s halten")
         self.assertEqual(el["zurueck"]["gesten"][1]["wie"], "halten (ab 0,5 s)")
 
+    def test_belegung_ein_taste_sparzustand_und_ganz_aus(self):
+        el = {e["id"]: e for e in self.holen("/api/belegung")["elemente"]}
+        gesten = {g["wie"]: g["was"] for g in el["taste"]["gesten"]}
+        self.assertIn("Sparzustand", gesten["2 s halten"])
+        self.assertIn("ganz aus", gesten["10 s halten"])
+
     def test_seite_enthaelt_alle_bisherigen_funktionen(self):
         """Der Funktionsumfang der alten Seite ist in der neuen Oberfläche vollständig (Alltag + Entwickler)."""
         def modul(name):
@@ -566,7 +572,7 @@ class Seite(unittest.TestCase):
                       b"'dev/etiketten'", b"'dev/system'"):
             self.assertIn(seite, js)
         # Teile, die es vorher gab
-        for teil in ("Schlummer-Timer", "Ruhezeit", "Automatisch ausschalten", "Höchstlautstärke", "Equalizer", "Prüfen und einstellen",
+        for teil in ("Schlummer-Timer", "Ruhezeit", "Automatisch in den Sparzustand", "Im Sparzustand ganz aus nach", "Höchstlautstärke", "Equalizer", "Prüfen und einstellen",
                      "Was die Tasten können", "Ansagen anhören", "Letzte Meldungen der Box", "Diagnose", "Nach Updates suchen",
                      "Zurück zur vorherigen Version", "Musik neu starten", "Box neu starten", "Ausschalten"):
             self.assertTrue(teil in alles, teil)

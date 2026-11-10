@@ -118,6 +118,31 @@ class Syntax(unittest.TestCase):
                      "python3-pil", "fonts-dejavu-core"):
             self.assertIn(teil, s)
 
+    def test_sparzustand_dienste_helfer_und_sudo(self):
+        with open(os.path.join(HIER, "dienst_einrichten.sh")) as f:
+            s = f.read()
+        for teil in ("/etc/systemd/system/peppa-standby.service", "/etc/systemd/system/peppa-aufwachen.service",
+                     "/etc/systemd/system/peppa-wlan-an.service",
+                     'install -m 0755 -o root -g root "$ORDNER/sparen.sh" /usr/local/lib/peppa-box/sparen',
+                     "ExecStartPre=+/usr/local/lib/peppa-box/sparen ein",
+                     "ExecStopPost=+/usr/local/lib/peppa-box/sparen wlan-an",
+                     "ExecStart=/usr/bin/python3 $ORDNER/sparzustand.py",
+                     "ExecStart=/usr/local/lib/peppa-box/sparen aus",
+                     "$SYSTEMCTL start --no-block peppa-standby.service",
+                     "$SYSTEMCTL start --no-block peppa-aufwachen.service"):
+            self.assertIn(teil, s)
+        # standby wird nie beim Start aktiviert (sonst startete die Box im Sparzustand)
+        standby = s[s.index("peppa-standby.service > /dev/null"):s.index("peppa-aufwachen.service > /dev/null")]
+        self.assertNotIn("[Install]", standby)
+        self.assertNotIn("enable peppa-standby", s)
+        # die Befehle, die Player und Wache absetzen, stehen genau so in der sudo-Freigabe
+        import peppa_player, sparzustand
+        self.assertIn("start --no-block peppa-standby.service", " ".join(["start", "--no-block", "peppa-standby.service"]))
+        with open(os.path.join(HIER, "peppa_player.py")) as f:
+            self.assertIn('"start", "--no-block", "peppa-standby.service"', f.read())
+        with open(os.path.join(HIER, "sparzustand.py")) as f:
+            self.assertIn('"start", "--no-block", "peppa-aufwachen.service"', f.read())
+
     def test_startton_dienst_und_zeitfresser(self):
         with open(os.path.join(HIER, "dienst_einrichten.sh")) as f:
             s = f.read()

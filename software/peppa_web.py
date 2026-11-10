@@ -222,6 +222,7 @@ def zeiten_info(cfg, jetzt):
         "timer": {"rest_s": max(0, int(t["ende"] - jetzt)), "minuten": t.get("minuten")} if t else None,
         "ruhezeit": dict(r, aktiv=aktiv, ausgesetzt=r["an"] and im_fenster and not aktiv),
         "auto_aus": cfg["auto_aus"],
+        "sparzustand": cfg["sparzustand"],
         "box": box_uhr(),
     }
 

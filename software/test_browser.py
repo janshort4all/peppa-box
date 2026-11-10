@@ -76,7 +76,7 @@ class Browser(unittest.TestCase):
         cls.tmp.cleanup()
 
     @staticmethod
-    def suchen(uri, holen=None, api=None):
+    def suchen(uri, holen=None, api=None, original=None):
         nr = uri.split(":")[2]
         h = sum(map(ord, nr))
         return {"titel": f"Peppa Lieder {nr[:4]}", "bild": cover._bild_normal(bild(((h * 37) % 200 + 30, (h * 91) % 180 + 40, 90))),
@@ -176,6 +176,36 @@ class Browser(unittest.TestCase):
         pg.fill("#link", "https://example.com/hallo")
         expect(pg.locator("#pruefung .hinweis.fehler")).to_be_visible()
         expect(pg.locator("#weiter")).to_be_disabled()
+
+    def test_privates_cover_per_screenshot_und_titel_von_hand(self):
+        """Spotify gibt bei privaten Playlists kein Cover heraus: Screenshot wählen, Ausschnitt schieben, Titel eintragen."""
+        from PIL import Image
+        pg = self.pg
+        with mock.patch.object(cover, "suchen", return_value={"titel": None, "bild": None, "quelle": None,
+                                                              "meldung": "Spotify gibt zu dieser Playlist kein Cover heraus. Das ist bei privaten Playlists normal."}):
+            pg.goto(self.url + "/#/karten/neu")
+            pg.fill("#link", "https://open.spotify.com/playlist/2LjheZq4975rCxs232En9j?si=3c807e&pt=d79afa")
+            expect(pg.locator("#pruefung .hinweis.warn")).to_contain_text("Strg + V")
+            expect(pg.locator("#pruefung .hinweis.warn")).to_contain_text("privaten Playlists")
+            pg.fill("#titelfeld", "Folge 103: SOS im Bike-Park")
+            pg.keyboard.press("Enter")
+            expect(pg.locator("#pruefung .titel")).to_have_text("Folge 103: SOS im Bike-Park")
+            breit = Image.new("RGB", (1200, 540), (30, 40, 40))                  # wie ein Screenshot der Playlist-Kopfzeile
+            breit.paste(Image.new("RGB", (270, 270), (200, 80, 40)), (40, 75))
+            p = io.BytesIO()
+            breit.save(p, "PNG")
+            pg.set_input_files("#eigenes", files=[{"name": "shot.png", "mimeType": "image/png", "buffer": p.getvalue()}])
+            expect(pg.locator("dialog.blatt .zuschnitt canvas")).to_be_visible()
+            r = pg.locator(".zuschnitt .rahmen")
+            self.assertAlmostEqual(r.bounding_box()["width"], r.bounding_box()["height"], delta=1.5)   # Quadrat
+            pg.fill("#zs-g", "50")
+            pg.click("dialog.blatt button[value=ja]")
+            expect(pg.locator("#pruefung img.cover")).to_be_visible()
+            expect(pg.locator("#weiter")).to_be_enabled()
+            uri = "spotify:playlist:2LjheZq4975rCxs232En9j"
+            self.assertTrue(karten.meta_lesen(uri)["eigen"])
+            self.assertEqual(Image.open(karten.cover_pfad(uri)).size[0], Image.open(karten.cover_pfad(uri)).size[1])
+        self.assertEqual(self.fehler, [])
 
     def test_kartenliste_detail_und_etikettenbogen(self):
         pg = self.pg

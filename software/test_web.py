@@ -356,6 +356,14 @@ class Seite(unittest.TestCase):
         self.assertFalse(erg["eigenes_bild"])
         self.assertEqual(erg["titel"], "Neu")
 
+    def test_titel_von_hand_eintragen(self):
+        st, erg = self.senden("/api/cover/titel", {"schluessel": "playlist_37i9dQZF1DXcBWIGoYBM5M", "titel": "Folge 103"})
+        self.assertTrue(erg["ok"], erg)
+        self.assertEqual(erg["titel"], "Folge 103")
+        self.assertFalse(self.senden("/api/cover/titel", {"schluessel": "playlist_37i9dQZF1DXcBWIGoYBM5M", "titel": " "})[1]["ok"])
+        self.assertFalse(self.senden("/api/cover/titel", {"schluessel": "../x", "titel": "a"})[1]["ok"])
+        self.assertFalse(self.senden("/api/cover/titel", {"titel": "a"})[1]["ok"])
+
     def test_zu_grosse_dateien_werden_abgelehnt(self):
         req = urllib.request.Request(self.url + "/api/cover/hochladen?s=playlist_37i9dQZF1DXcBWIGoYBM5M", data=b"x", method="POST",
                                      headers={"X-Peppa-Box": "1", "Content-Length": str(peppa_web.BILD_MAX + 1)})

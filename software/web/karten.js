@@ -17,8 +17,67 @@ async function verkleinern(datei) {
     return await new Promise(r => c.toBlob(b => r(b || datei), 'image/jpeg', 0.9));
   } catch (e) { return datei; }
 }
+/** Dialog: Quadrat über das Bild schieben (Screenshots und Fotos sind selten quadratisch). Gibt ein JPEG-Blob zurück
+ *  oder null bei Abbrechen. Ist das Bild schon (fast) quadratisch, wird es ohne Dialog übernommen. */
+async function ausschnittWaehlen(datei) {
+  let bmp;
+  try { bmp = await createImageBitmap(datei); } catch (e) { return datei; }       // nicht lesbar: die Box meldet es verständlich
+  const bw = bmp.width, bh = bmp.height;
+  if (Math.abs(bw - bh) / Math.max(bw, bh) < 0.03) return datei;
+  return new Promise(fertig => {
+    const d = document.createElement('dialog');
+    d.className = 'blatt';
+    d.innerHTML = `<h3>Ausschnitt wählen</h3>
+      <p class="leise klein" style="margin-top:0">Schiebe das Quadrat über das Cover. Mit dem Regler wird es größer oder kleiner.</p>
+      <div class="zuschnitt"><canvas></canvas><div class="rahmen" role="img" aria-label="Ausschnitt"></div></div>
+      <label class="klein leise" for="zs-g">Größe</label><input type="range" id="zs-g" min="8" max="100" value="100">
+      <div class="reihe" style="margin-top:12px"><button class="btn" value="nein">Abbrechen</button><button class="btn haupt" value="ja">Übernehmen</button></div>`;
+    const cv = d.querySelector('canvas'), box = d.querySelector('.zuschnitt'), rahmen = d.querySelector('.rahmen'), regler = d.querySelector('#zs-g');
+    const f0 = Math.min(1, 900 / Math.max(bw, bh));
+    cv.width = Math.round(bw * f0); cv.height = Math.round(bh * f0);
+    cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+    let s = Math.min(bw, bh), x = (bw - s) / 2, y = (bh - s) / 2;                    // Quadrat in Bildpunkten
+    const klemmen = () => { s = Math.max(16, Math.min(s, bw, bh)); x = Math.max(0, Math.min(x, bw - s)); y = Math.max(0, Math.min(y, bh - s)); };
+    const zeichnen = () => {
+      klemmen();
+      Object.assign(rahmen.style, {left: x / bw * 100 + '%', top: y / bh * 100 + '%', width: s / bw * 100 + '%', height: s / bh * 100 + '%'});
+    };
+    let griff = null;
+    const px = () => box.getBoundingClientRect().width / bw;                          // Bildschirmpixel je Bildpunkt
+    rahmen.addEventListener('pointerdown', e => { griff = {px: e.clientX, py: e.clientY, x, y}; rahmen.setPointerCapture(e.pointerId); e.preventDefault(); });
+    rahmen.addEventListener('pointermove', e => { if (!griff) return; x = griff.x + (e.clientX - griff.px) / px(); y = griff.y + (e.clientY - griff.py) / px(); zeichnen(); });
+    rahmen.addEventListener('pointerup', () => { griff = null; });
+    rahmen.addEventListener('pointercancel', () => { griff = null; });
+    box.addEventListener('pointerdown', e => {                                        // Tippen neben das Quadrat: dorthin setzen
+      if (e.target !== cv) return;
+      const r = box.getBoundingClientRect();
+      x = (e.clientX - r.left) / px() - s / 2; y = (e.clientY - r.top) / px() - s / 2; zeichnen();
+    });
+    regler.addEventListener('input', () => {
+      const mx = x + s / 2, my = y + s / 2;
+      s = Math.min(bw, bh) * regler.value / 100; x = mx - s / 2; y = my - s / 2; zeichnen();
+    });
+    let antwort = false;
+    d.addEventListener('click', e => { const b = e.target.closest('button'); if (b) { antwort = b.value === 'ja'; d.close(); } });
+    d.addEventListener('close', async () => {
+      let ergebnis = null;
+      if (antwort) {
+        const g = Math.min(1200, Math.round(s)), c = document.createElement('canvas');
+        c.width = c.height = g;
+        c.getContext('2d').drawImage(bmp, x, y, s, s, 0, 0, g, g);
+        ergebnis = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
+      }
+      d.remove(); fertig(ergebnis);
+    });
+    document.body.appendChild(d);
+    d.showModal();
+    zeichnen();
+  });
+}
 async function bildHochladen(datei, schluessel) {
-  const klein = await verkleinern(datei);
+  const ausschnitt = await ausschnittWaehlen(datei);
+  if (!ausschnitt) return {ok: null, abgebrochen: true};
+  const klein = await verkleinern(ausschnitt);
   if (klein.size > 8_000_000) return {ok: false, meldung: 'Das Bild ist zu groß (höchstens 8 MB).'};
   return hochladen('/api/cover/hochladen?s=' + encodeURIComponent(schluessel), klein);
 }
@@ -161,8 +220,9 @@ function detail(uid, signal) {
   $('#d-bild', d).addEventListener('change', async e => {
     const k = finden(), f = e.target.files[0]; e.target.value = '';
     if (!k || !f) return;
-    toast('Bild wird hochgeladen …');
-    melden(await bildHochladen(f, k.schluessel), 'Eigenes Bild gespeichert.'); await neu();
+    const erg = await bildHochladen(f, k.schluessel);
+    if (erg.abgebrochen) return;
+    melden(erg, 'Eigenes Bild gespeichert.'); await neu();
   });
   d.addEventListener('close', () => { d.remove(); kartenLaden(); });
   signal.addEventListener('abort', () => { if (d.isConnected) d.close(); });
@@ -212,7 +272,9 @@ export function assistent(w, signal) {
     if (!i || !i.ok) { p.innerHTML = ''; return; }
     p.innerHTML = `<div class="vorschau">${coverBild(i.cover ? i.cover + '&t=' + W.t : null, '', i.titel || '')}
         <div><span class="marke">${esc(typName(i.typ))}</span><div class="titel" style="margin-top:6px">${esc(i.titel || 'Ohne Titel')}</div></div></div>
-      ${i.hat_cover ? '' : `<div class="hinweis warn">${esc(i.meldung || 'Zu diesem Link wurde kein Cover gefunden.')} Du kannst es nochmal suchen lassen oder ein eigenes Bild wählen. Ohne Bild bekommt das Etikett ein oranges Namensschild.</div>`}
+      ${i.hat_cover ? '' : `<div class="hinweis warn">${esc(i.meldung || 'Zu diesem Link wurde kein Cover gefunden.')} <br><b>So geht es trotzdem:</b> Mach in Spotify einen Screenshot vom Cover (am PC: Windows-Taste + Umschalt + S), klicke hier in die Seite und drücke <b>Strg + V</b>. Oder wähle unten ein Bild aus. Das Quadrat für das Etikett schiebst du danach zurecht. Ohne Bild bekommt das Etikett ein oranges Namensschild.</div>`}
+      ${i.titel ? '' : `<div class="titelzeile" style="margin-top:10px"><label for="titelfeld"><b>Titel selbst eingeben</b> <span class="leise klein">(steht auf dem Etikett und in der Liste)</span></label>
+        <div class="reihe"><input type="text" id="titelfeld" maxlength="80" placeholder="z. B. Folge 103: SOS im Bike-Park" autocomplete="off"><button class="btn" id="titelspeichern">Speichern</button></div></div>`}
       <div class="reihe"><button class="btn klein" id="nochmal">${symbol('neu')} Cover nochmal suchen</button>
         <label class="btn klein" for="eigenes">${symbol('bild')} Eigenes Bild wählen</label><input type="file" id="eigenes" accept="image/*" hidden></div>
       ${etikettMoeglich() ? `<div class="trenner" style="margin-top:12px"><div class="leise klein" style="text-align:center">So sieht dein Etikett aus (${S.karten && S.karten.etikett ? S.karten.etikett.groesse_mm : 40} × ${S.karten && S.karten.etikett ? S.karten.etikett.groesse_mm : 40} mm)</div>${zeigeEtikett(i.uri, i.titel)}</div>` : ''}`;
@@ -303,15 +365,33 @@ export function assistent(w, signal) {
 
   // ---- Bedienung
   w.addEventListener('input', e => { if (e.target.id === 'link') eingabeAendern(e.target.value); }, {signal});
-  w.addEventListener('paste', e => { if (e.target.id === 'link') setTimeout(() => { eingabeAendern(e.target.value); clearTimeout(tipp); pruefen(); }, 0); }, {signal});
+  const bildSpeichern = async f => {
+    if (!W.info || !W.info.ok) { toast('Füge zuerst den Spotify-Link ein, dann das Bild.', 'fehler'); return; }
+    const erg = await bildHochladen(f, W.info.schluessel);
+    if (erg.abgebrochen) return;
+    melden(erg, 'Eigenes Bild gespeichert.');
+    if (erg.ok) pruefen();
+  };
+  const titelSpeichern = async () => {
+    const feld = $('#titelfeld', w), titel = feld ? feld.value.trim() : '';
+    if (!titel || !W.info) { if (feld) feld.focus(); return; }
+    const erg = await sicher('/api/cover/titel', {schluessel: W.info.schluessel, titel});
+    if (!erg.ok) { melden(erg, ''); return; }
+    W.info = {...W.info, titel: erg.titel}; W.t = Date.now(); pruefungZeigen();
+  };
+  w.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'titelfeld') { e.preventDefault(); titelSpeichern(); } }, {signal});
+  const bildAusZwischenablage = e => [...((e.clipboardData && e.clipboardData.files) || [])].find(f => f.type.startsWith('image/'));
+  document.addEventListener('paste', e => {                       // Screenshot aus der Zwischenablage, egal wo der Fokus steht
+    const bild = bildAusZwischenablage(e);
+    if (bild && W.phase === 'eingabe' && !document.querySelector('dialog[open]')) { e.preventDefault(); bildSpeichern(bild); }
+  }, {signal});
+  w.addEventListener('paste', e => {
+    if (e.target.id === 'link' && !bildAusZwischenablage(e)) setTimeout(() => { eingabeAendern(e.target.value); clearTimeout(tipp); pruefen(); }, 0);
+  }, {signal});
   w.addEventListener('change', async e => {
     if (e.target.id !== 'eigenes') return;
     const f = e.target.files[0]; e.target.value = '';
-    if (!f || !W.info) return;
-    toast('Bild wird hochgeladen …');
-    const erg = await bildHochladen(f, W.info.schluessel);
-    melden(erg, 'Eigenes Bild gespeichert.');
-    if (erg.ok) pruefen();
+    if (f) bildSpeichern(f);
   }, {signal});
   w.addEventListener('click', async e => {
     const id = (e.target.closest('button') || {}).id;
@@ -321,6 +401,7 @@ export function assistent(w, signal) {
     }
     if (id === 'leeren') { $('#link', w).value = ''; eingabeAendern(''); $('#link', w).focus(); }
     if (id === 'nochmal' && W.phase === 'eingabe') pruefen(true);
+    if (id === 'titelspeichern') titelSpeichern();
     if (id === 'weiter' && W.info && W.info.ok) bespielen(false);
     if (id === 'abbrechen') { await sicher('/api/karten/abbrechen', {}); W.phase = 'eingabe'; zeigen(); }
     if (id === 'ueber') bespielen(true);

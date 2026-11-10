@@ -6,6 +6,7 @@ import json
 import os
 import tempfile
 import unittest
+import urllib.parse
 from unittest import mock
 
 from PIL import Image
@@ -16,6 +17,7 @@ import etikett
 import karten
 
 PL = "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M"
+PL_LINK = "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M"
 AL = "spotify:album:4aawyAB9vmqN3uQ7FjRGTy"
 
 
@@ -131,6 +133,32 @@ class Cover(Basis):
         erg = cover.suchen(PL, Netz({}), api)
         self.assertIsNone(erg["bild"])
         self.assertIn("kein Cover", erg["meldung"])
+
+    def test_private_playlist_meldung_ist_verstaendlich(self):
+        netz = Netz({"https://open.spotify.com/": (404, b"")})
+        erg = cover.suchen(PL, netz, mock.Mock(return_value=(404, {})))
+        self.assertIsNone(erg["bild"])
+        self.assertIn("privat", erg["meldung"])
+        self.assertIn("oEmbed 404", erg["meldung"])
+
+    def test_link_mit_zugangsschluessel_wird_zusaetzlich_versucht(self):
+        link = PL_LINK + "?si=abc&pt=geheim123"
+        self.assertEqual(cover.original_link("Schau: " + link + " ok"), link)
+        self.assertIsNone(cover.original_link(PL_LINK))
+        netz = Netz({"https://open.spotify.com/oembed?url=" + urllib.parse.quote(link, safe=""): (200, json.dumps(
+                        {"title": "Privat", "thumbnail_url": "https://i.scdn.co/image/p1"}).encode()),
+                     "https://open.spotify.com/": (404, b""),
+                     "https://i.scdn.co/image/p1": (200, png())})
+        self.assertIsNone(cover.suchen(PL, netz, mock.Mock(return_value=(404, {})))["bild"])        # ohne Schlüssel: nichts
+        erg = cover.suchen(PL, netz, mock.Mock(return_value=(404, {})), original=link)
+        self.assertEqual((erg["titel"], erg["quelle"]), ("Privat", "oembed"))
+        self.assertIsNotNone(erg["bild"])
+
+    def test_titel_von_hand(self):
+        self.assertFalse(cover.titel_setzen(PL, "   ")["ok"])
+        erg = cover.titel_setzen(PL, "  Folge 103:   SOS im Bike-Park ")
+        self.assertEqual(erg["titel"], "Folge 103: SOS im Bike-Park")
+        self.assertEqual(karten.meta_lesen(PL)["titel"], "Folge 103: SOS im Bike-Park")
 
     def test_kein_bild_unter_der_bildadresse(self):
         netz = Netz({"https://open.spotify.com/oembed": (200, json.dumps(

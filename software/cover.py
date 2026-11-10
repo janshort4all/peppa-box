@@ -35,6 +35,7 @@ UA = "Mozilla/5.0 (X11; Linux aarch64; rv:120.0) Gecko/20100101 Firefox/120.0 Pe
 TYPEN = "playlist|album|show|episode|track|artist"
 LINK_RE = re.compile(rf"(?:open|play)\.spotify\.com/(?:intl-[a-z-]+/)?(?:embed/)?({TYPEN})/([A-Za-z0-9]{{8,40}})", re.I)
 URI_RE = re.compile(rf"spotify:(?:user:[^:\s]+:)?({TYPEN}):([A-Za-z0-9]{{8,40}})")
+ORIGINAL_RE = re.compile(r"https?://(?:open|play)\.spotify\.com/[^\s\"'<>]+\?[^\s\"'<>]+", re.I)
 KURZ_RE = re.compile(r"https?://(?:spotify\.link|spotify\.app\.link)/[A-Za-z0-9_\-]+")
 
 
@@ -74,6 +75,13 @@ def adresse_aus_text(text, holen=http_holen):
         raise ValueError("Dieser Spotify-Link wird nicht unterstützt. Möglich sind Playlists, Alben, "
                          "Podcasts, Künstler und einzelne Titel.")
     raise ValueError("Das sieht nicht nach einem Spotify-Link aus. In Spotify: Playlist öffnen → ⋯ → Teilen → Link kopieren.")
+
+
+def original_link(text):
+    """Der eingefügte Link samt Zusatz (?si=...&pt=...), wenn er einen hat. Geteilte Playlists tragen darin einen
+    Zugangsschlüssel (pt); damit gibt Spotify manchmal auch bei nicht öffentlichen Playlists Titel und Bild heraus."""
+    m = ORIGINAL_RE.search(text or "")
+    return m.group(0)[:400] if m else None
 
 
 # ---------------------------------------------------------------- Suche
@@ -138,34 +146,41 @@ def _web_api(typ, nr, api):
     return _titel_putzen(d.get("name")), url
 
 
-def suchen(uri, holen=http_holen, api=None):
+def suchen(uri, holen=http_holen, api=None, original=None):
     """Titel und Cover zu einer Spotify-Adresse. Gibt dict(titel, bild, quelle, meldung) zurück; `bild` sind
     JPEG-Bytes oder None. Wirft nie (Netzfehler werden zu einer Meldung)."""
     typ, nr = karten.uri_pruefen(uri)
     link = karten.uri_zu_link(uri)
     titel, bild_url, quelle, probleme = None, None, None, []
 
-    status, body, _ = holen("https://open.spotify.com/oembed?url=" + urllib.parse.quote(link, safe=""))
-    if status == 200:
-        try:
-            d = json.loads(body)
-            titel = _titel_putzen(d.get("title"))
-            bild_url = d.get("thumbnail_url") or None
-            quelle = "oembed" if bild_url else None
-        except ValueError:
-            probleme.append("oEmbed unlesbar")
-    else:
-        probleme.append(f"oEmbed {status or 'keine Verbindung'}")
+    adressen = [link] + ([original] if original and original != link else [])
+    for adr in adressen:                                  # zuerst die saubere Adresse, dann der Link mit Zugangsschlüssel
+        status, body, _ = holen("https://open.spotify.com/oembed?url=" + urllib.parse.quote(adr, safe=""))
+        if status == 200:
+            try:
+                d = json.loads(body)
+                titel = titel or _titel_putzen(d.get("title"))
+                bild_url = d.get("thumbnail_url") or None
+                quelle = "oembed" if bild_url else quelle
+            except ValueError:
+                probleme.append("oEmbed unlesbar")
+        else:
+            probleme.append(f"oEmbed {status or 'keine Verbindung'}")
+        if bild_url:
+            break
 
     if not bild_url:
-        status, body, _ = holen(link, MAX_SEITE)
-        if status == 200:
-            seite = body.decode("utf-8", "replace")
-            bild_url = _meta(seite, "og:image")
-            titel = titel or _titel_putzen(_meta(seite, "og:title"))
-            quelle = "seite" if bild_url else quelle
-        else:
-            probleme.append(f"Seite {status or 'keine Verbindung'}")
+        for adr in adressen:
+            status, body, _ = holen(adr, MAX_SEITE)
+            if status == 200:
+                seite = body.decode("utf-8", "replace")
+                bild_url = _meta(seite, "og:image")
+                titel = titel or _titel_putzen(_meta(seite, "og:title"))
+                quelle = "seite" if bild_url else quelle
+            else:
+                probleme.append(f"Seite {status or 'keine Verbindung'}")
+            if bild_url:
+                break
 
     if not bild_url:
         try:
@@ -190,7 +205,12 @@ def suchen(uri, holen=http_holen, api=None):
             probleme.append("Bild nicht ladbar")
     meldung = None
     if not bild:
-        meldung = "Zu diesem Link wurde kein Cover gefunden." + (" (" + "; ".join(probleme) + ")" if probleme else "")
+        meldung = "Zu diesem Link wurde kein Cover gefunden."
+        if typ == "playlist" and not any("keine Verbindung" in p for p in probleme):
+            meldung = ("Spotify gibt zu dieser Playlist kein Cover heraus. Das ist bei privaten Playlists normal "
+                       "(oben in der Playlist steht „Private Playlist“).")
+        if probleme:
+            meldung += " (" + "; ".join(probleme) + ")"
     return {"titel": titel, "bild": bild, "quelle": quelle if bild else None, "meldung": meldung}
 
 
@@ -211,14 +231,14 @@ def aufloesen(text, neu=False, holen=http_holen, api=None):
         uri = adresse_aus_text(text, holen)
     except ValueError as e:
         return {"ok": False, "meldung": str(e)}
-    return nachschlagen(uri, neu=neu, holen=holen, api=api)
+    return nachschlagen(uri, neu=neu, holen=holen, api=api, original=original_link(text))
 
 
-def nachschlagen(uri, neu=False, holen=http_holen, api=None):
+def nachschlagen(uri, neu=False, holen=http_holen, api=None, original=None):
     m = karten.meta_lesen(uri)
     if m and not neu and m.get("titel") and (m.get("hat_cover") or m.get("eigen")):
         return info(uri)                                   # schon da: ohne Netz
-    erg = suchen(uri, holen, api)
+    erg = suchen(uri, holen, api, original)
     eigen = bool(m and m.get("eigen")) and not neu
     if erg["titel"] or erg["bild"]:
         karten.meta_schreiben(uri, titel=erg["titel"], bild=None if eigen else erg["bild"],
@@ -232,4 +252,13 @@ def eigenes_bild(uri, daten):
     if not jpeg:
         return {"ok": False, "meldung": "Das ist kein brauchbares Bild (JPEG oder PNG)."}
     karten.meta_schreiben(uri, bild=jpeg, quelle="eigen", eigen=True)
+    return info(uri)
+
+
+def titel_setzen(uri, titel):
+    """Selbst eingetragener Titel (wenn Spotify keinen herausgibt, z. B. bei privaten Playlists)."""
+    titel = " ".join(str(titel or "").split())[:80]
+    if not titel:
+        return {"ok": False, "meldung": "Bitte einen Titel eingeben."}
+    karten.meta_schreiben(uri, titel=titel)
     return info(uri)

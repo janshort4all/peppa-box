@@ -489,7 +489,7 @@ def karten_pruefen(daten):
     text = daten.get("text") if isinstance(daten, dict) else None
     if not isinstance(text, str) or not text.strip():
         return {"ok": False, "meldung": "Bitte zuerst einen Spotify-Link einfügen."}
-    erg = cover.aufloesen(text.strip()[:500], neu=bool(daten.get("neu")))
+    erg = cover.aufloesen(text.strip()[:600], neu=bool(daten.get("neu")))
     if erg.get("ok"):
         erg["cover"] = _cover_url(erg["uri"], karten.meta_lesen(erg["uri"]))
     return erg
@@ -573,6 +573,20 @@ def cover_hochladen(roh, abfrage):
     except ValueError as e:
         return {"ok": False, "meldung": str(e)}
     erg = cover.eigenes_bild(uri, roh)
+    if erg.get("ok"):
+        erg["cover"] = _cover_url(uri, karten.meta_lesen(uri))
+    return erg
+
+
+def cover_titel(daten):
+    """Titel von Hand eintragen, wenn Spotify keinen herausgibt."""
+    try:
+        uri = karten.uri_aus_schluessel(str(daten.get("schluessel") or "")) if isinstance(daten, dict) else None
+        if not uri:
+            raise ValueError("Unbekannte Playlist.")
+    except ValueError as e:
+        return {"ok": False, "meldung": str(e)}
+    erg = cover.titel_setzen(uri, daten.get("titel"))
     if erg.get("ok"):
         erg["cover"] = _cover_url(uri, karten.meta_lesen(uri))
     return erg
@@ -804,7 +818,7 @@ SCHNELL = {"/api/klang": klang_setzen, "/api/lautstaerke": lautstaerke_setzen, "
            "/api/karten/pruefen": karten_pruefen, "/api/karten/bespielen": karten_bespielen,
            "/api/karten/abbrechen": karten_abbrechen, "/api/karten/umbenennen": karten_umbenennen,
            "/api/karten/entfernen": karten_entfernen, "/api/karten/gedruckt": karten_gedruckt,
-           "/api/cover/neu": cover_neu}
+           "/api/cover/neu": cover_neu, "/api/cover/titel": cover_titel}
 # Aktionen, deren Anfragetext eine Datei ist (kein JSON); die Parameter stehen in der Adresse (?s=...)
 ROH = {"/api/cover/hochladen": cover_hochladen}
 GROESSE = {"/api/cover/hochladen": BILD_MAX}                # sonst gilt 4096 Bytes

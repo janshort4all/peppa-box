@@ -731,7 +731,7 @@ Python-Pakete: manifold3d, trimesh, numpy, pillow, matplotlib, opencv-python.
 | E3 Mond | antippen: Schlummer-Timer 15 → 30 → 45 → 60 Min → aus, je mit Ansage; 5 s halten: Akkustand ansagen |
 | Klick | zurück, Play, vor: leiser Klick (Jans Klickton), sobald die Berührung zählt (70 ms), einmal je Berührung; **nicht** Mond, **nicht** Ein-Taste (Nachtrag 09.11. (13)) |
 | Drehknopf | Lautstärke 2 % je Raste (einstellbar), nie über die Höchstlautstärke, nie unter 5 % |
-| Ein-Taste | aus: einschalten (Pi selbst); kurz: Akkustand ansagen; 2 s halten: „Tschüss“, Musik pausiert, **beim Loslassen** in den **Sparzustand** (seit 10.11., sonst weckte die noch gedrückte Taste sofort wieder); 10 s halten: „ganz aus“, beim Loslassen ganz aus |
+| Ein-Taste | aus: einschalten (Pi selbst); kurz: Akkustand ansagen; 2 s halten: Musik pausiert, **beim Loslassen** „Tschüss“ und **Sparzustand** (seit 10.11., sonst weckte die noch gedrückte Taste sofort wieder; „Tschüss“ erst beim Loslassen seit 10.11. (5)); 10 s halten: „ganz aus“, beim Loslassen ganz aus |
 | Kopfhörer | einstecken: Lautsprecher sofort stumm (SD), Spotify auf Kopfhörer, Startlautstärke Kopfhörer (30 %, jedes Mal); ausstecken: Kopfhörer sofort still, zurück auf Lautsprecher in der alten Lautstärke. Musik läuft an derselben Stelle weiter (Pause ca. 3–5 s) |
 
 Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) lösen nichts aus; Feld meldet über 60 s Berührung → neu kalibriert; Ein-Taste beim Start gedrückt → erst nach Loslassen beachtet; über 15 s gedrückt (klemmt) → nie ausschalten; Kopfhörer entprellt (0,4 s), höchstens alle 3 s umschalten.
@@ -1016,3 +1016,9 @@ Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) l�
 - **Wann:** Ein-Taste 10 s halten (und beim Loslassen ganz aus). Vorher spielten drei absteigende Töne.
 - **Am Pi:** `cd ~/peppa-box && git pull`, dann `sudo systemctl restart peppa-player`. Von Hand hören: `python3 ~/peppa-box/software/toene.py --alle`.
 - **Offen:** Die Ansage dauert 3,4 s; ob der Pi sie vor dem Ausschalten zu Ende spricht, ist nicht am Pi gesehen (Tests ohne Hardware grün, alle 22 Dateien).
+
+## Nachtrag 10.11.2026 (5) – „Tschüss“ erst beim Loslassen
+- **Problem (Jan, 22:32):** Wer 10 s halten will, hörte bei 2 s schon „Tschüss“, obwohl er weiter hielt.
+- **Änderung (`bedienung.py`):** Bei 2 s wird nur die Musik pausiert (stille Rückmeldung), nichts gesagt. Bei 10 s kommt „Ich schalte mich jetzt ganz aus“ (ohne vorheriges „Tschüss“). Wer zwischen 2 und 10 s loslässt, hört „Tschüss“ beim Loslassen, dann Sparzustand (bzw. aus ohne Sparzustand). Der Player spricht es mit Abwarten (`herunterfahren(..., "tschuess")`).
+- **Annahme:** Läuft keine Musik, gibt es bei 2 s keine Rückmeldung; erst das Loslassen zeigt es. Falls gewünscht: leiser Ton bei 2 s.
+- Geprüft ohne Hardware: `test_bedienung.py` angepasst (kein „Tschüss“ beim Halten, „Tschüss“ beim Loslassen, 10 s nur „ganz aus“), alle 22 Testdateien grün. Am Pi nicht gesehen.

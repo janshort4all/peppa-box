@@ -265,13 +265,13 @@ class EinTaste(Basis):
     def test_zwei_sekunden_tschuess_und_aus_beim_loslassen(self):
         self.b.ein_taste(False, self.uhr.t)
         self.lauf(2.1, taste=True)
-        self.assertEqual(self.gesagt, ["tschuess"])
+        self.assertEqual(self.gesagt, [])                   # noch gedrückt: kein „Tschüss“
         self.assertIn(("pausieren",), self.st.aufrufe)
         self.assertEqual(self.aus, [])                      # noch gedrückt: nicht ausschalten
         self.lauf(1.0, taste=True)
         self.assertEqual(self.aus, [])
         self.lauf(0.1, taste=False)
-        self.assertEqual(self.aus, [("Ein-Taste", None)])
+        self.assertEqual(self.aus, [("Ein-Taste", "tschuess")])
 
     def test_klemmt_schaltet_nie_aus(self):
         self.b.ein_taste(False, self.uhr.t)
@@ -299,19 +299,19 @@ class EinTasteSparzustand(Basis):
     def test_zwei_sekunden_sparzustand_beim_loslassen(self):
         self.b.ein_taste(False, self.uhr.t)
         self.lauf(2.1, taste=True)
-        self.assertEqual(self.gesagt, ["tschuess"])
+        self.assertEqual(self.gesagt, [])                                # noch gedrückt: kein „Tschüss“
         self.assertIn(("pausieren",), self.st.aufrufe)
         self.assertEqual((self.spar, self.aus), ([], []))                # noch gedrückt: noch nichts
         self.lauf(3.0, taste=True)                                       # 5 s: immer noch Sparzustand
         self.assertEqual((self.spar, self.aus), ([], []))
+        self.assertEqual(self.gesagt, [])
         self.lauf(0.1, taste=False)
-        self.assertEqual((self.spar, self.aus), ([("Ein-Taste", None)], []))
-        self.assertEqual(self.gesagt, ["tschuess"])
+        self.assertEqual((self.spar, self.aus), ([("Ein-Taste", "tschuess")], []))   # „Tschüss“ spricht der Player
 
     def test_zehn_sekunden_ganz_aus_beim_loslassen(self):
         self.b.ein_taste(False, self.uhr.t)
         self.lauf(10.2, taste=True)
-        self.assertEqual(self.gesagt, ["tschuess", "ganz_aus"])
+        self.assertEqual(self.gesagt, ["ganz_aus"])                      # kein „Tschüss“ unterwegs
         self.assertEqual((self.spar, self.aus), ([], []))
         self.lauf(0.1, taste=False)
         self.assertEqual((self.spar, self.aus), ([], [("Ein-Taste", None)]))

@@ -12,7 +12,7 @@ Belegung (Verdrahtungsplan 08.11.2026; welche Elektrode welches Feld ist, steht 
   Drehknopf   Lautstärke (2 % je Raste, Einstellung), nie über die Höchstlautstärke, nie unter 5 %
   Ein-Taste   ausgeschaltet: einschalten (das macht der Pi selbst: GPIO 3 nach Masse weckt ihn)
               kurz drücken: Akkustand ansagen
-              2 s halten: „Tschüss“, Musik pausiert, beim Loslassen in den Sparzustand
+              2 s halten: Musik pausiert; beim Loslassen „Tschüss“ und Sparzustand
               (WLAN aus, nur die Ein-Taste wacht; sparzustand.py; weckt sofort mit Startton)
               10 s halten: „Ich schalte mich jetzt ganz aus“, beim Loslassen ganz aus
               (erst beim Loslassen, sonst weckte die noch gedrückte Taste den Pi sofort wieder)
@@ -231,8 +231,7 @@ class Bedienung:
                 self.taste_aus = True
                 ziel = "in den Sparzustand" if self.sparzustand else "aus"
                 self.log(f"Ein-Taste 2 s gehalten: Box geht beim Loslassen {ziel}.")
-                self.st.pausieren()
-                self._sagen("tschuess")
+                self.st.pausieren()                   # Musik still = 2 s erreicht; „Tschüss“ erst beim Loslassen
             if (dauer >= GANZ_AUS_HALTEN_S and self.taste_aus and not self.taste_ganz_aus
                     and not self.taste_klemmt and self.sparzustand):
                 self.taste_ganz_aus = True
@@ -251,10 +250,12 @@ class Bedienung:
             return
         if self.taste_aus:
             ganz, self.taste_aus, self.taste_ganz_aus = self.taste_ganz_aus, False, False
-            if ganz or not self.sparzustand:
-                self.herunterfahren("Ein-Taste", None)    # „Tschüss“ bzw. „ganz aus“ lief schon
+            if ganz:
+                self.herunterfahren("Ein-Taste", None)    # „ganz aus“ lief schon beim Erreichen der 10 s
+            elif not self.sparzustand:
+                self.herunterfahren("Ein-Taste", "tschuess")
             else:
-                self.sparzustand("Ein-Taste", None)
+                self.sparzustand("Ein-Taste", "tschuess")
             return
         if dauer >= TASTE_MIN_S:
             self.akku_ansagen()
@@ -385,7 +386,7 @@ def belegung(cfg=None):
         {"id": "taste", "symbol": "⏻", "name": "Ein-Taste", "ort": "Deckel hinten rechts", "klick": False,
          "gesten": [g("drücken, wenn aus", "einschalten"),
                     g("kurz drücken", "Akkustand ansagen"),
-                    g(f"{_s(AUS_HALTEN_S)} halten", "„Tschüss“, Musik pausiert, beim Loslassen in den Sparzustand "
+                    g(f"{_s(AUS_HALTEN_S)} halten", "Musik pausiert; beim Loslassen „Tschüss“ und Sparzustand "
                                                      "(WLAN aus, die Ein-Taste weckt sofort)", True),
                     g(f"{_s(GANZ_AUS_HALTEN_S)} halten", "„Ich schalte mich jetzt ganz aus“, beim Loslassen ganz aus", True)]},
         {"id": "karte", "symbol": "▭", "name": "Karte", "ort": "Kartenschlitz", "klick": False,

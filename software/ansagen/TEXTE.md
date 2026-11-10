@@ -23,6 +23,7 @@ Probehören: Eltern-Seite → Bedienung → Ansagen anhören, oder `python3 ~/pe
 | `timer_45.wav` | Schlummer-Timer: Die Musik geht in fünfundvierzig Minuten aus. | Mond-Feld antippen |
 | `timer_60.wav` | Schlummer-Timer: Die Musik geht in einer Stunde aus. | Mond-Feld antippen |
 | `timer_aus.wav` | Schlummer-Timer aus. | Mond-Feld nach 60 Min |
+| `netzteil.wav` | Deine Box wird geladen. | Netzteil wird eingesteckt (Wechsel von Akkubetrieb auf Laden); nicht, wenn die Box schon am Netzteil startet; ohne Aufnahme zwei kurze Töne, nie die Sprachausgabe |
 | `akku_laedt.wav` | Der Akku wird gerade geladen. | Akkustand, Netzteil steckt |
 | `akku_voll.wav` | Der Akku ist voll. | Akkustand, Netzteil steckt, voll |
 | `akku_schwach.wav` | Mein Akku ist fast leer. Bitte bald aufladen! | einmal bei ca. 15 % |

@@ -101,7 +101,9 @@ class Akkuwache:
         sauber ausschalten, bevor das Akku-Board hart abschaltet (schützt die SD-Karte)
       - merkt den letzten Prozentwert ohne Netzteil (die Eltern-Seite zeigt ihn beim Laden an)
     Schwellen festgelegt, nicht gemessen (Kennlinie oben: 3,50 V ≈ 15 %, 3,30 V ≈ 5 %)."""
-    ABSTAND_S = 15
+    ABSTAND_S = 15              # Abstand der Auswertung (Warnung, Aus): bleibt, die Schwellen zählen Messungen
+    ABSTAND_NETZ_S = 2          # Abstand der Messung selbst: so schnell hört man den Ton nach dem Einstecken
+    NETZ_MESSUNGEN = 2          # so viele Messungen in Folge mit Netzteil, bis „Deine Box wird geladen“ kommt
     WARNEN_PROZENT = 15
     AUS_SPANNUNG = 3.30
     AUS_MESSUNGEN = 3
@@ -115,16 +117,43 @@ class Akkuwache:
         self._gewarnt = False
         self._kritisch = 0
         self._aus = False
+        self._lesen_ab = 0.0
+        self._netz = None               # None = noch unbekannt, sonst: steckte das Netzteil zuletzt?
+        self._netz_zaehler = 0          # Messungen in Folge, die vom bisherigen Zustand abweichen
 
     def tick(self, t):
-        if t < self._naechste:
+        if t < self._lesen_ab:
             return
-        self._naechste = t + self.ABSTAND_S
+        self._lesen_ab = t + self.ABSTAND_NETZ_S
         try:
             w = self.lesen()
         except Exception as e:
             w = {"fehler": repr(e)}
-        self.verarbeiten(w, t)
+        self._netzteil(w)
+        if t >= self._naechste:
+            self._naechste = t + self.ABSTAND_S
+            self.verarbeiten(w, t)
+
+    def _netzteil(self, w):
+        """Netzteil eingesteckt? Nur der Wechsel von Akkubetrieb auf Netzteil macht die Ansage, nicht
+        der Zustand beim Start (dort läuft der Startton) und nicht das Ausstecken. Zwei Messungen in
+        Folge gegen Zittern um die Schwelle."""
+        if w.get("fehler") or w.get("richtung") is None:
+            return
+        steckt = w["richtung"] in ("laedt", "voll")
+        if self._netz is None or steckt == self._netz:
+            self._netz, self._netz_zaehler = steckt, 0
+            return
+        self._netz_zaehler += 1
+        if self._netz_zaehler < self.NETZ_MESSUNGEN:
+            return
+        self._netz, self._netz_zaehler = steckt, 0
+        if steckt:
+            self.log("Netzteil eingesteckt.")
+            if self.ansage:
+                self.ansage("netzteil")
+        else:
+            self.log("Netzteil abgezogen.")
 
     def verarbeiten(self, w, t):
         self.zeit = t

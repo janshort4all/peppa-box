@@ -58,7 +58,7 @@ class Katalog(Basis):
         for m in (15, 30, 45, 60):
             self.assertIn(f"timer_{m}", toene.ANSAGEN)
         for n in ("tschuess", "karte_leer", "karte_auflegen", "ruhezeit", "moment", "kein_internet",
-                  "anmeldung", "timer_aus", "akku_laedt", "akku_voll", "akku_schwach", "akku_leer", "akku_unbekannt"):
+                  "anmeldung", "timer_aus", "netzteil", "akku_laedt", "akku_voll", "akku_schwach", "akku_leer", "akku_unbekannt"):
             self.assertTrue(toene.ANSAGEN[n].strip(), n)
 
     def test_texte_datei_vollstaendig(self):

@@ -1,0 +1,47 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Peppa Box Kartenbox 3D</title>
+<style>html,body{margin:0;height:100%;background:#f3eee6;font-family:system-ui,sans-serif;color:#3a2a1c}
+#c{position:fixed;inset:0;width:100%;height:100%}#ui{position:fixed;left:0;right:0;bottom:0;padding:12px 14px;background:rgba(243,238,230,.92);display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-size:14px}
+label{display:flex;gap:8px;align-items:center}input[type=range]{width:160px}button{padding:8px 12px;border-radius:10px;border:1px solid #c9b79c;background:#fff;font-size:14px}
+#h{position:fixed;top:10px;left:12px;font-size:13px;opacity:.8}</style></head><body>
+<div id="h">Kartenbox (Entwurf) · ziehen = drehen, zwei Finger = verschieben/zoomen</div><canvas id="c"></canvas>
+<div id="ui"><label>Deckel <input id="a" type="range" min="0" max="110" value="0"> <span id="av">0°</span></label>
+<label><input id="k" type="checkbox" checked> 30 Karten</label><label><input id="i" type="checkbox" checked> Inlay</label><button id="v">Schnitt</button></div>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const YH=@YH@, ZH=@ZH@, LX=@LX@;
+const cv=document.getElementById('c');const r=new THREE.WebGLRenderer({canvas:cv,antialias:true});r.setPixelRatio(Math.min(devicePixelRatio,2));
+const s=new THREE.Scene();s.background=new THREE.Color(0xf3eee6);
+const cam=new THREE.PerspectiveCamera(35,1,1,3000);cam.position.set(260,200,330);
+const ctl=new OrbitControls(cam,cv);ctl.target.set(0,60,-45);ctl.update();
+s.add(new THREE.HemisphereLight(0xffffff,0xb59a7a,1.1));const d=new THREE.DirectionalLight(0xffffff,1.6);d.position.set(200,400,300);s.add(d);
+const root=new THREE.Group();root.rotation.x=-Math.PI/2;s.add(root);
+const pivot=new THREE.Group();pivot.position.set(0,YH,ZH);root.add(pivot);
+let inl;const cards=new THREE.Group();root.add(cards);
+const bin=Uint8Array.from(atob("@GLB@"),c=>c.charCodeAt(0));
+new GLTFLoader().parse(bin.buffer,'',g=>{
+ const find=n=>{let f=null;g.scene.traverse(o=>{if(o.name===n&&!f)f=o});return f};
+ const col={basis:0xed731a,deckel:0xed731a,inlay:0xe6d1a8,stift:0x999aa3};
+ const objs={};
+ for(const n in col){const o=find(n);if(!o)continue;objs[n]=o;o.traverse(x=>{if(x.isMesh)x.material=new THREE.MeshStandardMaterial({color:col[n],roughness:.55,metalness:n==='stift'?.8:0,side:THREE.DoubleSide})});}
+ root.add(objs.basis,objs.inlay,objs.stift);inl=objs.inlay;
+ objs.deckel.position.set(0,-YH,-ZH);pivot.add(objs.deckel);
+ build();},e=>console.error(e));
+function build(){const mat=new THREE.MeshStandardMaterial({color:0x6f93b0,roughness:.6});
+ const yf=2.52+0.3+2.1+2,SL=48,DV=2.1;
+ const w=70,h=112,rr=5;const sh=new THREE.Shape();
+ sh.moveTo(rr,0);sh.lineTo(w-rr,0);sh.quadraticCurveTo(w,0,w,rr);sh.lineTo(w,h-rr);sh.quadraticCurveTo(w,h,w-rr,h);sh.lineTo(rr,h);sh.quadraticCurveTo(0,h,0,h-rr);sh.lineTo(0,rr);sh.quadraticCurveTo(0,0,rr,0);
+ const geo=new THREE.ExtrudeGeometry(sh,{depth:3.9,bevelEnabled:false});
+ geo.applyMatrix4(new THREE.Matrix4().set(0,0,1,0, 1,0,0,0, 0,1,0,0, 0,0,0,1)); // Form-x→y, Form-y→z, Tiefe→x
+ for(let k=0;k<3;k++){const xc0=-LX/2+DV+k*(SL+DV);for(let i=0;i<10;i++){
+  const m=new THREE.Mesh(geo,mat);m.position.set(xc0+i*4+(k===0?7:0),yf,5);cards.add(m);}}}
+const a=document.getElementById('a');a.oninput=()=>{document.getElementById('av').textContent=a.value+'°';pivot.rotation.x=-a.value*Math.PI/180;};
+document.getElementById('k').onchange=e=>cards.visible=e.target.checked;
+document.getElementById('i').onchange=e=>{if(inl)inl.visible=e.target.checked};
+let cut=false;document.getElementById('v').onclick=()=>{cut=!cut;r.localClippingEnabled=cut;const pl=[new THREE.Plane(new THREE.Vector3(1,0,0),0)];s.traverse(o=>{if(o.isMesh)o.material.clippingPlanes=cut?pl:[]});};
+function rs(){const w=innerWidth,h=innerHeight;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}addEventListener('resize',rs);rs();
+(function loop(){requestAnimationFrame(loop);ctl.update();r.render(s,cam)})();
+</script></body></html>

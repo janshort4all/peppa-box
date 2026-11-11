@@ -332,6 +332,22 @@ class AutoAusTest(Basis):
         self.laufen(3 * 60, 10)
         self.assertEqual(len(self.aus_aufrufe), 1)
 
+    def test_uhrsprung_nach_dem_kaltstart_loest_kein_auto_aus_aus(self):
+        """Pi ohne Echtzeituhr: nach dem Booten springt die Wanduhr beim Zeitabgleich um Stunden vor.
+        Die Frist läuft auf der Dauer-Uhr und darf davon nicht berührt werden (Fehler 11.11.2026)."""
+        dauer = Uhr(1000.0)
+        a = automatik.Automatik(self.sp, self.laut, einst, jetzt=self.uhr, schlaf=lambda s: None,
+                                ausschalten=lambda: self.aus_aufrufe.append(1), log=print, dauer=dauer)
+        self.sp.spielt_jetzt = False
+        a.tick("D")
+        self.uhr.t += 5 * 3600                              # Zeitabgleich: Wanduhr springt 5 Stunden vor
+        dauer.t += 3                                        # in Wirklichkeit sind 3 Sekunden vergangen
+        a.tick("D")
+        self.assertEqual(self.aus_aufrufe, [])
+        dauer.t += 31 * 60                                  # echte 31 Minuten ohne Musik: jetzt gilt die Frist
+        a.tick("D")
+        self.assertEqual(self.aus_aufrufe, [1])
+
     def test_ausgeschaltet_macht_nichts(self):
         einst.speichern({"auto_aus": {"an": False}})
         self.laufen(5 * 3600, 30)

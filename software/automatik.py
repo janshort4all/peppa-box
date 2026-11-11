@@ -59,11 +59,15 @@ def _poweroff():
 
 class Automatik:
     def __init__(self, spotify, laut, einst, jetzt=time.time, schlaf=time.sleep,
-                 ausschalten=_poweroff, log=print):
+                 ausschalten=_poweroff, log=print, dauer=None):
         self.spotify, self.laut, self.einst = spotify, laut, einst
         self.jetzt, self.schlaf, self.ausschalten, self.log = jetzt, schlaf, ausschalten, log
+        # Uhr für die Auto-Aus-Frist. Im Betrieb time.monotonic: Der Pi hat keine Echtzeituhr und springt nach
+        # dem Kaltstart beim Zeitabgleich (NTP) um Stunden vor; mit der Wanduhr hätte das sofort Auto-Aus
+        # ausgelöst (Fehler 11.11.2026). Ohne Angabe gilt dieselbe Uhr wie jetzt (Tests mit simulierter Zeit).
+        self.dauer = dauer or jetzt
         self.spielt = None                       # letzter bekannter Zustand: True, False, None
-        self.letzte_aktivitaet = jetzt()         # nach dem Einschalten bleibt die Box mindestens so lange an
+        self.letzte_aktivitaet = self.dauer()    # nach dem Einschalten bleibt die Box mindestens so lange an
         self._naechste_abfrage = 0.0
         self.status = {"ausgabe": laut.aktive_ausgabe(), "ruhezeit": False, "auto_aus_in": None}
 
@@ -103,7 +107,7 @@ class Automatik:
                 self.log(f"Spotify-Abfrage fehlgeschlagen: {e!r}")
                 self.spielt = None
         if self.spielt is True:
-            self.letzte_aktivitaet = jetzt
+            self.letzte_aktivitaet = self.dauer()
 
         self._timer(dev, aus, jetzt)
 
@@ -180,17 +184,17 @@ class Automatik:
     def _auto_aus(self, cfg, jetzt):
         seite = self.einst.lauf_alter("seite", jetzt)
         if seite is not None and seite < SEITE_AKTIV_S:
-            self.letzte_aktivitaet = jetzt
+            self.letzte_aktivitaet = self.dauer()
         aa = cfg["auto_aus"]
         if not aa["an"]:
             self.status["auto_aus_in"] = None
             return
-        rest = aa["minuten"] * 60 - (jetzt - self.letzte_aktivitaet)
+        rest = aa["minuten"] * 60 - (self.dauer() - self.letzte_aktivitaet)
         self.status["auto_aus_in"] = max(0, int(rest))
         if rest > 0:
             return
         self.log(f"Auto-Aus: seit {aa['minuten']} Minuten nichts gespielt, Box wird ausgeschaltet")
-        self.letzte_aktivitaet = jetzt                   # falls es nicht klappt: erst nach der nächsten Frist wieder versuchen
+        self.letzte_aktivitaet = self.dauer()            # falls es nicht klappt: erst nach der nächsten Frist wieder versuchen
         try:
             self.ausschalten()
         except Exception as e:

@@ -224,7 +224,7 @@ class Probelauf(unittest.TestCase):
 
     def test_auto_aus_geht_in_den_sparzustand_ohne_ansage(self):
         einstellungen.speichern({"auto_aus": {"an": True, "minuten": 5}})
-        self.pl.auto.letzte_aktivitaet = time.time() - 400
+        self.pl.auto.letzte_aktivitaet = time.monotonic() - 400
         self.pl.auto.spotify.spielt = lambda dev: False
         self.runde()
         self.assertEqual((self.spar, self.aus), ([1], []))

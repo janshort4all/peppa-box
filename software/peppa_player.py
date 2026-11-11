@@ -179,7 +179,7 @@ class Player:
                             lokal=lokaler_beleg(self.rueck, LibrespotLast()) if sp is spotify else None,
                             fortschritt=self.fortschritt)
         self._spielte = None                    # Karte, die im letzten Durchlauf lief
-        self.auto = automatik.Automatik(SpotifyFuerAutomatik(self.st, sp), lautstaerke, einstellungen, log=log,
+        self.auto = automatik.Automatik(SpotifyFuerAutomatik(self.st, sp), lautstaerke, einstellungen, log=log, dauer=time.monotonic,
                                         ausschalten=lambda: self.sparzustand("Auto-Aus", None))
         self.regler = bedienung.Regler(lautstaerke, einstellungen, log=log)
         self.akkuwache = akku.Akkuwache(lesen=akku_lesen_gesperrt, ansage=self.ansager.sagen,

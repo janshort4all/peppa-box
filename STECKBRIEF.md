@@ -1022,3 +1022,10 @@ Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) l�
 - **Änderung (`bedienung.py`):** Bei 2 s wird nur die Musik pausiert (stille Rückmeldung), nichts gesagt. Bei 10 s kommt „Ich schalte mich jetzt ganz aus“ (ohne vorheriges „Tschüss“). Wer zwischen 2 und 10 s loslässt, hört „Tschüss“ beim Loslassen, dann Sparzustand (bzw. aus ohne Sparzustand). Der Player spricht es mit Abwarten (`herunterfahren(..., "tschuess")`).
 - **Annahme:** Läuft keine Musik, gibt es bei 2 s keine Rückmeldung; erst das Loslassen zeigt es. Falls gewünscht: leiser Ton bei 2 s.
 - Geprüft ohne Hardware: `test_bedienung.py` angepasst (kein „Tschüss“ beim Halten, „Tschüss“ beim Loslassen, 10 s nur „ganz aus“), alle 22 Testdateien grün. Am Pi nicht gesehen.
+
+## Nachtrag 11.11.2026 – Auto-Aus nach Kaltstart
+
+- Beobachtung: Box nach dem Einschalten (war länger aus) gebootet, Karte spielte kurz, dann stumm und nicht zurück; die Box war von selbst im Sparzustand (Log: „Auto-Aus: seit 60 Minuten nichts gespielt“).
+- Vermutete Ursache: Der Pi hat keine Echtzeituhr. Nach dem Kaltstart springt die Wanduhr beim Zeitabgleich um die Ausschaltdauer vor; die Auto-Aus-Frist lief auf `time.time()` und war damit sofort „abgelaufen“. Noch nicht am Gerät bestätigt (Journal-Zeilen zu „clock/Synchronized“ vor dem Auto-Aus prüfen).
+- Änderung: `Automatik` misst die Auto-Aus-Frist auf einer eigenen Dauer-Uhr (`dauer`, im Player `time.monotonic`). Neuer Test `test_uhrsprung_nach_dem_kaltstart_loest_kein_auto_aus_aus`.
+- Offen: Schlummer-Timer und Ruhezeit nutzen weiter die Wanduhr (Timer-Ende steht als Wanduhrzeit in einer Datei) und sollten nach einem Zeitsprung geprüft werden. Zusätzlich: Auto-Aus greift auch, wenn eine Karte liegt und die Wiedergabe gestört ist; die Reparaturleiter in `steuerung.py` hat in der Zeit nichts gerettet (Ursache über das Journal vor 18:57 klären).

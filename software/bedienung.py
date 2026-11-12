@@ -444,6 +444,7 @@ class Hardware:
         self._scl_tief = self._scl_hoch = 0
         self.scl = 1
         self.taste = None
+        self._tief_seit = None       # (Zeit, SDA-Pegel) seit SCL als gedrückt gilt – Befund nach dem Loslassen
         self._stumm_naechste = 0.0
         self._live_alt, self._live_zeit = None, -1e9
         self.lebenszeichen = jetzt()
@@ -484,6 +485,8 @@ class Hardware:
         frei = w is not None and self.scl and not self.taste     # I2C nur, wenn die Taste nicht gedrückt ist
         if w is None:
             frei = True                                           # ohne GPIO: Taste unbekannt, I2C trotzdem
+        if w is not None:
+            self._taste_befund(w, t)
         if self.taste is not None:
             self.bed.ein_taste(self.taste, t)
         if frei:
@@ -510,6 +513,18 @@ class Hardware:
         self._gpio_gemeldet = False
         for pin in (gpio.KLINKE, gpio.MPR_INT):                   # falls config.txt noch nicht gilt
             self.pins_setzen(pin, "ip", "pu", log=self.log)
+
+    def _taste_befund(self, w, t):
+        """12.11.2026: Box ging beim Spielen in den Sparzustand, laut Protokoll „Ein-Taste 2 s gehalten“,
+        ohne dass jemand drückte. Für die Fehlersuche: wie lange SCL tief war und wie SDA dabei stand
+        (Taste gedrückt: SDA hoch; hängt ein I2C-Baustein, meist SDA tief)."""
+        if self.taste and self._tief_seit is None:
+            self._tief_seit = (t, (w >> 2) & 1)
+        elif not self.taste and self._tief_seit is not None:
+            beginn, sda = self._tief_seit
+            self._tief_seit = None
+            if t - beginn >= AUS_HALTEN_S:
+                self.log(f"Ein-Taste: SCL war {t - beginn:.1f} s tief (SDA dabei {'hoch' if sda else 'tief'}).")
 
     def _pegel(self):
         """Pegel aller Pins; SCL nur, wenn dieser Prozess gerade nicht über I2C sendet."""

@@ -532,6 +532,23 @@ class HardwareAbfrage(Basis):
         self.assertEqual(len(FakeMPR.instanzen), 1)           # Chip nie als defekt neu eingerichtet
         self.assertIs(self.hw.mpr, m)
 
+    def test_langes_scl_tief_wird_mit_sda_protokolliert(self):
+        """12.11.2026: Sparzustand ohne Tastendruck. Nach dem Loslassen: Dauer und SDA-Pegel im Protokoll."""
+        self.schritte(0.1)
+        self.g.setze(2, True)                                # SDA hoch = Bus frei, Taste zieht nur SCL
+        self.g.setze(gpio.SCL, False)
+        self.schritte(2.5)
+        self.g.setze(gpio.SCL, True)
+        self.schritte(0.1)
+        zeilen = [z for z in self.log if "SCL war" in z]
+        self.assertEqual(len(zeilen), 1)
+        self.assertIn("SDA dabei hoch", zeilen[0])
+        self.g.setze(gpio.SCL, False)                        # kurzer Druck: keine Zeile
+        self.schritte(0.5)
+        self.g.setze(gpio.SCL, True)
+        self.schritte(0.1)
+        self.assertEqual(len([z for z in self.log if "SCL war" in z]), 1)
+
     def test_kurzer_scl_einbruch_ist_keine_taste(self):
         self.schritte(0.1)
         self.g.setze(gpio.SCL, False)

@@ -115,6 +115,25 @@ export function toast(text, art = 'ok', ms) {
   clearTimeout(toastZeit);
   toastZeit = setTimeout(() => { t.remove(); }, ms || (art === 'ok' ? 3500 : 7000));
 }
+/** Text in die Zwischenablage. Im Heimnetz läuft die Seite über http (kein navigator.clipboard),
+ *  darum der alte Weg über ein unsichtbares Textfeld; muss direkt im Klick aufgerufen werden. */
+export async function kopieren(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* alter Weg */ }
+  }
+  const feld = document.createElement('textarea');
+  feld.value = text;
+  feld.setAttribute('readonly', '');
+  feld.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px';
+  document.body.appendChild(feld);
+  feld.select();
+  feld.setSelectionRange(0, text.length);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+  feld.remove();
+  return ok;
+}
+
 /** Antwort der Box melden: Erfolg kurz, Fehler lang. */
 export function melden(erg, okText) {
   toast(erg.meldung || (erg.ok ? okText || 'Erledigt.' : 'Das hat nicht geklappt.'), erg.ok ? 'ok' : 'fehler');
@@ -163,6 +182,7 @@ const SYMBOLE = {
   wlan: '<path d="M3 9a14 14 0 0 1 18 0"/><path d="M6 12.5a9.5 9.5 0 0 1 12 0"/><path d="M9 16a5 5 0 0 1 6 0"/><path d="M12 19.5h.01"/>',
   musik: '<path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
   schloss: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  kopieren: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
 };
 export function symbol(name, klasse = '') {
   return `<svg class="sym ${klasse}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SYMBOLE[name] || ''}</svg>`;

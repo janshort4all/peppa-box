@@ -1,5 +1,5 @@
 // Entwickler-Einstellungen: Ton, Bedienung, Etiketten, System. Alles, was nicht zum Alltag gehört.
-import {$, NB, S, abo, bedient, boxAktion, datum, einstLaden, einstSpeichern, esc, holen, kartenLaden, melden, sicher, symbol, toast, zustandLaden, zustandTexte} from './kern.js';
+import {$, NB, S, abo, bedient, boxAktion, datum, kopieren, einstLaden, einstSpeichern, esc, holen, kartenLaden, melden, sicher, symbol, toast, zustandLaden, zustandTexte} from './kern.js';
 import {equalizer} from './klang.js';
 
 const QUELLE = {aufnahme: 'Aufnahme', sprache: 'Sprachausgabe', ton: 'nur Töne'};
@@ -244,9 +244,11 @@ export function system(w, signal) {
     <section class="k"><h2>Software</h2><div class="wert" id="vtext">–</div><div class="leise klein" id="vdatum"></div><div id="uergebnis"></div>
       <div class="stapel" style="margin-top:12px"><button class="btn" id="bpruefen">Nach Updates suchen</button>
         <button class="btn haupt versteckt" id="bupdate">Jetzt aktualisieren</button><button class="btn versteckt" id="bzurueck">Zurück zur vorherigen Version</button></div></section>
-    <section class="k"><details id="mdetails" style="margin-top:0"><summary>Letzte Meldungen der Box</summary><pre id="mtext">wird geladen …</pre></details>
+    <section class="k"><details id="mdetails" style="margin-top:0"><summary>Letzte Meldungen der Box</summary><pre id="mtext">wird geladen …</pre>
+        <button class="btn" id="mkopieren" data-quelle="mtext">${symbol('kopieren')} Meldungen kopieren</button></details>
       <details id="ddetails"><summary>Diagnose (für die Fehlersuche)</summary>
-        <p class="leise klein">Zustand von Ton, Diensten und Spotify und das Protokoll, auch vom vorigen Lauf. Nach einem Fehler öffnen und Screenshots machen.</p><pre id="dtext">wird geladen …</pre></details></section>`;
+        <p class="leise klein">Zustand von Ton, Diensten und Spotify und das Protokoll, auch vom vorigen Lauf. Nach einem Fehler öffnen, kopieren und in den Chat einfügen.</p><pre id="dtext">wird geladen …</pre>
+        <button class="btn" id="dkopieren" data-quelle="dtext">${symbol('kopieren')} Diagnose kopieren</button></details></section>`;
   zustandLaden();
   abo(signal, 'zustand', () => {
     const z = S.zustand; if (!z) return;
@@ -282,6 +284,12 @@ export function system(w, signal) {
     try { const m = await holen('/api/meldungen'); const p = $('#mtext', w); p.textContent = m.text || '(keine Meldungen)'; p.scrollTop = p.scrollHeight; }
     catch (x) { $('#mtext', w).textContent = 'Keine Verbindung zur Box.'; }
   }, {signal});
+  ['#mkopieren', '#dkopieren'].forEach(id => $(id, w).addEventListener('click', async e => {
+    const text = $('#' + e.currentTarget.dataset.quelle, w).textContent;
+    if (!text || text === 'wird geladen …') { toast('Noch nicht geladen, bitte kurz warten.', 'fehler'); return; }
+    const ok = await kopieren(text);
+    toast(ok ? 'Kopiert – jetzt im Chat einfügen.' : 'Kopieren ging nicht. Text lange drücken und markieren.', ok ? 'ok' : 'fehler');
+  }, {signal}));
   $('#ddetails', w).addEventListener('toggle', async e => {
     if (!e.target.open) return;
     $('#dtext', w).textContent = 'wird geladen …';

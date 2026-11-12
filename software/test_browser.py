@@ -236,6 +236,30 @@ class Browser(unittest.TestCase):
         self.karte.update(uid=None, link=None)
         expect(pg.locator("#hero .titel")).to_have_text("Keine Karte im Fach")
 
+    def test_meldungen_und_diagnose_kopieren(self):
+        """Wunsch Jan 12.11.2026: Protokoll per Knopf kopieren (im Heimnetz http: alter Weg über Textfeld)."""
+        for sicher in (True, False):
+            with self.subTest(sicher=sicher), \
+                    mock.patch.object(peppa_web, "meldungen", return_value={"ok": True, "text": "Zeile 1\nAuto-Aus: 502"}), \
+                    mock.patch.object(peppa_web, "diagnose", return_value={"ok": True, "text": "== Version ==\nabc"}):
+                ctx = self.chrome.new_context(viewport={"width": 390, "height": 844})
+                self.addCleanup(ctx.close)
+                ctx.grant_permissions(["clipboard-read", "clipboard-write"])
+                if not sicher:
+                    ctx.add_init_script("Object.defineProperty(window, 'isSecureContext', {get: () => false})")
+                pg = ctx.new_page()
+                pg.set_default_timeout(8000)
+                pg.goto(self.url + "/#/dev/system")
+                pg.click("#mdetails summary")
+                expect(pg.locator("#mtext")).to_contain_text("Auto-Aus: 502")
+                pg.click("#mkopieren")
+                expect(pg.locator(".toast")).to_contain_text("Kopiert")
+                self.assertEqual(pg.evaluate("navigator.clipboard.readText()"), "Zeile 1\nAuto-Aus: 502")
+                pg.click("#ddetails summary")
+                expect(pg.locator("#dtext")).to_contain_text("abc")
+                pg.click("#dkopieren")
+                self.assertEqual(pg.evaluate("navigator.clipboard.readText()"), "== Version ==\nabc")
+
     def test_keine_verbindung_zeigt_hinweis(self):
         pg = self.pg
         pg.goto(self.url + "/#/start")

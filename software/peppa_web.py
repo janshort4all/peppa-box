@@ -46,7 +46,7 @@ EINRICHTUNG = {"software/dienst_einrichten.sh", "software/lautsprecher_einrichte
                "software/bedienung_einrichten.sh", "software/peppa_ausgang.sh",
                "software/ausgabe.py", "software/ereignis.py"}     # die beiden laufen als installierte Kopie
 HELFER = "/usr/local/sbin/peppa-ausgang"
-DIENSTE = ("peppa-player", "peppa-web", "raspotify", "peppa-stille")
+DIENSTE = ("peppa-player", "peppa-web", "raspotify", "peppa-stille", "peppa-standby")
 KONFIG = os.path.expanduser("~/.config/peppa-box")
 VORHER_DATEI = os.path.join(KONFIG, "vorherige_version.txt")
 TROCKEN = os.environ.get("PEPPA_WEB_TROCKEN") == "1"
@@ -257,7 +257,7 @@ def zustand():
 
 def meldungen():
     code, aus = befehl(["journalctl", "-u", "peppa-player", "-u", "peppa-web", "-u", "raspotify",
-                        "-u", "peppa-stille", "-n", "100",
+                        "-u", "peppa-stille", "-u", "peppa-standby", "-n", "100",
                         "--no-pager", "-o", "short-iso"], zeit=10)
     return {"ok": code == 0, "text": aus}
 

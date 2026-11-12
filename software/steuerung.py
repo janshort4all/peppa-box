@@ -565,7 +565,9 @@ class Steuerung:
             return
         warte = WARTEN[min(self.fehler - 1, len(WARTEN) - 1)]
         if self.fehler >= neustart_ab:
-            self._melden(f"Musik startet nicht ({grund}), neuer Versuch in {warte} s.")
+            tipp = (" Tipp: in der Spotify-App einmal das Gerät „Peppa Box“ auswählen."
+                    if grund.startswith("Spotify 5") else "")
+            self._melden(f"Musik startet nicht ({grund}), neuer Versuch in {warte} s.{tipp}")
         self.naechster_versuch = jetzt + warte
 
     def _netzfehler(self, e, jetzt, zaehlen=True):

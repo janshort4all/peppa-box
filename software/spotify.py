@@ -187,7 +187,10 @@ def abspielen(device_id, uri, titel=None, position_ms=0):
     if position_ms:
         body["position_ms"] = int(max(0, position_ms))
     status, data = api("PUT", "/me/player/play", body, {"device_id": device_id})
-    if status == 404:                       # Geraet noch nicht aktiv: erst Wiedergabe uebertragen
+    # Geraet nicht aktiv: erst Wiedergabe uebertragen, dann noch einmal. 404 "kein aktives Geraet", und
+    # 12.11.2026: nach einer Nacht antwortete Spotify 502, auch nach Raspotify-Neustarts; erst das
+    # Auswaehlen der Box in der Spotify-App (= Uebertragen) half.
+    if status == 404 or status >= 500:
         api("PUT", "/me/player", {"device_ids": [device_id], "play": False})
         time.sleep(1)
         status, data = api("PUT", "/me/player/play", body, {"device_id": device_id})

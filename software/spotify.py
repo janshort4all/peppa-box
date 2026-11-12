@@ -31,6 +31,17 @@ class AnmeldungFehlt(RuntimeError):
     Player weiterlaeuft (Karte lesen, Eltern-Seite) und die Ursache meldet."""
 
 
+class ApiFehler(RuntimeError):
+    """Spotify hat geantwortet, aber mit einem Fehler (z. B. 429 "zu viele Anfragen", 502). Das ist etwas
+    anderes als "die Box steht nicht in der Geraeteliste": Die Steuerung startet dafuer Raspotify nicht neu,
+    sondern wartet (Audit 12.11.2026, Befund 11). `warten` = von Spotify verlangte Wartezeit in s oder None."""
+
+    def __init__(self, status, daten=None):
+        self.status = status
+        self.warten = daten.get("retry_after") if isinstance(daten, dict) else None
+        super().__init__(f"Spotify antwortet mit Fehler {status}")
+
+
 def _save(path, data):
     os.makedirs(CONF_DIR, mode=0o700, exist_ok=True)
     tmp = path + ".tmp"
@@ -122,7 +133,17 @@ def token_verwerfen():
 
 
 def api(method, path, body=None, params=None):
-    """Aufruf der Web API. Gibt (Statuscode, JSON oder None) zurueck."""
+    """Aufruf der Web API. Gibt (Statuscode, JSON oder None) zurueck. Bei 401 (Zugang abgelaufen, z. B. weil
+    die Uhr der Box nach dem Einschalten noch nachgeht) wird der Zugang einmal erneuert und die Anfrage
+    wiederholt; vorher galt das bei Abfragen als "Geraet fehlt" (Audit 12.11.2026, Befund 11)."""
+    status, data = _api_einmal(method, path, body, params)
+    if status == 401:
+        token_verwerfen()
+        status, data = _api_einmal(method, path, body, params)
+    return status, data
+
+
+def _api_einmal(method, path, body=None, params=None):
     url = API + path + ("?" + urllib.parse.urlencode(params) if params else "")
     data = json.dumps(body).encode() if body is not None else (b"" if method in ("PUT", "POST") else None)
     req = urllib.request.Request(url, data=data, method=method,
@@ -152,14 +173,20 @@ def _json_oder_none(raw):
         return None
 
 
-def geraete():
+def geraete(streng=False):
+    """Geraeteliste. streng=True: bei einer Fehlerantwort ApiFehler statt einer leeren Liste (fuer die
+    Steuerung: eine Fehlerantwort heisst nicht, dass die Box fehlt)."""
     status, data = api("GET", "/me/player/devices")
-    return (data or {}).get("devices", []) if status == 200 else []
+    if status != 200:
+        if streng:
+            raise ApiFehler(status, data)
+        return []
+    return (data or {}).get("devices", []) if isinstance(data, dict) else []
 
 
 def geraet_id(name):
-    for d in geraete():
-        if d.get("name", "").lower() == name.lower():
+    for d in geraete(streng=True):
+        if (d.get("name") or "").lower() == name.lower():
             return d["id"]
     return None
 

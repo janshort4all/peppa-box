@@ -53,7 +53,15 @@ from steuerung import LibrespotLast, Steuerung
 
 GERAET = "Peppa Box"          # Name in /etc/raspotify/conf (LIBRESPOT_NAME)
 ABFRAGE = 1.0                 # Sekunden zwischen zwei Abfragen des Lesers
-WEG_NACH = 1.5                # Sekunden ohne Karte, bis "entfernt" gilt (= zwei verpasste Abfragen)
+# Audit 12.11.2026, Befund 6: Vorher reichten zwei einzelne Fehlversuche des Lesers für "Karte weg" -> die
+# Musik setzte kurz aus, obwohl die Karte lag. Jetzt bis zu LESE_VERSUCHE Versuche je Abfrage und "weg"
+# erst nach drei verpassten Abfragen. Die Musik stoppt nach dem Herausnehmen dadurch ca. 1,5 s später.
+WEG_NACH = 3.0                # Sekunden ohne Karte, bis "entfernt" gilt (= drei verpasste Abfragen)
+LESE_VERSUCHE = 3             # Versuche je Abfrage, wenn eine Karte liegen müsste
+LESE_PAUSE_S = 0.03
+# Befund 5: Beim Einschieben ist die Karte kurz am Rand des Funkfelds: Nummer lesbar, Link noch nicht. So lange
+# wird der Link weiter versucht, erst dann kommt "Auf dieser Karte ist noch keine Musik".
+LINK_GEDULD_S = 3.0
 LESER_NEU_NACH = 5            # so viele Lesefehler in Folge -> Leser neu einrichten
 LESER_NEU_VERSUCH_S = 10      # fehlt der Leser: so oft neu versuchen
 MOMENT_NACH_S = 8             # Karte wartet so lange auf Musik -> „Einen Moment …“
@@ -98,17 +106,30 @@ class SpotifyFuerAutomatik:
     gewollt ist, und „repariert“ sie nicht. Ohne bekanntes Gerät wird nichts pausiert (sonst träfe
     die Pause womöglich das Handy der Eltern)."""
 
-    def __init__(self, st, sp=spotify):
-        self.st, self.sp = st, sp
+    def __init__(self, st, sp=spotify, geraet=None):
+        self.st, self.sp, self.geraet = st, sp, geraet
 
     def spielt(self, dev):
         return self.sp.spielt(dev) if dev else False
 
     def pause(self, dev):
+        """Gibt (Status, Daten) zurück; Status 0 = nicht gesendet, weil die Gerätekennung fehlt (die
+        Automatik versucht es dann weiter; vorher galt das als erledigt, Audit 12.11.2026, Befund 3)."""
         self.st.extern_pausiert()
+        if not dev and self.geraet and hasattr(self.sp, "geraet_id"):
+            try:
+                dev = self.sp.geraet_id(self.geraet)
+            except Exception:
+                dev = None
         if not dev:
-            return 404, None
+            return 0, None
         return self.sp.pause(dev)
+
+    def stopp_erzwingen(self):
+        """Letztes Mittel des Schlummer-Timers: Die Pause wirkt nicht, es fließt weiter Ton. Raspotify neu
+        starten beendet die Musik sicher; angespielt wird danach nichts (kein Spielen-Wunsch mehr)."""
+        self.st.extern_pausiert()
+        self.st.reparatur_anfordern("Schlummer-Timer: Musik lief trotz Pause weiter")
 
 
 class GpioDerBedienung:
@@ -177,10 +198,16 @@ class Player:
         self.fortschritt = fortschritt.Fortschritt(log=log) if sp is spotify else None
         self.st = Steuerung(sp, geraet=GERAET, log=log,
                             lokal=lokaler_beleg(self.rueck, LibrespotLast()) if sp is spotify else None,
-                            fortschritt=self.fortschritt)
+                            fortschritt=self.fortschritt, zu_ende=self._karte_zu_ende,
+                            ton=self._tonfluss if sp is spotify else None,
+                            stumm=lambda an: self.ausgang.zwangsstumm(an))
         self._spielte = None                    # Karte, die im letzten Durchlauf lief
-        self.auto = automatik.Automatik(SpotifyFuerAutomatik(self.st, sp), lautstaerke, einstellungen, log=log, dauer=time.monotonic,
-                                        ausschalten=lambda: self.sparzustand("Auto-Aus", None))
+        self._link_offen = None                 # (Kartennummer, seit wann): Link der Karte wird noch versucht
+        self.auto = automatik.Automatik(SpotifyFuerAutomatik(self.st, sp, GERAET), lautstaerke, einstellungen,
+                                        log=log, dauer=time.monotonic,
+                                        ausschalten=lambda: self.sparzustand("Auto-Aus", None),
+                                        ton=self._tonfluss if sp is spotify else None,
+                                        wartet=self.st.wartezeit)
         self.regler = bedienung.Regler(lautstaerke, einstellungen, log=log)
         self.akkuwache = akku.Akkuwache(lesen=akku_lesen_gesperrt, ansage=self.ansager.sagen,
                                         ausschalten=self.herunterfahren, log=log)
@@ -326,6 +353,12 @@ class Player:
     def schritt(self):
         """Ein Durchlauf: Karte lesen und bei Wechsel der Steuerung den Wunsch melden (wartet nie auf das Netz)."""
         uid = self.leser.read_uid()
+        if not uid and self.aktuell:                    # eine Karte müsste da sein: nicht dem ersten Fehlversuch glauben
+            for _ in range(LESE_VERSUCHE - 1):
+                self.schlaf(LESE_PAUSE_S)
+                uid = self.leser.read_uid()
+                if uid:
+                    break
         jetzt = self.jetzt()
         if uid:
             self.letzte_sicht = jetzt
@@ -335,36 +368,56 @@ class Player:
                 self.log(f"Auftrag lesen: {e!r}")
                 auftrag = None
             if auftrag:
+                self._link_offen = None
                 self._auftrag_ausfuehren(uid, auftrag)
                 return
             if uid != self.aktuell:
                 self.aktuell = uid
-                link = self._link_lesen()
-                if not link:                            # kein Link auf der Karte: Zuordnung in der Box (karten.json)
-                    link = karten.link_fuer_uid(uid)
-                self.zustand["link"] = link
-                uri = None
-                if not link:
-                    self.log(f"Karte {uid}: kein Link gefunden. In der Eltern-Seite unter „Karten“ bespielen.")
-                    self.ansager.sagen("karte_leer")
-                else:
-                    try:
-                        uri = self.sp.link_zu_uri(link)
-                    except ValueError:
-                        self.log(f"Karte {uid}: Link ist kein Spotify-Link: {link}")
-                        self.ansager.sagen("karte_leer")
-                if uri and self.auto.sperrt():
-                    self.log(f"Karte {uid}: Ruhezeit, es wird nicht abgespielt.")
-                    self.ansager.sagen("ruhezeit")
-                    uri = None
-                if uri:
-                    self.st.karte_auf(uri)
-                else:
-                    self.st.karte_weg()             # Karte ohne Link ersetzt eine spielende Karte
+                self._link_offen = None
+                self._karte_neu(uid, jetzt, erste=True)
+            elif self._link_offen and self._link_offen[0] == uid:
+                self._karte_neu(uid, jetzt, erste=False)
         elif self.aktuell and jetzt - self.letzte_sicht > WEG_NACH:
             self.st.karte_weg()
             self.aktuell = None
+            self._link_offen = None
             self.zustand["link"] = None
+
+    def _karte_neu(self, uid, jetzt, erste):
+        """Link der Karte lesen und der Steuerung den Wunsch melden. Ist (noch) kein Link lesbar, wird es
+        LINK_GEDULD_S lang bei jeder Abfrage wieder versucht, erst dann gilt die Karte als leer."""
+        link = self._link_lesen()
+        if not link:                                    # kein Link auf der Karte: Zuordnung in der Box (karten.json)
+            link = karten.link_fuer_uid(uid)
+        self.zustand["link"] = link
+        uri = None
+        if not link:
+            if erste:
+                self._link_offen = (uid, jetzt)
+                self.st.karte_weg()                     # eine vorher spielende Karte ist auf jeden Fall weg
+                return
+            if jetzt - self._link_offen[1] < LINK_GEDULD_S:
+                return
+            self._link_offen = None
+            self.log(f"Karte {uid}: kein Link gefunden. In der Eltern-Seite unter „Karten“ bespielen.")
+            self.ansager.sagen("karte_leer")
+        else:
+            if not erste:
+                self.log(f"Karte {uid}: Link erst beim wiederholten Lesen gefunden.")
+            self._link_offen = None
+            try:
+                uri = self.sp.link_zu_uri(link)
+            except ValueError:
+                self.log(f"Karte {uid}: Link ist kein Spotify-Link: {link}")
+                self.ansager.sagen("karte_leer")
+        if uri and self.auto.sperrt():
+            self.log(f"Karte {uid}: Ruhezeit, es wird nicht abgespielt.")
+            self.ansager.sagen("ruhezeit")
+            uri = None
+        if uri:
+            self.st.karte_auf(uri)
+        else:
+            self.st.karte_weg()                         # Karte ohne Link ersetzt eine spielende Karte
 
     # ------------------------------------------------------------ Karte bespielen (Auftrag der Eltern-Seite)
 
@@ -524,6 +577,22 @@ class Player:
         status_schreiben(self.zustand)
         systemd_melden("WATCHDOG=1")
         return beginn
+
+    def _tonfluss(self):
+        """Fließt gerade Ton durch die Tonausgabe? True/False; None, wenn es niemand sicher weiß (Tonausgabe
+        nicht eingerichtet oder der Empfang ihrer Meldungen läuft nicht) – dann wird nichts daraus gefolgert."""
+        if not self.rueck.empfang_ok:
+            return None
+        return self.rueck.lokal()
+
+    def _karte_zu_ende(self):
+        """Ist die Karte zu Ende gehört (letzter Titel lief aus)? Aus den Ereignissen von librespot."""
+        ereignis = self.rueck.ereignis
+        if not ereignis:
+            return False
+        pos, dauer = self.rueck.position(), self.rueck.dauer_ms
+        return ereignis[0] == "end_of_track" or (
+            ereignis[0] == "stopped" and pos is not None and bool(dauer) and dauer - pos < 10000)
 
     def _stelle_merken(self):
         """Jede Sekunde: Wo ist die Musik der liegenden Karte? (aus den librespot-Ereignissen)"""

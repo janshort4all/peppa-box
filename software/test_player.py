@@ -163,7 +163,7 @@ class Probelauf(unittest.TestCase):
         self.runde(2)
         self.pl.st.karte_auf.assert_called_once_with("spotify:playlist:37i9dQZF1DX")
         self.leser.karte = None
-        self.runde(3)
+        self.runde(5)                                   # „weg“ gilt seit dem Audit erst nach 3 s
         self.pl.st.karte_weg.assert_called()
         with open(peppa_player.STATUS_DATEI) as f:
             z = json.load(f)
@@ -174,6 +174,8 @@ class Probelauf(unittest.TestCase):
     def test_leere_karte_und_fremder_link_sagen_es(self):
         self.leser.karte = ("AA:BB", None)
         self.runde()
+        self.assertEqual(self.ansager.gesagt, [])       # seit dem Audit: erst weiter versuchen (LINK_GEDULD_S)
+        self.runde(4)
         self.leser.karte = ("CC:DD", "https://example.com/")
         self.runde()
         self.assertEqual(self.ansager.gesagt, ["karte_leer", "karte_leer"])
@@ -321,7 +323,7 @@ class Probelauf(unittest.TestCase):
 
     def test_unbekannte_karte_ohne_link_sagt_leer(self):
         self.leser.karte = ("11:22:33:44", None)
-        self.runde()
+        self.runde(5)
         self.assertEqual(self.ansager.gesagt, ["karte_leer"])
 
     def auftrag(self, uri=None, ueberschreiben=False):
@@ -341,7 +343,7 @@ class Probelauf(unittest.TestCase):
         self.assertEqual(self.pl.zustand["link"], "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M")
         # Karte abheben und wieder auflegen: jetzt spielt sie
         self.leser.karte = None
-        self.runde(3)
+        self.runde(5)                                   # „weg“ gilt seit dem Audit erst nach 3 s
         self.leser.karte = ("04:AA:BB:CC", "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M")
         self.runde(2)
         self.pl.st.karte_auf.assert_called_once_with(self.PL)
@@ -388,7 +390,7 @@ class Probelauf(unittest.TestCase):
         self.assertIn("nur an dieser Box", st["meldung"])
         self.assertTrue(karten.link_fuer_uid("19:81:15:20"))
         self.leser.karte = None
-        self.runde(3)
+        self.runde(5)                                   # „weg“ gilt seit dem Audit erst nach 3 s
         self.leser.karte = ("19:81:15:20", None)                           # später: spielt über die Zuordnung
         self.runde(2)
         self.pl.st.karte_auf.assert_called_once_with(self.PL)

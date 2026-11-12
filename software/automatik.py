@@ -26,6 +26,8 @@ FADE_S = 20             # so lange wird beim Schlummer-Timer ausgeblendet
 ABFRAGE_S = 10          # Spotify fragen und Grenzen prüfen
 SEITE_AKTIV_S = 120     # so lange zählt eine geöffnete Eltern-Seite als Aktivität
 TIMER_GNADE_S = 60      # so lange nach Ablauf wird die Pause bei Fehlern wiederholt
+TIMER_PAUSE_ABSTAND_S = 3   # ... in diesem Abstand
+SEITE_REPARATUR_S = 600     # so lange zählt eine Karte, die auf Musik wartet (Reparatur), als Aktivität
 SYSTEMCTL = shutil.which("systemctl") or "/usr/bin/systemctl"
 TIMER_SPERRE = threading.RLock()  # Mond-Feld (Faden der Bedienung) und Ausblenden (Hauptfaden) nie gleichzeitig
 
@@ -59,13 +61,20 @@ def _poweroff():
 
 class Automatik:
     def __init__(self, spotify, laut, einst, jetzt=time.time, schlaf=time.sleep,
-                 ausschalten=_poweroff, log=print, dauer=None):
+                 ausschalten=_poweroff, log=print, dauer=None, ton=None, wartet=None):
         self.spotify, self.laut, self.einst = spotify, laut, einst
         self.jetzt, self.schlaf, self.ausschalten, self.log = jetzt, schlaf, ausschalten, log
         # Uhr für die Auto-Aus-Frist. Im Betrieb time.monotonic: Der Pi hat keine Echtzeituhr und springt nach
         # dem Kaltstart beim Zeitabgleich (NTP) um Stunden vor; mit der Wanduhr hätte das sofort Auto-Aus
         # ausgelöst (Fehler 11.11.2026). Ohne Angabe gilt dieselbe Uhr wie jetzt (Tests mit simulierter Zeit).
         self.dauer = dauer or jetzt
+        # Audit 12.11.2026 (Befunde 3 und 4): Die Auskunft von Spotify, ob gespielt wird, war bei hörbarer
+        # Musik schon falsch (08.11.). Darum zusätzlich der Tonfluss der Box selbst: ton() -> True/False,
+        # None = unbekannt. wartet() -> Sekunden, die eine liegende Karte schon auf Musik wartet, oder None.
+        self.ton = ton or (lambda: None)
+        self.wartet = wartet or (lambda: None)
+        self._timer_pause_ok = None              # (Ende des Timers, Zeitpunkt der angenommenen Pause)
+        self._timer_naechste_pause = 0.0
         self.spielt = None                       # letzter bekannter Zustand: True, False, None
         self.letzte_aktivitaet = self.dauer()    # nach dem Einschalten bleibt die Box mindestens so lange an
         self._naechste_abfrage = 0.0
@@ -106,8 +115,15 @@ class Automatik:
             except Exception as e:                       # Netz weg: nichts Neues, alter Wert bleibt
                 self.log(f"Spotify-Abfrage fehlgeschlagen: {e!r}")
                 self.spielt = None
-        if self.spielt is True:
+        if self.spielt is True or self._ton() is True:
             self.letzte_aktivitaet = self.dauer()
+        else:
+            try:
+                w = self.wartet()
+            except Exception:
+                w = None
+            if w is not None and w < SEITE_REPARATUR_S:  # Karte liegt, die Box kümmert sich gerade um die Musik
+                self.letzte_aktivitaet = self.dauer()
 
         self._timer(dev, aus, jetzt)
 
@@ -122,6 +138,12 @@ class Automatik:
         self._auto_aus(cfg, jetzt)
         self.status.update(ausgabe=aus, ruhezeit=ruhe)
 
+    def _ton(self):
+        try:
+            return self.ton()
+        except Exception:
+            return None
+
     # ------------------------------------------------------------ Schlummer-Timer
 
     def _timer(self, dev, aus, jetzt):
@@ -134,21 +156,48 @@ class Automatik:
             return
         rest = t["ende"] - jetzt
         if rest > 0:
-            if rest <= FADE_S and self.spielt is True:
+            if rest <= FADE_S and (self.spielt is True or self._ton() is True):
                 self._ausblenden(t, aus, rest)
             return
-        # Zeit ist um: pausieren (bei Fehlern kurz wiederholen), dann Lautstärke zurück
-        fertig = jetzt - t["ende"] > TIMER_GNADE_S
-        if self.spielt is not False:
+        # Zeit ist um: pausieren und am Tonfluss prüfen, dass es wirklich still ist. Die Pause wird immer
+        # gesendet, wenn Musik laufen könnte (Spotify sagt "spielt", weiß es nicht, oder es fließt Ton);
+        # vorher entfiel sie, wenn Spotify fälschlich "spielt nicht" meldete oder die Gerätekennung gerade
+        # fehlte, und die Musik lief die Nacht durch (Audit 12.11.2026, Befund 3).
+        ueber = jetzt - t["ende"]
+        ton = self._ton()
+        if self._timer_pause_ok is not None and self._timer_pause_ok[0] != t["ende"]:
+            self._timer_pause_ok = None              # anderer Timer als beim letzten Mal
+        fertig = False
+        if self.spielt is False and ton is not True and self._timer_pause_ok is None:
+            fertig = True                            # es läuft nichts
+        elif self._timer_pause_ok is not None and ton is not True:
+            fertig = True                            # Pause angenommen und kein Ton mehr
+        elif jetzt >= self._timer_naechste_pause:
+            self._timer_naechste_pause = jetzt + TIMER_PAUSE_ABSTAND_S
             try:
                 status, _ = self.spotify.pause(dev)
-                fertig = fertig or status < 300 or status in (403, 404)   # 404: kein aktives Gerät
                 self.log(f"Schlummer-Timer abgelaufen, Pause (Spotify {status})")
+                if status and (status < 300 or status in (403, 404)):   # 404: kein aktives Gerät
+                    if self._timer_pause_ok is None:
+                        self._timer_pause_ok = (t["ende"], jetzt)
+                    if ton is None:
+                        fertig = True                # ohne Tonausgabe-Meldung: wie bisher der Antwort glauben
             except Exception as e:
                 self.log(f"Schlummer-Timer: Pause fehlgeschlagen: {e!r}")
-        else:
+        if not fertig and ueber > TIMER_GNADE_S:
             fertig = True
+            if ton is True:                          # Pause wirkt nicht: Ton über einen Neustart beenden
+                stopp = getattr(self.spotify, "stopp_erzwingen", None)
+                self.log("Schlummer-Timer: Musik läuft trotz Pause weiter"
+                         + (" – Ton wird neu gestartet, damit sie endet." if stopp else "."))
+                if stopp:
+                    try:
+                        stopp()
+                    except Exception as e:
+                        self.log(f"Schlummer-Timer: Stopp fehlgeschlagen: {e!r}")
         if fertig:
+            self._timer_pause_ok = None
+            self._timer_naechste_pause = 0.0
             self.spielt = False
             vorher = t.get("vorher")
             if vorher is not None:

@@ -101,6 +101,11 @@ class Ausgang:
         self._sd_tief = 0
         self.klang_da = klang_da or (lambda: False)
         self.klang = False               # Equalizer für die Tonausgabe freigegeben
+        # Zwangsstumm (Audit 12.11.2026, Befund 8): Die Karte ist weg, aber die Pause kommt bei Spotify nicht
+        # an. Die Steuerung wünscht es (anderer Faden), umgesetzt wird hier im Takt der Bedienung.
+        self._zwang_soll = False
+        self.zwang = False
+        self._kh_vorher = None           # Kopfhörer-Lautstärke vor dem Zwangsstumm
         if rueck is not None:
             rueck.bei_fehler = self.relais_fehler
 
@@ -137,9 +142,34 @@ class Ausgang:
         if ziel == "kopfhoerer":
             self._relais_fehler = text
 
+    # ------------------------------------------------------------ Zwangsstumm
+
+    def zwangsstumm(self, an):
+        """Von der Steuerung: Ton sofort stumm (True) bzw. wieder frei (False). Wirkt im nächsten Takt.
+        Ein Neustart des Players hebt es immer auf (beginnt mit False)."""
+        self._zwang_soll = bool(an)
+
+    def _zwang_anwenden(self):
+        if self._zwang_soll == self.zwang:
+            return
+        self.zwang = self._zwang_soll
+        if self.zwang:
+            self.verstaerker(False, log=self.log)
+            if self.aktuell == "kopfhoerer":
+                self._kh_vorher = self.laut.lesen("kopfhoerer")
+                self.laut.setzen("kopfhoerer", 0)
+        else:
+            if self.aktuell == "kopfhoerer":
+                if self._kh_vorher:
+                    self.laut.setzen("kopfhoerer", self._kh_vorher)
+            else:
+                self.verstaerker(True, log=self.log)
+            self._kh_vorher = None
+
     # ------------------------------------------------------------ alle 20 ms aus der Bedienung
 
     def tick(self, pegel, t):
+        self._zwang_anwenden()
         cfg = self.einst.laden()["bedienung"]
         self.pegel = pegel
         roh = (pegel == 1) == (cfg["klinke_eingesteckt_bei"] == "hoch")
@@ -176,12 +206,16 @@ class Ausgang:
             cfg = self.einst.laden()
             start = min(cfg["lautstaerke"]["kopfhoerer"]["start"],
                         self.einst.wirksames_max(cfg, "kopfhoerer", self.uhr()))
-            self.laut.setzen("kopfhoerer", start)
+            if self.zwang:                                   # stumm bleiben, Lautstärke für danach merken
+                self._kh_vorher = start
+                self.laut.setzen("kopfhoerer", 0)
+            else:
+                self.laut.setzen("kopfhoerer", start)
         else:
             self.laut.setzen("kopfhoerer", 0)                 # sofort still in den Kopfhörern
         self.aktuell = ziel
         self._merken()                                       # ausgabe.py folgt in höchstens 0,25 s
-        if ziel == "lautsprecher":
+        if ziel == "lautsprecher" and not self.zwang:
             self.verstaerker(True, log=self.log)
         self.folgt_bis = t + FOLGT_S
         self.log(f"Ausgang: {ziel}.")
@@ -217,7 +251,8 @@ class Ausgang:
         self.aktuell = "lautsprecher"
         self._merken()
         self.letzte = t
-        self.verstaerker(True, log=self.log)
+        if not self.zwang:
+            self.verstaerker(True, log=self.log)
 
     # ------------------------------------------------------------ Verstärker passend halten (alle 2 s)
 
@@ -229,7 +264,7 @@ class Ausgang:
             sd = leser.pegel(gpio.VERSTAERKER_SD)
         except Exception:
             return
-        if self.aktuell == "kopfhoerer":
+        if self.aktuell == "kopfhoerer" or self.zwang:
             self._sd_tief = 0
             if sd:
                 self.verstaerker(False, log=self.log)
@@ -248,5 +283,6 @@ class Ausgang:
         t = self.jetzt()
         return {"pegel": self.pegel, "eingesteckt": self.eingesteckt, "ausgang": self.aktuell,
                 "umstellung": self.folgt_bis is not None, "fehler": self.fehler, "weg": self.weg,
+                "zwangsstumm": self.zwang,
                 "gesperrt_s": round(self.gesperrt_bis - t) if self.gesperrt_bis and self.gesperrt_bis > t else None,
                 "ausgabe": self.rueck.ausgabe_ziel if self.rueck else None}

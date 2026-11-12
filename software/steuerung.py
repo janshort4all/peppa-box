@@ -32,6 +32,14 @@ Abgefangen wird
   Tasten im Deckel         Play = Pause/Weiter bei liegender Karte (Karte weg nach Tasten-Pause
                            ändert nichts), vor/zurück = Titel springen, Halten = spulen. Befehle
                            werden zusammengefasst und nur gesendet, solange Musik zur Karte läuft.
+  Musik bricht später ab   Wächter (Audit 12.11.2026, Befund 1): Liegt die Karte, soll gespielt werden
+                           und meldet die Tonausgabe STILL_NACH_S lang keinen Ton, wird die Karte an der
+                           gemerkten Stelle neu gestartet (höchstens WAECHTER_VERSUCHE mal, dann Hinweis).
+                           Nicht bei gewollter Pause und nicht, wenn die Karte zu Ende gehört ist.
+  Pause kommt nicht an     (Netz weg, Spotify 5xx): Die Box schaltet den Ton selbst stumm, bis die Pause
+                           bestätigt ist oder wieder gespielt werden soll (Befund 8).
+  Fremder Inhalt           Nach "Weiter" wird geprüft, ob wirklich die Playlist der Karte läuft (das Konto
+                           kann inzwischen am Handy etwas anderes gespielt haben); sonst frisch (Befund 10).
   Kopfhörer ein/aus        betrifft die Steuerung nicht mehr: die Tonausgabe (ausgabe.py) wechselt
                            den Ausgang ohne Neustart (seit 09.11.2026). Nur wenn sie hängt, fordert
                            ausgang.py eine Reparatur an (reparatur_anfordern).
@@ -65,6 +73,12 @@ NEUSTART_ABSTAENDE = (NEUSTART_ABSTAND, 300, 600, 900)
 NACH_NEUSTART = 6          # s nach einem Neustart, bevor nach dem Gerät gefragt wird
 WACHE_ABSTAND = 5          # s: Startzeit von Raspotify vergleichen (Absturz erkennen, nur lokal)
 WARTEN = [2, 5, 15, 30, 60, 120, 300]   # Abstände bei wiederholten Fehlern
+NETZ_WARTEN_MAX = 15       # ohne Netz höchstens so lange bis zum nächsten Versuch (vorher bis 5 min: nach einem
+                           # WLAN-Ausfall kam die Musik erst Minuten später wieder, Audit Befund 9)
+WAECHTER_ABSTAND = 2.0     # s: so oft sieht der Wächter nach dem Tonfluss
+STILL_NACH_S = 12.0        # so lange kein Ton bei liegender Karte -> Karte neu anspielen
+WAECHTER_VERSUCHE = 2      # höchstens so oft zurückholen (Entscheidung Jan 12.11.2026), dann nur Hinweis
+WAECHTER_RUHE_S = 300.0    # so lange muss wieder Ton fließen, bis die Versuche neu zählen
 SPRUNG_MAX = 5             # so viele Titelsprünge werden höchstens vorgemerkt
 SYSTEMCTL = shutil.which("systemctl") or "/usr/bin/systemctl"
 HELFER = "/usr/local/sbin/peppa-ausgang"
@@ -164,7 +178,7 @@ class Dienste:
 
 class Steuerung:
     def __init__(self, spotify, dienste=None, geraet="Peppa Box", jetzt=time.monotonic,
-                 log=print, bei_bereit=None, lokal=None, fortschritt=None):
+                 log=print, bei_bereit=None, lokal=None, fortschritt=None, zu_ende=None, stumm=None, ton=None):
         self.sp, self.dienste = spotify, dienste or Dienste()
         self.lokal = lokal or (lambda: None)   # Messfühler: spielt Raspotify wirklich? (LibrespotLast)
         self.geraet, self.jetzt, self.log, self.bei_bereit = geraet, jetzt, log, bei_bereit
@@ -207,6 +221,23 @@ class Steuerung:
         self.von_vorn_uri = None    # Play-Feld lange gehalten: diese Karte von vorn
         self.ohne_stelle = set()    # Stelle ließ sich nicht anspielen: von vorn
         self._mit_stelle = None     # letzter Start lief mit gemerkter Stelle (Karte)
+        # Wächter für die laufende Wiedergabe (Befund 1)
+        # ton(): fließt gerade Ton durch die Tonausgabe? True/False, None = unbekannt. Bewusst NICHT der
+        # Messfühler `lokal`: dessen Rückfall (Rechenzeit von librespot) ist für eine Dauerüberwachung zu
+        # unsicher; ohne Tonausgabe-Meldung unternimmt der Wächter nichts.
+        self.ton = ton or (lambda: None)
+        self.zu_ende = zu_ende      # Rückfrage: ist die Karte zu Ende gehört? (Player, aus den librespot-Ereignissen)
+        self.still_seit = None      # seit wann bei laufender Karte kein Ton fließt
+        self.fluss_seit = None      # seit wann wieder Ton fließt
+        self.waechter_versuche = 0
+        self.naechste_waechter = 0.0
+        # Fortsetzen mit fremdem Inhalt (Befund 10)
+        self._start_art = None      # "weiter" | "uebertragen" | "frisch": wie der letzte Start gesendet wurde
+        self._frisch = None         # diese Karte beim nächsten Start nicht fortsetzen, sondern frisch abspielen
+        # Pause kommt nicht an (Befund 8): Ton selbst stumm schalten, stumm(True/False) kommt vom Player
+        self.stumm = stumm
+        self._pause_haengt = False
+        self._stumm_ist = False
 
     # ------------------------------------------------------------ vom Kartenleser / der Automatik
 
@@ -330,6 +361,8 @@ class Steuerung:
         self.wunsch_nr += 1
         self.fehler = 0
         self.naechster_versuch = 0.0
+        self.waechter_versuche = 0                  # jemand hat etwas getan: der Wächter zählt neu
+        self.still_seit = self.fluss_seit = None
         if w[0] != "spielen":
             self.sprung = self.spul_ms = 0
         if self.phase == "pruefen":
@@ -365,6 +398,7 @@ class Steuerung:
     def tick(self):
         jetzt = self.jetzt()
         self._wache(jetzt)
+        self._stumm_pruefen()
         if self.reparatur is not None:
             self._reparieren(jetzt)
             return
@@ -381,7 +415,106 @@ class Steuerung:
         if offen:
             self._umsetzen(wunsch, nr, jetzt)
         else:
+            self._waechter(jetzt)
             self._leerlauf(jetzt)
+
+    # ------------------------------------------------------------ Wächter für die laufende Wiedergabe
+
+    def _waechter(self, jetzt):
+        """Die Karte gilt als "spielt": fließt wirklich Ton? Sonst an der gemerkten Stelle neu anspielen.
+        Ohne Auskunft der Tonausgabe (ton() liefert None) wird nichts unternommen."""
+        with self._sperre:
+            aktiv = (self.wunsch is not None and self.wunsch[0] == "spielen"
+                     and self.erledigt_nr == self.wunsch_nr and self.ist == ("spielt", self.wunsch[1]))
+            uri, nr = (self.wunsch[1], self.wunsch_nr) if aktiv else (None, None)
+        if not aktiv:
+            self.still_seit = self.fluss_seit = None
+            return
+        if jetzt < self.naechste_waechter:
+            return
+        self.naechste_waechter = jetzt + WAECHTER_ABSTAND
+        try:
+            ton = self.ton()
+        except Exception as e:
+            self.log(f"  Wächter: Tonfluss nicht lesbar: {e!r}")
+            ton = None
+        if ton is None:
+            return
+        if ton:
+            self.still_seit = None
+            if self.fluss_seit is None:
+                self.fluss_seit = jetzt
+            elif self.waechter_versuche and jetzt - self.fluss_seit >= WAECHTER_RUHE_S:
+                self.waechter_versuche = 0
+            return
+        self.fluss_seit = None
+        if self.still_seit is None:
+            self.still_seit = jetzt
+            return
+        if jetzt - self.still_seit < STILL_NACH_S:
+            return
+        still = int(jetzt - self.still_seit)
+        self.still_seit = None
+        try:
+            ende = bool(self.zu_ende and self.zu_ende())
+        except Exception as e:
+            self.log(f"  Wächter: Ende der Karte nicht prüfbar: {e!r}")
+            ende = False
+        with self._sperre:
+            if nr != self.wunsch_nr:                    # inzwischen hat jemand etwas getan
+                return
+            if ende:
+                self._wunsch_ablegen(None)
+                text = "Karte zu Ende gehört. Play antippen oder neu einstecken spielt sie noch einmal."
+            elif self.waechter_versuche >= WAECHTER_VERSUCHE:
+                self._wunsch_ablegen(("pause", uri))
+                self._frisch = uri
+                text = None
+            else:
+                self.waechter_versuche += 1
+                self.ist = None                         # nicht "weiter", sondern an der gemerkten Stelle neu
+                self.erledigt_nr = self.wunsch_nr - 1
+                self.fehler = 0
+                text = (f"Musik ist ausgegangen (seit {still} s kein Ton, Karte liegt) – wird zurückgeholt "
+                        f"(Versuch {self.waechter_versuche} von {WAECHTER_VERSUCHE}).")
+        if text:
+            self.log(text)
+        else:
+            self._melden(f"Musik ist wieder ausgegangen und wurde schon {WAECHTER_VERSUCHE} mal zurückgeholt. "
+                         "Die Box lässt sie jetzt aus (spielt vielleicht ein Handy mit demselben Spotify-Konto?). "
+                         "Play antippen oder Karte neu einstecken startet sie wieder.")
+
+    def _wunsch_ablegen(self, ist):
+        """Nichts mehr wollen (wie nach einer Pause der Automatik); die Karte bleibt gemerkt, Play startet sie.
+        Nur unter der Sperre aufrufen."""
+        self.wunsch = None
+        self.wunsch_nr += 1
+        self.erledigt_nr = self.wunsch_nr
+        self.ist = ist
+        self.phase, self.pruef = "frei", None
+
+    # ------------------------------------------------------------ Pause kommt nicht an: Ton selbst stumm
+
+    def _stumm_pruefen(self):
+        """Stumm nur, solange eine Pause offen ist, die Spotify nicht annimmt. Bei jedem anderen Zustand
+        (Pause bestätigt, wieder spielen, Wunsch abgelegt) sofort wieder frei."""
+        with self._sperre:
+            pause_offen = (self.wunsch is not None and self.wunsch[0] == "pause"
+                           and self.erledigt_nr != self.wunsch_nr)
+        if not pause_offen:
+            self._pause_haengt = False
+        soll = pause_offen and self._pause_haengt
+        if soll == self._stumm_ist:
+            return
+        self._stumm_ist = soll
+        if self.stumm is None:
+            return
+        try:
+            self.stumm(soll)
+        except Exception as e:
+            self.log(f"  Ton stumm/frei schalten: {e!r}")
+        self.log("Pause kommt bei Spotify nicht an – die Box schaltet den Ton selbst stumm."
+                 if soll else "Ton wieder frei.")
 
     # ------------------------------------------------------------ Gerät
 
@@ -487,9 +620,10 @@ class Steuerung:
             return
         weiter = self.ist == ("pause", uri)
         uebertragen = weiter and self.nach_neustart_uebertragen
-        if weiter and self.fehler >= 1:
+        if weiter and (self.fehler >= 1 or self._frisch == uri):
             weiter = uebertragen = False                # Fortsetzen hat nicht geklappt: frisch starten
         self._mit_stelle = None
+        self._start_art = "uebertragen" if uebertragen else "weiter" if weiter else "frisch"
         try:
             if uebertragen:
                 status, data = self.sp.uebertragen(dev, True)
@@ -514,8 +648,16 @@ class Steuerung:
         self.nach_neustart_uebertragen = False
         self.log(f"{text}: {uri} (Spotify {status})")
         if status < 300 or (weiter and status == 403):  # 403 beim Fortsetzen: läuft vermutlich schon
+            if self._start_art == "frisch" and self._frisch == uri:
+                self._frisch = None
             with self._sperre:
+                # Der Befehl ist bei Spotify angekommen, auch wenn inzwischen ein anderer Wunsch gilt (Karte
+                # nur kurz erkannt): als gestartet verbuchen, sonst würde die folgende Pause nie gesendet und
+                # die Musik liefe ohne Karte weiter (Audit 12.11.2026, Befund 8).
+                # Ausnahme: dieselbe Karte soll inzwischen neu starten (Play 2 s gehalten) – das bleibt offen.
                 if nr != self.wunsch_nr:
+                    if self.wunsch != ("spielen", uri):
+                        self.ist = ("startet", uri)
                     return
                 self.ist = ("startet", uri)
             self.phase = "pruefen"
@@ -576,9 +718,27 @@ class Steuerung:
             self._melden(str(e), "anmeldung")
             self.naechster_versuch = jetzt + 60
             return
-        warte = WARTEN[min(self.fehler, len(WARTEN) - 1)]
+        warte = min(WARTEN[min(self.fehler, len(WARTEN) - 1)], NETZ_WARTEN_MAX)
         if zaehlen:
             self.fehler += 1
+        status = getattr(e, "status", None)
+        if status is not None:                          # Spotify hat geantwortet, aber mit einem Fehler
+            if status == 401:
+                try:
+                    self.sp.token_verwerfen()
+                except Exception:
+                    pass
+                self._melden("Spotify-Zugang wird erneuert (401).", "netz")
+                self.naechster_versuch = jetzt + 2
+                return
+            if status == 429:
+                verlangt = getattr(e, "warten", None)
+                warte = max(warte, min(int(verlangt), 900) if isinstance(verlangt, (int, float)) else 30)
+                self._melden(f"Spotify bremst (zu viele Anfragen), neuer Versuch in {warte} s.", "netz")
+            else:
+                self._melden(f"Spotify antwortet gerade mit einem Fehler ({status}), neuer Versuch in {warte} s.", "netz")
+            self.naechster_versuch = jetzt + warte
+            return
         self._melden(f"Keine Verbindung zu Spotify ({e!r}), neuer Versuch in {warte} s.", "netz")
         self.naechster_versuch = jetzt + warte
 
@@ -591,6 +751,7 @@ class Steuerung:
             try:
                 dev = self._geraet(jetzt)
             except Exception as e:
+                self._pause_haengt = True
                 self._netzfehler(e, jetzt)
                 return
         if dev is None:                               # Box nicht bei Spotify: es spielt auch nichts
@@ -600,6 +761,7 @@ class Steuerung:
         try:
             status, data = self.sp.pause(dev)
         except Exception as e:
+            self._pause_haengt = True                   # Musik liefe sonst weiter: Ton selbst stumm (tick)
             self._netzfehler(e, jetzt)
             return
         self.letzter_befehl = jetzt
@@ -610,8 +772,9 @@ class Steuerung:
         elif status == 429 or status == 401:
             self._befehl_fehlgeschlagen(status, data, jetzt)
         else:
+            self._pause_haengt = True
             self.fehler += 1
-            self.naechster_versuch = jetzt + WARTEN[min(self.fehler - 1, len(WARTEN) - 1)]
+            self.naechster_versuch = jetzt + min(WARTEN[min(self.fehler - 1, len(WARTEN) - 1)], NETZ_WARTEN_MAX)
 
     def _erledigt(self, nr):
         with self._sperre:
@@ -646,6 +809,14 @@ class Steuerung:
             probe = (gut, z.get("titel"), z.get("position", 0), jetzt, lokal_gut)
         elif lokal:                                     # Web-API stumm, aber Ton fließt nachweislich
             probe = (False, "(lokal)", 0, jetzt, True)
+        if z is not None and self._fremd(z, p["uri"]):
+            self.log(f"  Nach „Weiter“ läuft nicht die Karte, sondern {z.get('kontext') or z.get('titel_uri')} "
+                     "(das Spotify-Konto hat inzwischen etwas anderes gespielt) – Karte wird frisch gestartet.")
+            self.phase, self.pruef = "frei", None
+            self._frisch = p["uri"]
+            self.ist = ("pause", p["uri"])
+            self.naechster_versuch = 0.0
+            return
         p["proben"].append(probe)
         if z and probe and probe[0] and self.fortschritt is not None and z.get("titel_uri"):
             try:
@@ -679,6 +850,17 @@ class Steuerung:
         # schon einmal frisch gestartet und wieder nichts: Raspotify ist das Problem
         self.naechster_versuch = 0.0
         self._fehlschlag(jetzt, "Box spielt nach dem Start nicht", neustart_ab=2)
+
+    def _fremd(self, z, uri):
+        """Nach Weiter/Übertragen: läuft etwas anderes als die Karte? Nur wenn Spotify es eindeutig sagt."""
+        if self._start_art not in ("weiter", "uebertragen") or z.get("leer") or z.get("geraet") != self.dev:
+            return False
+        nr = uri.split(":")[-1]
+        if uri.split(":")[1:2] in (["track"], ["episode"]):
+            titel = z.get("titel_uri")
+            return bool(titel) and titel.split(":")[-1] != nr
+        kontext = z.get("kontext")
+        return bool(kontext) and kontext.split(":")[-1] != nr
 
     @staticmethod
     def _laeuft_sicher(proben):
@@ -770,6 +952,7 @@ class Steuerung:
                 if self.wunsch and self.wunsch[0] == "spielen":
                     self.ist = ("pause", self.wunsch[1])
                     self.nach_neustart_uebertragen = True
+                    self._frisch = None                 # hier bewusst an derselben Stelle übertragen
                     if self.erledigt_nr == self.wunsch_nr:
                         self.erledigt_nr = self.wunsch_nr - 1
                     self.fehler = 0
@@ -795,8 +978,15 @@ class Steuerung:
         self.raspotify_start = self.dienste.startzeit("raspotify")   # eigener Neustart, keine "Absturz"-Meldung
         self.dev, self.dev_zeit = None, -1e9
         self.dev_fehlt_seit = None
-        if self.ist and self.ist[0] in ("spielt", "startet"):
-            self.ist = ("pause", self.ist[1])
+        with self._sperre:
+            if self.ist and self.ist[0] in ("spielt", "startet"):
+                self.ist = ("pause", self.ist[1])
+                # Die Karte liegt und sollte spielen (z. B. Gerät fehlte im Leerlauf): nach dem Neustart
+                # wieder anspielen, an der gemerkten Stelle. Vorher blieb die Box danach still (Befund 1).
+                if self.wunsch == ("spielen", self.ist[1]) and self.erledigt_nr == self.wunsch_nr:
+                    self.erledigt_nr = self.wunsch_nr - 1
+                    self._frisch = self.ist[1]
+                    self.fehler = 0
         self.nach_neustart_uebertragen = False          # nach Reparatur frisch abspielen
         self.neustart_wartet_bis = jetzt + NACH_NEUSTART
         self.naechster_versuch = jetzt + NACH_NEUSTART

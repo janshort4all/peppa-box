@@ -62,6 +62,9 @@ class FakeSpotify:
         if titel == "spotify:track:weg":               # Titel nicht mehr in der Playlist
             self.befehle.append(("spielen", uri))
             return 404, {"error": {"status": 404, "message": "Invalid offset"}}
+        if titel == "spotify:track:502":               # 12.11.2026: Start an der Stelle -> 502
+            self.befehle.append(("spielen", uri))
+            return 502, {"error": {"status": 502, "message": "Bad gateway."}}
         st, d = self._befehl("spielen", uri)
         if st < 300:
             self._starte(uri, neu=True)
@@ -710,6 +713,25 @@ class Weiterspielen(Basis):
         self.assertEqual(self.sp.stellen, [("spotify:track:weg", 5000), (None, 0)])
         self.assertTrue(self.spielt("spotify:album:A"))
         self.assertEqual(self.di.neustarts, [])          # kein Neustart wegen der Stelle
+
+    def test_stelle_502_dann_von_vorn(self):
+        """Fall 12.11.2026: nach Neustart jeder Start an der gemerkten Stelle 502."""
+        self.fs.daten["spotify:album:A"] = {"titel": "spotify:track:502", "position_ms": 80000}
+        self.st.karte_auf("spotify:album:A")
+        self.lauf(20)
+        self.assertEqual(self.sp.stellen[:2], [("spotify:track:502", 80000)] * 2)
+        self.assertEqual(self.sp.stellen[2], (None, 0))
+        self.assertTrue(self.spielt("spotify:album:A"))
+        self.assertEqual(self.di.neustarts, [])          # kein Raspotify-Neustart nötig
+        self.assertNotIn("spotify:album:A", self.st.ohne_stelle)   # beim nächsten Mal wieder mit Stelle
+
+    def test_502_auch_ohne_stelle_fuehrt_zum_neustart(self):
+        self.fs.daten["spotify:album:A"] = {"titel": "spotify:track:t3", "position_ms": 60000}
+        self.sp.modus = "502"
+        self.st.karte_auf("spotify:album:A")
+        self.lauf(40)
+        self.assertIn("raspotify", self.di.neustarts)
+        self.assertTrue(self.spielt("spotify:album:A"))
 
     def test_von_vorn_vergisst_stelle_und_startet_neu(self):
         self.fs.daten["spotify:album:A"] = {"titel": "spotify:track:t7", "position_ms": 95000}

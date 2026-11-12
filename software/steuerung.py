@@ -531,6 +531,14 @@ class Steuerung:
             self._mit_stelle = None
             self.naechster_versuch = jetzt + 1
             return
+        # 12.11.2026: nach Neustart jeder Start an der gemerkten Stelle 502, Leiter lief mit derselben
+        # Stelle bis 60 s Wartezeit. Ab dem zweiten 5xx darum ohne Stelle (von vorn) weiter versuchen;
+        # scheitert auch das, geht die Leiter normal weiter (Raspotify-Neustart).
+        if self._mit_stelle and status >= 500 and self.fehler >= 1:
+            self.log(f"  Start an der gemerkten Stelle scheitert wiederholt (Spotify {status}) "
+                     "– nächster Versuch von vorn.")
+            self.ohne_stelle.add(self._mit_stelle)
+            self._mit_stelle = None
         if status == 401:
             self.sp.token_verwerfen()
             self.log("  Spotify-Zugang erneuert (401).")
@@ -648,6 +656,7 @@ class Steuerung:
             with self._sperre:
                 if p["nr"] == self.wunsch_nr:
                     self.ist = ("spielt", p["uri"])
+            self.ohne_stelle.discard(p["uri"])          # läuft: ab jetzt gilt die neu gemerkte Stelle
             self.phase, self.pruef = "frei", None
             self.neustarts = 0
             if self.fehler:

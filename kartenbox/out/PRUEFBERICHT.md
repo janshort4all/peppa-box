@@ -1,76 +1,118 @@
-# Prüfbericht Kartenbox (automatisch erzeugt von kartenbox/check.py)
+# Prüfbericht Kartenbox v2 (automatisch erzeugt von kartenbox/check.py)
 
-## 1. Netze
-OK    basis: Netz wasserdicht, 24720 Dreiecke, 159.3 cm³
-OK    deckel: Netz wasserdicht, 11016 Dreiecke, 61.0 cm³
-OK    deckel_ohne_haken: Netz wasserdicht, 11000 Dreiecke, 61.0 cm³
-OK    inlay: Netz wasserdicht, 1276 Dreiecke, 65.9 cm³
-Masse bei massivem Volumen und PETG 1,27 g/cm³ (Obergrenze, Füllung und Wände zählen voll): Basis 202 g, Deckel 78 g, Inlay 84 g, zusammen 364 g (ANNAHME Dichte 1,27 g/cm³)
+Außenmaß geschlossen: 240.3 × 102.9 × 122.3 mm (B × T × H, mit Wölbung, ohne Ösen/Scharnier); mit Ösen 264.3 mm breit, mit Scharnier 113.0 mm tief
 
-## 2. Statische Kollisionen (geschlossen, Überschneidungsvolumen in mm³)
-OK    Deckel (ohne Haken) ↔ Basis: 0.00 mm³
-OK    Inlay ↔ Basis: 0.00 mm³
-OK    Inlay ↔ Deckel: 0.00 mm³
-OK    30 Karten ganz hinten im Inlay ↔ Basis: 0.00 mm³
-OK    30 Karten ganz hinten im Inlay ↔ Inlay: 0.00 mm³
-OK    30 Karten ganz hinten im Inlay ↔ Deckel: 0.00 mm³
-OK    30 Karten ganz vorn im Inlay ↔ Basis: 0.00 mm³
-OK    30 Karten ganz vorn im Inlay ↔ Inlay: 0.00 mm³
-OK    30 Karten ganz vorn im Inlay ↔ Deckel: 0.00 mm³
+## 1. Netze und Masse
+OK    Basis: wasserdicht, ein zusammenhängender Körper, 36018 Dreiecke, 190.3 cm³
+OK    Deckel: wasserdicht, ein zusammenhängender Körper, 38378 Dreiecke, 122.8 cm³
+OK    Inlay: wasserdicht, ein zusammenhängender Körper, 60166 Dreiecke, 157.0 cm³
+OK    Stift (×2): wasserdicht, ein zusammenhängender Körper, 458 Dreiecke, 0.4 cm³
+OK    Karte (v4/out/10_karte_orange.stl): wasserdicht, ein zusammenhängender Körper, 836 Dreiecke, 18.6 cm³
+Masse bei massivem Volumen (Obergrenze, ANNAHME Dichte 1.27 g/cm³): Basis 242 g, Deckel 156 g, Inlay 199 g, zusammen 597 g. Gedruckt mit 6 Wänden und 15 % Füllung etwa 70–85 % davon (Wände sind fast überall massiv).
 
-## 3. Fassungsvermögen und Ecken
-Fach innen 48.0 mm, 10 Karten = 40.0 mm, frei 8.0 mm je Fach (Karte 70 × 112 × 4 mm aus 10_karte_orange.stl)
-Randfach: Kartenlänge 70 mm in 74 mm Inlay-Tiefe → die Randkarte muss mindestens 2.1 mm von der Außenwand weg stehen (Ecken-Rundung); ganz hinten/vorn im Spiel sind es 7 mm. Im Test liegt der linke Stapel an der Trennwand (+7 mm).
-OK    Randfach fasst 10 Karten auch bei 7 mm Abstand der Randkarte von der Außenwand (Luft > 0,5 mm)
-OK    Gesamtzahl 30 Karten
+## 2. Geschlossen: Überschneidungen (mm³; 0 = frei)
+OK    Deckel ↔ Basis: -0.000
+OK    Inlay ↔ Basis: 0.000
+OK    Inlay ↔ Deckel: 0.000
+OK    Stifte ↔ Deckel (Deckelknöchel muss frei drehen): 0.000
+OK    Stifte ↔ Basis: 6.4 mm³ = gewollte Pressung im inneren Basisknöchel (rechnerisch 10.8 mm³ für Ø 4.0 in Ø 3.9)
+OK    30 Karten an der Stütze ↔ Basis: 0.000
+OK    30 Karten an der Stütze ↔ Inlay: 0.000
+OK    30 Karten an der Stütze ↔ Deckel: 0.000
+OK    30 Karten seitlich verschoben bis 0,5 mm vor die Fachwand (dx -2.00 mm) ↔ Basis/Inlay/Deckel: 0.000
+OK    30 Karten seitlich verschoben bis 0,5 mm vor die Fachwand (dx +2.00 mm) ↔ Basis/Inlay/Deckel: 0.000
+OK    senkrechte Einzelkarte überall im Fach (ab 5 mm hinter der Fachwand, alle Fächer, quer mittig) passt unter den geschlossenen Deckel: größte Überschneidung 0.003 mm³
+Hinweis: senkrechte Karte im Randfach ganz an die Stirnwand geschoben: Kartenecke berührt die Deckelrundung (größte Überschneidung 5.9 mm³, Ecke R 1,5); der schließende Deckel schiebt sie zur Mitte. Der normale Zustand (Stapel lehnt an der Stütze) ist in jeder Querlage frei.
+Senkrechte Karte direkt an der Fachwand vorn (mittig): ebenfalls frei.
+OK    Inlay lässt sich senkrecht einsetzen und herausziehen (an der Verschluss-Verstärkung vorbei): größte Überschneidung 0.000 mm³
+OK    Stifte lassen sich von außen entlang der Achse einschieben (nichts im Weg außer den Knöcheln): 0.000 mm³
 
-## 4. Deckel-Schwenk (Rotation um die Scharnierachse, Schritt 1°, 0–125°)
-Größte Kippung einer Karte nach vorn/hinten: 3.74° (Wand 3.74°, Inlay-Vorderwand 8.13°) – Schwenkprüfung mit 3.69° (mehr lässt die Basiswand nicht zu)
-OK    Deckel ↔ Basis (Wände, Knöchel, Ösen) im ganzen Schwenkbereich frei
-OK    Deckel ↔ Karten senkrecht, ganz hinten im Inlay: frei bis 125° (größte Überschneidung 0.0 mm³; Toleranz 2 mm³ ≈ 0,05 mm Eindringtiefe am Grenzfall)
-OK    Deckel ↔ Karten senkrecht, ganz vorn im Inlay: frei bis 125° (größte Überschneidung 0.0 mm³; Toleranz 2 mm³ ≈ 0,05 mm Eindringtiefe am Grenzfall)
-OK    Deckel ↔ Karten 3.7° nach vorn gekippt: frei bis 125° (größte Überschneidung 0.8 mm³; Toleranz 2 mm³ ≈ 0,05 mm Eindringtiefe am Grenzfall)
-OK    Deckel ↔ Karten 3.7° nach hinten gekippt: frei bis 125° (größte Überschneidung 0.0 mm³; Toleranz 2 mm³ ≈ 0,05 mm Eindringtiefe am Grenzfall)
+## 3. Fassungsvermögen
+Mittleres Fach: Vorderwand springt auf 45 mm Breite hinter die Verschluss-Verstärkung zurück, dort 13.6 mm frei vor dem Stapel
+OK    je Fach 10 Karten: Stapel 41.4 mm (waagerecht am Boden, 15° Neigung), davor 14.0 mm frei zum Greifen
+OK    Fach 75 mm breit, Karte 70 mm: 5 mm Luft quer
+Karten-Oberkante: 113.3 mm (geneigt) bzw. 116.1 mm (senkrecht); Deckeldecke innen 119.8 mm; Basisrand 78 mm
+Cover-Fenster der Karte beginnt 43.5 mm über der Kartenunterkante (v4: INS_Y0) → sichtbar ab ca. 46 mm Höhe; Griffmulden im Inlay bis 52 mm hinunter, Basisrand 78 mm
 
-## 5. Scharnier und Verschluss (rechnerisch)
-Hakenhöhe 1.20 mm, Spalt zur Basiswand 0.40 mm → Zunge muss beim Schließen 0.80 mm nach außen federn (plus 0,1 mm Reserve für Druckabweichung)
-Freie Federlänge 22 mm, Dicke 1.68 mm, Breite 30 mm → Randfaserdehnung 0.47 % (ANNAHME PETG E = 1800 MPa; Streckdehnung PETG ca. 4 %), Federkraft 5.4 N, mit 45°-Flanke und Reibung 0,3 ca. 10 N Öffnungs-/Schließkraft
-OK    Biegedehnung der Zunge unter 1 % (Dauerfestigkeit, kein Ermüdungsbruch zu erwarten)
-OK    Öffnungskraft unter 10 N, für ein Kind (6 Jahre) machbar (ANNAHME, nicht gemessen → Coupon K2)
-Basiswand an der Haken-Nut: 1.52 mm Restwand (Wand 2.52 mm, Nut 1.00 mm tief)
-OK    Restwand an der Nut mindestens 1,2 mm (3 Linien)
-Scharnier: Knöchelradius 3.5 mm, Wand um den Stift 2.00 mm, Stift Ø 3.0 mm, Stiftlänge 90 mm, Paketlänge 92 mm, Knöchelbreite 18.0 mm
-OK    Knöchelwand mindestens 1,5 mm
-OK    Scharnierpaket: 5 Knöchel + 4 × Axialspiel = Paketlänge
-OK    Stift 90 mm passt zwischen Blindende und rechtes Ende
+## 4. Deckelschwenk um die Scharnierachse (Schritt 1°)
+OK    0° bis Anschlag: Deckel frei gegenüber Basis (außer Rasthaken), Inlay und 30 Karten (größte Überschneidung 0.000 mm³)
+OK    Öffnungsanschlag (Nase am Deckelknöchel trifft die Rückwand) bei 96° – Deckel kippt über die Senkrechte und bleibt offen
+OK    Schwerpunkt des offenen Deckels +34.9 mm hinter der Achse → fällt nicht zu
+Rasthaken beim Schließen: größte Überdeckung mit der Basis 0.68 mm (Federweg der Zunge; Soll 0.80 mm)
+OK    Haken überdeckt nur so weit, wie die Zunge federn soll
+OK    geschlossen sitzt der Haken frei in der Rastnut (-0.000 mm³), senkrechtes Spiel 0.2 mm
+OK    Basisknöchel ↔ Deckelrückwand: kleinster Abstand 0.64 mm (gleicher Radius beim Drehen, keine Berührung)
 
-## 6. Spiele und Wandstärken (aus den Netzen gemessen)
-Deckelhaut ↔ Basis (Innenseite der Haut): kleinster Abstand 0.50 mm (Soll 0.40)
-OK    Spiel Deckelhaut ↔ Basis eingehalten
-Inlay ↔ Basisinnenseite: kleinster Abstand 0.30 mm (Soll 0.30)
-OK    Spiel Inlay ↔ Basis eingehalten
-Wände: Basis 2.52 mm (6 Linien), Boden 3.0 mm, Deckelwand 1.68 mm (4 Linien), Dach 3.0 mm, Inlay-Wand 2.1 mm, Inlay-Boden 2.0 mm
-OK    Wandstärken ≥ 4–5 Linien à 0,42 mm
-OK    Karten stehen genau Kartenüberstand über der Fuge
-OK    Deckelinnenraum: mindestens 4 mm Luft über den Karten
+## 5. Verschluss und Scharnier (rechnerisch)
+Zunge 30 × 2.0 mm, freie Länge 27 mm, Federweg 0.80 mm → Randdehnung 0.33 %, Federkraft 4.4 N (ANNAHME E = 1800 MPa)
+OK    Dehnung unter 0,6 % (Biegung geht quer zu den Schichten, daher niedrig gehalten; PETG-Streckdehnung ca. 4 %)
+Öffnen: Griffnase 1.2 mm nach außen ziehen (ca. 4 N), dann Deckel heben. Schließen: Haken gleitet über die 30°-Schräge, ca. 5 N, hörbares Einrasten.
+Haltefläche 60° gegen die Zugrichtung: Deckel ohne Betätigen der Zunge aufreißen braucht ca. 19 N (Reibung 0.3, ANNAHME). Bei Gewalt springt der Haken heraus, statt zu brechen.
+OK    Verschluss hält mindestens das Dreifache der Betätigungskraft und ≥ 15 N (Tragen, Umkippen)
+OK    Öffnungskraft an der Zunge höchstens 10 N (6-Jähriger, ANNAHME; Coupon K2 prüft)
+OK    Restwand hinter der Rastnut 2.00 mm (≥ 4 Linien)
+Scharnier: 2 × 3 Knöchel (Basis 9 / Deckel 14 / Basis 9 mm, Spiel 0.5 mm), Knöchel R 5.0 mm, Stift Ø 4.0 gedruckt (Bohrungen: außen 4.15, Deckel 4.6, innen 3.9 klemmt)
+OK    Wand um die Deckelbohrung 2.70 mm
+OK    Wand um die Basisbohrungen 2.92 mm
+OK    Deckelknöchel dreht frei: 0.30 mm Luft je Seite
 
-## 7. Druckbarkeit (Elegoo Centauri Carbon 2: Bauraum 256 × 256 × 256 mm laut Hersteller/Testberichten, Düse 0,4, PETG)
-OK    Basis (stehend, Boden auf dem Bett): 186 × 93 × 106 mm passt in 256³
-OK    Deckel (Dach auf dem Bett, kopfüber): 162 × 99 × 43 mm passt in 256³
-OK    Inlay (stehend): 152 × 78 × 50 mm passt in 256³
+## 6. Wandstärken (gemessen an den Netzen)
+Außenhaut ↔ Innenraum (ohne V-Fuge): kleinste 2.40 mm, Median 2.52 mm
+OK    Wand überall ≥ 2.35 mm
+an der V-Fuge: kleinste Wand 1.70 mm (Fuge 0.8 mm tief, nur auf ±0.8 mm Höhe)
+OK    Wand an der V-Fuge ≥ 1,6 mm
+Inlay 1.68 mm (4 Linien), Inlay-Boden 1.6 mm; Basisboden 2.5 mm; Deckeldach 2.5 mm
+OK    Öse: Wand außen 3.8 mm, zur Box hin 3.0 mm
 
-Überhänge (Flächen, deren Normale mehr als 45° nach unten geneigt ist, ohne Bettfläche), Flächenanteil an der Gesamtfläche:
-  Basis (stehend, Boden auf dem Bett): 329 mm² von 119408 mm² (0.3 %)
-     z≈0: 56 mm² (x -78…78, y 1…83)
-     z≈100: 150 mm² (x -40…40, y 90…92)
-     z≈105: 122 mm² (x -39…40, y 89…91)
-  Deckel (Dach auf dem Bett, kopfüber): 721 mm² von 52464 mm² (1.4 %)
-     z≈0: 374 mm² (x -80…80, y -85…1)
-     z≈20: 131 mm² (x -79…79, y -92…0)
-     z≈25: 69 mm² (x -22…22, y -91…-89)
-     z≈35: 73 mm² (x -4…-4, y 3…3)
-     z≈40: 73 mm² (x 4…4, y 5…5)
-  Inlay (stehend): 0 mm² von 66377 mm² (0.0 %)
+## 7. Standfestigkeit (Kippen)
+OK    geschlossen, 30 Karten: Schwerpunkt y +2.2 / z 49.6 mm, kippt nach hinten erst bei 39°, nach vorn bei 42° (Masse ca. 970 g, ANNAHME Karte 75 % gefüllt)
+OK    leer, Deckel offen am Anschlag: Schwerpunkt y +28.4 / z 60.9 mm, kippt nach hinten erst bei 13°, nach vorn bei 49° (Masse ca. 438 g, ANNAHME Karte 75 % gefüllt)
+OK    30 Karten, Deckel offen: Schwerpunkt y +13.8 / z 52.5 mm, kippt nach hinten erst bei 28°, nach vorn bei 47° (Masse ca. 970 g, ANNAHME Karte 75 % gefüllt)
 
-## 8. Ergebnis
+## 8. Druckbarkeit (Elegoo Centauri Carbon 2: 256 × 256 × 256 mm, Herstellerangabe; Düse 0,4; PETG)
+OK    basis in Druckausrichtung 225 × 225 × 83 mm (≤ 250, 3 mm Rand)
+OK    basis: Druckausrichtung ist eine reine Drehung (Volumen gleich, keine Spiegelung im Code)
+OK    deckel in Druckausrichtung 240 × 117 × 55 mm (≤ 250, 3 mm Rand)
+OK    deckel: Druckausrichtung ist eine reine Drehung (Volumen gleich, keine Spiegelung im Code)
+OK    inlay in Druckausrichtung 235 × 97 × 81 mm (≤ 250, 3 mm Rand)
+OK    inlay: Druckausrichtung ist eine reine Drehung (Volumen gleich, keine Spiegelung im Code)
+OK    stift in Druckausrichtung 33 × 6 × 5 mm (≤ 250, 3 mm Rand)
+OK    stift: Druckausrichtung ist eine reine Drehung (Volumen gleich, keine Spiegelung im Code)
+- basis: Überhang > 45° 113 mm², davon waagerecht (Brücke) 0 mm²
+    z≈69: 36 mm² (x 31…38, y -38…-31)
+    z≈81: 76 mm² (x -100…22, y -22…99)
+- deckel: Überhang > 45° 83 mm², davon waagerecht (Brücke) 0 mm²
+    z≈51: 83 mm² (x -5…5, y 54…58)
+- inlay: Überhang > 45° 2543 mm², davon waagerecht (Brücke) 2543 mm²
+    z≈78: 2543 mm² (x -113…113, y 34…46)
+- stift: Überhang > 45° 0 mm², davon waagerecht (Brücke) 0 mm²
+
+Erwartete Überhänge (bewusst): Bohrungen als Tropfen (Spitze 45°), Brücke über den Hohlräumen des Inlays (Dach ≤ 14 mm Spannweite), Haltefläche von Haken und Rastnut (30° zur Waagerechten, 1 mm breit), Unterseite der Stiftrundung direkt über dem Bett.
+Haftfläche: Basis 224 × 85 mm, Deckel-Dach 220 × 80 mm – kein Brim nötig
+
+## 9. Ergebnis
 Alle Prüfungen bestanden.
+
+## 10. Gegenprüfung (zweite Methode: Schichten wie im Slicer, 0,2 mm, aus den fertigen STL)
+Freie Fläche = Teil einer Schicht, der nicht auf der Schicht darunter (um 0,2 mm = 45° erweitert) steht. Schmal = Stellen unter 0,42 mm Linienbreite.
+- **01_basis_orange.stl** (415 Schichten): frei 11 mm² in 3 Schichten; schmal 0 mm² in 0 Schichten
+    z 70.3–70.7: 11 mm² (x 23…46, y -46…-23)
+- **02_deckel_orange_kopfueber.stl** (277 Schichten): frei 13 mm² in 3 Schichten; schmal 16 mm² in 2 Schichten
+    z 51.9–52.3: 13 mm² (x -14…14, y 54…58)
+    schmal z 55.1–55.1: 11 mm²
+- **03_inlay_beige.stl** (402 Schichten): frei 2448 mm² in 1 Schichten; schmal 0 mm² in 0 Schichten
+    z 78.9–78.9: 2448 mm² (x -115…115, y 34…46)
+- **04_stift_3x_beige.stl** (25 Schichten): frei 5 mm² in 1 Schichten; schmal 0 mm² in 0 Schichten
+    z 0.3–0.3: 5 mm² (x -16…15, y -11…11)
+- **probedruck/K1a_scharnier_basis.stl** (143 Schichten): frei 0 mm² in 0 Schichten; schmal 0 mm² in 0 Schichten
+- **probedruck/K1b_scharnier_deckel_kopfueber.stl** (145 Schichten): frei 0 mm² in 0 Schichten; schmal 0 mm² in 0 Schichten
+- **probedruck/K1c_stifte_3.9_4.0_4.1.stl** (25 Schichten): frei 5 mm² in 1 Schichten; schmal 0 mm² in 0 Schichten
+    z 0.3–0.3: 5 mm² (x -16…15, y -1…21)
+- **probedruck/K2a_verschluss_basis.stl** (148 Schichten): frei 11 mm² in 3 Schichten; schmal 0 mm² in 0 Schichten
+    z 21.9–22.3: 11 mm² (x -15…15, y -0…0)
+- **probedruck/K2b_verschluss_deckel_kopfueber.stl** (183 Schichten): frei 12 mm² in 3 Schichten; schmal 5 mm² in 1 Schichten
+    z 33.1–33.5: 12 mm² (x -14…14, y -2…2)
+- **probedruck/K3a_passung_basis.stl** (50 Schichten): frei 0 mm² in 0 Schichten; schmal 0 mm² in 0 Schichten
+- **probedruck/K3b_passung_inlay.stl** (75 Schichten): frei 242 mm² in 1 Schichten; schmal 0 mm² in 0 Schichten
+    z 13.5–13.5: 242 mm² (x -14…11, y 33…44)
+- **probedruck/K3c_passung_deckel_kopfueber.stl** (50 Schichten): frei 0 mm² in 0 Schichten; schmal 0 mm² in 0 Schichten

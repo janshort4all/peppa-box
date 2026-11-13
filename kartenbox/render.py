@@ -1,59 +1,70 @@
-"""Schnelle Ansichten (PNG) der Kartenbox mit pyvista, Deckel wahlweise geöffnet."""
-import os, sys, numpy as np, trimesh, pyvista as pv
+"""Ansichten (PNG) der Kartenbox v2. Aufruf: python3 render.py [name ...]"""
+import os, sys, math
+import numpy as np
+import pyvista as pv
 import model as M
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
+
 pv.OFF_SCREEN = True
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "out")
+ORANGE, BEIGE, CARD, STEEL = "#e9772b", "#ecdcbf", "#7fa7c9", "#b9b9be"
 
-def load(n): return trimesh.load(os.path.join(OUT, f"_use_{n}.stl"))
 
-def rot_lid(m, ang):
-    """Deckel um die Scharnierachse (y=Y_H, z=Z_H, Achse x) öffnen: Vorderkante nach oben/hinten."""
-    m = m.copy()
-    a = np.radians(ang)
-    T = np.eye(4)
-    c, s = np.cos(a), np.sin(a)
-    # (y,z) rel. -> (y c + z s, -y s + z c)
-    T[1,1]=c; T[1,2]=s; T[2,1]=-s; T[2,2]=c
-    T[1,3] = M.Y_H - (c*M.Y_H + s*M.Z_H)
-    T[2,3] = M.Z_H - (-s*M.Y_H + c*M.Z_H)
-    m.apply_transform(T)
-    return m
+def poly(m):
+    mesh = m.to_mesh()
+    v = np.asarray(mesh.vert_properties)[:, :3]
+    f = np.asarray(mesh.tri_verts)
+    faces = np.hstack([np.full((len(f), 1), 3), f]).ravel()
+    return pv.PolyData(v, faces)
 
-def cards(n_per=(10,10,10)):
-    bs=[]
-    for k,n in enumerate(n_per):
-        xc0 = -M.LINER_X/2 + M.DIV + k*(M.SLOT_W+M.DIV)
-        for i in range(n):
-            x0 = xc0 + i*M.CARD_T + 0.5
-            b = trimesh.creation.box(extents=(M.CARD_T-0.1, M.CARD_W, M.CARD_H))
-            b.apply_translation((x0+M.CARD_T/2, M.YC, M.CARD_Z0+M.CARD_H/2))
-            bs.append(b)
-    return trimesh.util.concatenate(bs)
 
-def to_pv(m): return pv.wrap(m)
+_cache = {}
 
-def shot(name, lid_ang=0, with_cards=True, cam="iso", size=(1400,1000), cutaway=False):
+
+def parts():
+    if not _cache:
+        card = M.card_mesh()
+        _cache.update(base=M.base(), lid=M.lid(), inlay=M.inlay(), cards=M.cards_stack(card),
+                      pins=M.pin() + M.pin().mirror([1, 0, 0]))
+    return _cache
+
+
+def shot(name, ang=0.0, eye=(330, -330, 250), focus=(0, 0, 55), cards=True, lid=True, clip_x=None, zoom=1.0, size=(1500, 1100)):
+    p = parts()
     pl = pv.Plotter(off_screen=True, window_size=size)
-    pl.set_background("#f4efe6")
-    basis, lid, inlay = load("basis"), load("deckel"), load("inlay")
-    pl.add_mesh(to_pv(basis), color="#e8742a", smooth_shading=True, split_sharp_edges=True, specular=0.2)
-    pl.add_mesh(to_pv(inlay), color="#eadbc0", smooth_shading=True, split_sharp_edges=True)
-    pl.add_mesh(to_pv(rot_lid(lid, lid_ang)), color="#e8742a", smooth_shading=True, split_sharp_edges=True, specular=0.2)
-    if with_cards:
-        pl.add_mesh(to_pv(cards()), color="#8fb8de", smooth_shading=False)
-    cx, cy, cz = 0, M.D_B/2, 62
-    views = {
-      "iso": ((330, -300, 260)), "iso_back": ((-300, 380, 260)), "front": ((0, -520, 110)),
-      "top": ((0, M.D_B/2, 560)), "side": ((560, M.D_B/2, 80)), "back": ((0, 560, 110)),
-    }
-    eye = views[cam]
-    pl.camera_position = [eye, (cx, cy, cz), (0,0,1) if cam!="top" else (0,1,0)]
-    pl.camera.zoom(1.15)
+    pl.set_background("#f5f0e8")
+    def add(m, col, **kw):
+        if clip_x is not None:
+            m = m ^ M.box(-400, -400, -400, clip_x, 400, 400)
+            if m.is_empty():
+                return
+        pl.add_mesh(poly(m), color=col, smooth_shading=True, split_sharp_edges=True, feature_angle=35, specular=0.25, specular_power=12, **kw)
+    add(p["base"], ORANGE)
+    add(p["inlay"], BEIGE)
+    add(p["pins"], STEEL)
+    if lid:
+        add(M.rot_lid(p["lid"], ang), ORANGE)
+    if cards:
+        add(p["cards"], CARD)
+    pl.enable_lightkit()
+    pl.camera_position = [eye, focus, (0, 0, 1)]
+    pl.camera.zoom(zoom)
     pl.screenshot(os.path.join(OUT, name))
     pl.close()
 
+
+VIEWS = {
+    "v_iso_zu.png": dict(ang=0, eye=(330, -360, 260)),
+    "v_iso_offen.png": dict(ang=104, eye=(300, -380, 330), focus=(0, 10, 70)),
+    "v_hinten.png": dict(ang=0, eye=(-300, 380, 220), cards=False),
+    "v_vorne.png": dict(ang=0, eye=(0, -520, 70), cards=False),
+    "v_schnitt_seite.png": dict(ang=0, eye=(600, 0, 60), focus=(0, 0, 60), clip_x=-40.0, zoom=1.6),
+    "v_schnitt_offen.png": dict(ang=104, eye=(600, 0, 80), focus=(0, 10, 80), clip_x=-40.0, zoom=1.3),
+    "v_oben_offen.png": dict(ang=104, eye=(0, -140, 520), focus=(0, 0, 60)),
+}
+
 if __name__ == "__main__":
-    shot("v_iso_zu.png", 0, True, "iso")
-    shot("v_iso_offen.png", 100, True, "iso")
-    shot("v_hinten_zu.png", 0, False, "iso_back")
-    shot("v_oben_offen.png", 100, True, "top")
+    os.makedirs(OUT, exist_ok=True)
+    names = sys.argv[1:] or list(VIEWS)
+    for n in names:
+        shot(n, **VIEWS[n])
+        print("ok", n)

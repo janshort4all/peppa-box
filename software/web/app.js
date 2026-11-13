@@ -7,6 +7,7 @@ const SEITEN = [
   {pfad: 'karten', name: 'Karten', bereich: 'alltag', symbol: 'karten', laden: () => import('./karten.js').then(m => m.liste)},
   {pfad: 'karten/neu', name: 'Karte bespielen', bereich: 'alltag', symbol: 'karten', versteckt: true, laden: () => import('./karten.js').then(m => m.assistent)},
   {pfad: 'zeiten', name: 'Zeiten', bereich: 'alltag', symbol: 'zeiten', laden: () => import('./alltag.js').then(m => m.zeiten)},
+  {pfad: 'wlan', name: 'WLAN', bereich: 'alltag', symbol: 'wlan', laden: () => import('./alltag.js').then(m => m.wlan)},
   {pfad: 'hilfe', name: 'Hilfe', bereich: 'alltag', symbol: 'hilfe', laden: () => import('./alltag.js').then(m => m.hilfe)},
   {pfad: 'dev/ton', name: 'Ton', bereich: 'dev', symbol: 'ton', laden: () => import('./entwickler.js').then(m => m.ton)},
   {pfad: 'dev/bedienung', name: 'Bedienung', bereich: 'dev', symbol: 'bedienung', laden: () => import('./entwickler.js').then(m => m.bedienung)},

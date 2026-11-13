@@ -227,12 +227,14 @@ sudo install -m 0755 -o root -g root "$ORDNER/peppa_ausgang.sh" "$HELFER"
 sudo install -d -m 0755 -o root -g root /usr/local/lib/peppa-box
 sudo install -m 0755 -o root -g root "$ORDNER/ausgabe.py" /usr/local/lib/peppa-box/ausgabe
 sudo install -m 0755 -o root -g root "$ORDNER/ereignis.py" /usr/local/lib/peppa-box/ereignis
+# WLANs eintragen/entfernen (Eltern-Seite → WLAN): Name und Passwort kommen ueber die Standardeingabe
+sudo install -m 0755 -o root -g root "$ORDNER/wlan_hinzufuegen.sh" /usr/local/lib/peppa-box/wlan
 
 # --- sudo-Freigabe: genau diese Befehle, sonst nichts
 TMP="$(mktemp)"
 cat > "$TMP" <<EOF
 # Peppa Box: Befehle fuer Eltern-Seite (peppa-web) und Selbstreparatur des Players. Erzeugt von dienst_einrichten.sh.
-$BENUTZER ALL=(root) NOPASSWD: $SYSTEMCTL poweroff, $SYSTEMCTL reboot, $SYSTEMCTL restart peppa-player, $SYSTEMCTL restart raspotify, $SYSTEMCTL restart peppa-stille, $SYSTEMCTL start --no-block peppa-standby.service, $SYSTEMCTL start --no-block peppa-aufwachen.service, $HELFER zeigen, $HELFER neustart, $HELFER lautsprecher, $HELFER kopfhoerer
+$BENUTZER ALL=(root) NOPASSWD: $SYSTEMCTL poweroff, $SYSTEMCTL reboot, $SYSTEMCTL restart peppa-player, $SYSTEMCTL restart raspotify, $SYSTEMCTL restart peppa-stille, $SYSTEMCTL start --no-block peppa-standby.service, $SYSTEMCTL start --no-block peppa-aufwachen.service, $HELFER zeigen, $HELFER neustart, $HELFER lautsprecher, $HELFER kopfhoerer, /usr/local/lib/peppa-box/wlan
 EOF
 if sudo visudo -cf "$TMP" > /dev/null; then
     sudo install -m 0440 -o root -g root "$TMP" /etc/sudoers.d/peppa-box

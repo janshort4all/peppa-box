@@ -104,7 +104,7 @@ details { margin-top: 10px; } details > summary { cursor: pointer; font-weight: 
 details > summary::-webkit-details-marker { display: none; }
 details > summary::before { content: '›'; font-size: 22px; line-height: 1; transition: transform .15s; width: 14px; }
 details[open] > summary::before { transform: rotate(90deg); }
-input[type=text], input[type=url], input[type=time], input[type=search], select, textarea { font: inherit; padding: 11px 13px; border-radius: 12px; border: 2px solid var(--rand);
+input[type=text], input[type=password], input[type=url], input[type=time], input[type=search], select, textarea { font: inherit; padding: 11px 13px; border-radius: 12px; border: 2px solid var(--rand);
        background: var(--bg); color: var(--text); min-height: 48px; width: 100%; }
 select { width: auto; } textarea { resize: vertical; }
 input:focus, select:focus, textarea:focus { border-color: var(--orange); outline: none; }
@@ -219,3 +219,11 @@ ul.neu { margin: 8px 0 0; padding-left: 20px; }
 .zuschnitt canvas { display: block; max-width: 100%; max-height: 52dvh; width: auto; height: auto; }
 .zuschnitt .rahmen { position: absolute; border: 3px solid #fff; outline: 2px solid var(--orange); box-shadow: 0 0 0 999px rgba(0, 0, 0, .55); cursor: move; touch-action: none; box-sizing: border-box; }
 .titelzeile .reihe input { flex: 1 1 200px; min-width: 0; }
+
+/* WLAN-Seite */
+.wlanliste { list-style: none; margin: 0; padding: 0; }
+.wlanliste li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
+.wlanliste li + li { border-top: 1px solid var(--rand); }
+.wlanliste .name { min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
+.feldname { display: block; font-weight: 700; margin: 12px 0 6px; }
+.feldname + input { margin-bottom: 2px; }

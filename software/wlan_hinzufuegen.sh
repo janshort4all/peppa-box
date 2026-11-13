@@ -5,6 +5,11 @@
 #   sh wlan_hinzufuegen.sh --prioritaet 7   dasselbe mit anderer Prioritaet (1-9)
 #   sh wlan_hinzufuegen.sh --liste          gespeicherte WLANs der Box anzeigen
 #   sh wlan_hinzufuegen.sh --entfernen NAME ein eingetragenes WLAN wieder loeschen
+#   sh wlan_hinzufuegen.sh --roh            Liste fuer Programme: je Zeile Prioritaet, Art (heim/weitere), Name, mit Tab getrennt
+#
+# Die Eltern-Seite (peppa_web.py) ruft die root-eigene Kopie /usr/local/lib/peppa-box/wlan per sudo auf
+# (Name und Passwort kommen ueber die Standardeingabe, nie als Aufrufargument: sonst stuenden sie in
+# der Prozessliste). Name und Passwort werden dort wie hier geprueft.
 #
 # Welches WLAN die Box nimmt: unter den sichtbaren gespeicherten WLANs das mit der hoechsten
 # Prioritaet. Heim-WLAN (peppa-wlan aus wlan_beschleunigen.sh) = 10, Hotspots = 5. Zu Hause gewinnt
@@ -20,6 +25,7 @@ NMDIR="${PEPPA_NM_CONNECTIONS:-/etc/NetworkManager/system-connections}"
 HEIM="$NMDIR/peppa-wlan.nmconnection"
 PRIO=5
 
+[ "$(id -u)" = 0 ] && PEPPA_OHNE_SUDO=1     # als root (Kopie in /usr/local/lib/peppa-box) braucht es kein sudo
 sudo_lauf() { if [ -n "$PEPPA_OHNE_SUDO" ]; then "$@"; else sudo "$@"; fi; }   # Tests ohne sudo
 maske() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/^ /\\s/'; }
 kurz() { printf '%s' "$1" | tr -c 'A-Za-z0-9_-' '_' | cut -c 1-40; }   # Dateiname aus dem WLAN-Namen
@@ -50,6 +56,13 @@ case "$1" in
         printf '  %-32s Prioritaet %s\n' "$(wert ssid "$f")" "$(wert autoconnect-priority "$f")"
     done
     exit 0 ;;
+--roh)
+    for f in "$NMDIR"/peppa-wlan*.nmconnection; do
+        sudo_lauf test -f "$f" || continue
+        if [ "$f" = "$HEIM" ]; then ART=heim; else ART=weitere; fi
+        printf '%s\t%s\t%s\n' "$(wert autoconnect-priority "$f")" "$ART" "$(wert ssid "$f")"
+    done
+    exit 0 ;;
 --entfernen)
     [ -n "$2" ] || { echo "Bitte den WLAN-Namen angeben: sh $0 --entfernen NAME"; exit 1; }
     DATEI="$(datei_zu "$2")"
@@ -63,7 +76,7 @@ case "$1" in
 --prioritaet)
     case "$2" in [1-9]) PRIO="$2" ;; *) echo "Prioritaet bitte 1 bis 9 (Heim-WLAN hat 10)."; exit 1 ;; esac ;;
 "") ;;
-*)  echo "Unbekannte Angabe '$1'. Moeglich: --liste, --entfernen NAME, --prioritaet 1-9"; exit 1 ;;
+*)  echo "Unbekannte Angabe '$1'. Moeglich: --liste, --roh, --entfernen NAME, --prioritaet 1-9"; exit 1 ;;
 esac
 
 # --- Name und Passwort abfragen (Passwort ohne Anzeige)

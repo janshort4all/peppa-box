@@ -119,17 +119,102 @@ class Browser(unittest.TestCase):
         self.pg.set_default_timeout(8000)
 
     def test_alle_seiten_laden_ohne_fehler(self):
-        for seite in ("start", "karten", "karten/neu", "zeiten", "hilfe", "dev/ton", "dev/bedienung", "dev/etiketten", "dev/system"):
+        for seite in ("start", "karten", "karten/neu", "zeiten", "wlan", "hilfe", "dev/ton", "dev/bedienung", "dev/etiketten", "dev/system"):
             self.pg.goto(f"{self.url}/#/{seite}")
             expect(self.pg.locator("#inhalt h1")).to_be_visible()
             time.sleep(0.4)
         self.assertEqual(self.fehler, [])
 
+    def test_wlan_hinzufuegen_und_entfernen(self):
+        nm = os.path.join(self.tmp.name, "nm")
+        os.makedirs(nm, exist_ok=True)
+        with open(os.path.join(nm, "peppa-wlan.nmconnection"), "w") as f:
+            f.write("[connection]\nid=peppa-wlan\nautoconnect-priority=10\n[wifi]\nssid=Heim-Netz\n")
+        for p in (mock.patch.dict(os.environ, {"PEPPA_NM_CONNECTIONS": nm}),
+                  mock.patch.object(peppa_web, "aktive_ssid", return_value="Heim-Netz")):
+            p.start()
+            self.addCleanup(p.stop)
+        self.addCleanup(shutil.rmtree, nm, True)
+        pg = self.pg
+        pg.goto(self.url + "/#/wlan")
+        expect(pg.locator("#inhalt h1")).to_have_text("WLAN")
+        expect(pg.locator("#wliste li")).to_have_count(1)                   # nur das Heim-WLAN, ohne Entfernen-Knopf
+        expect(pg.locator("#wliste li")).to_contain_text("Heim-WLAN · verbunden")
+        expect(pg.locator("#wliste button")).to_have_count(0)
+        self.assertEqual(pg.get_attribute("#wpass", "type"), "password")
+        # zu kurzes Passwort: Hinweis, nichts gesendet, Eingaben bleiben
+        pg.fill("#wname", "Jans Handy")
+        pg.fill("#wpass", "kurz")
+        pg.click("#wspeichern")
+        expect(pg.locator(".toast.fehler")).to_contain_text("mindestens 8 Zeichen")
+        self.assertEqual(pg.input_value("#wname"), "Jans Handy")
+        self.assertEqual(os.listdir(nm), ["peppa-wlan.nmconnection"])
+        # Passwort anzeigen
+        pg.check("#wzeigen")
+        self.assertEqual(pg.get_attribute("#wpass", "type"), "text")
+        pg.fill("#wpass", "streng-geheim-42")
+        pg.click("#wspeichern")
+        expect(pg.locator(".toast.ok")).to_contain_text("„Jans Handy“ gespeichert")
+        expect(pg.locator("#wliste li")).to_have_count(2)
+        expect(pg.locator("#wliste li").nth(1)).to_contain_text("Jans Handy")
+        self.assertEqual((pg.input_value("#wname"), pg.input_value("#wpass")), ("", ""))   # Passwort nicht stehen lassen
+        self.assertNotIn("streng-geheim-42", pg.content())
+        self.assertNotIn("streng-geheim-42", pg.locator("#wliste").inner_text())
+        # Entfernen mit Rückfrage
+        pg.click("#wliste button >> text=Entfernen")
+        pg.click("dialog.frage button >> text=Abbrechen")
+        expect(pg.locator("#wliste li")).to_have_count(2)
+        pg.click("#wliste button >> text=Entfernen")
+        pg.click("dialog.frage button >> text=Entfernen")
+        expect(pg.locator("#wliste li")).to_have_count(1)
+        self.assertEqual(os.listdir(nm), ["peppa-wlan.nmconnection"])
+        # Heim-WLAN-Name: verständliche Meldung, Eingaben bleiben
+        pg.fill("#wname", "Heim-Netz")
+        pg.fill("#wpass", "12345678")
+        pg.click("#wspeichern")
+        expect(pg.locator(".toast.fehler").last).to_contain_text("Heim-WLAN der Box")
+        self.assertEqual(pg.input_value("#wname"), "Heim-Netz")
+        self.assertEqual(self.fehler, [])
+
+    def test_wlan_formular_ueberschreibt_keine_neue_eingabe(self):
+        nm = os.path.join(self.tmp.name, "nm2")
+        os.makedirs(nm, exist_ok=True)
+        self.addCleanup(shutil.rmtree, nm, True)
+        orig = peppa_web.wlan_hinzufuegen
+
+        def langsam(daten):                                  # die echte Box braucht einige Sekunden (WLAN-Suche)
+            time.sleep(1.0)
+            return orig(daten)
+        for p in (mock.patch.dict(os.environ, {"PEPPA_NM_CONNECTIONS": nm}),
+                  mock.patch.object(peppa_web, "aktive_ssid", return_value=None),
+                  mock.patch.dict(peppa_web.SCHNELL, {"/api/wlan/hinzufuegen": langsam})):
+            p.start()
+            self.addCleanup(p.stop)
+        pg = self.pg
+        pg.goto(self.url + "/#/wlan")
+        expect(pg.locator("#wliste")).to_contain_text("Noch kein WLAN gespeichert")
+        pg.fill("#wname", "Jans Handy")
+        pg.fill("#wpass", "streng-geheim-42")
+        pg.click("#wspeichern")
+        expect(pg.locator("#wspeichern")).to_be_disabled()   # kein doppeltes Absenden
+        pg.fill("#wname", "Pixel Frau")                      # während die Box noch sucht, schon das nächste tippen
+        expect(pg.locator(".toast.ok")).to_contain_text("„Jans Handy“ gespeichert")
+        self.assertEqual(pg.input_value("#wname"), "Pixel Frau")
+        self.assertEqual(pg.input_value("#wpass"), "")       # unverändertes Passwort wird geleert
+
+    def test_wlan_seite_auf_dem_handy_ohne_ueberlauf(self):
+        pg = self.pg
+        pg.goto(self.url + "/#/wlan")
+        expect(pg.locator("#inhalt h1")).to_have_text("WLAN")
+        self.assertLessEqual(pg.evaluate("document.documentElement.scrollWidth"), 390)
+        for a in pg.locator(".leiste a").all():                              # fünf Einträge müssen alle sichtbar und tippbar sein
+            self.assertGreaterEqual(a.bounding_box()["width"], 60)
+
     def test_zwei_bereiche_und_navigation(self):
         pg = self.pg
         pg.goto(self.url + "/#/start")
-        expect(pg.locator(".leiste a")).to_have_count(4)
-        self.assertEqual(pg.locator(".leiste a").all_inner_texts(), ["Start", "Karten", "Zeiten", "Hilfe"])
+        expect(pg.locator(".leiste a")).to_have_count(5)
+        self.assertEqual(pg.locator(".leiste a").all_inner_texts(), ["Start", "Karten", "Zeiten", "WLAN", "Hilfe"])
         pg.click(".kopf .bereich a >> text=Entwickler")
         expect(pg.locator("#inhalt h1")).to_have_text("Ton")
         self.assertEqual(pg.locator(".leiste a").all_inner_texts(), ["Ton", "Bedienung", "Etiketten", "System"])

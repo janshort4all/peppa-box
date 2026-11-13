@@ -2,9 +2,12 @@
 dazu die Prüfung der Bedien-Einstellungen. Ohne Hardware, sudo-Befehle im Probelauf.
 Aufruf: cd software && python3 -m unittest -v test_web
 """
+import contextlib
 import http.server
+import io
 import json
 import os
+import stat
 import tempfile
 import threading
 import time
@@ -95,6 +98,122 @@ class Seite(unittest.TestCase):
     def player_status(self, **z):
         with open(peppa_web.STATUS_DATEI, "w") as f:
             json.dump(dict({"zeit": time.time(), "karte": None, "link": None, "spotify_bereit": True}, **z), f)
+
+    # ---- WLAN-Verwaltung (Eltern-Seite → WLAN)
+
+    def wlan_vorbereiten(self, aktiv=None):
+        nm = os.path.join(self.tmp.name, "nm")
+        os.makedirs(nm)
+        with open(os.path.join(nm, "peppa-wlan.nmconnection"), "w") as f:
+            f.write("[connection]\nid=peppa-wlan\nautoconnect-priority=10\n[wifi]\nssid=Heim-Netz\n[wifi-security]\npsk=heimgeheim\n")
+        for ziel, wert in ((os.environ, {"PEPPA_NM_CONNECTIONS": nm}),):
+            p = mock.patch.dict(ziel, wert)
+            p.start()
+            self.addCleanup(p.stop)
+        p = mock.patch.object(peppa_web, "aktive_ssid", return_value=aktiv)
+        p.start()
+        self.addCleanup(p.stop)
+        return nm
+
+    def test_wlan_liste_hinzufuegen_ersetzen_entfernen(self):
+        nm = self.wlan_vorbereiten(aktiv="Heim-Netz")
+        erg = self.holen("/api/wlan")
+        self.assertTrue(erg["ok"])
+        self.assertEqual(erg["wlans"], [{"name": "Heim-Netz", "heim": True, "aktiv": True, "prioritaet": 10}])
+        code, erg = self.senden("/api/wlan/hinzufuegen", {"name": " x", "passwort": "kurz"})
+        self.assertEqual(code, 200)
+        self.assertFalse(erg["ok"])
+        code, erg = self.senden("/api/wlan/hinzufuegen", {"name": "Jans Handy", "passwort": "super\\geheim 1"})
+        self.assertTrue(erg["ok"], erg)
+        self.assertIn("„Jans Handy“ gespeichert", erg["meldung"])
+        self.assertNotIn("geheim", json.dumps(erg))
+        liste = self.holen("/api/wlan")["wlans"]
+        self.assertEqual([(w["name"], w["heim"], w["prioritaet"]) for w in liste], [("Heim-Netz", True, 10), ("Jans Handy", False, 5)])
+        self.assertNotIn("geheim", json.dumps(liste))                      # Passwörter werden nie ausgeliefert
+        datei = os.path.join(nm, "peppa-wlan-Jans_Handy.nmconnection")
+        with open(datei) as f:
+            self.assertIn("\npsk=super\\\\geheim 1\n", f.read())
+        self.assertEqual(stat.S_IMODE(os.stat(datei).st_mode), 0o600)
+        _, erg = self.senden("/api/wlan/hinzufuegen", {"name": "Jans Handy", "passwort": "neues-passwort"})
+        self.assertIn("aktualisiert", erg["meldung"])                       # gleicher Name: ersetzt, nicht doppelt
+        self.assertEqual(len(self.holen("/api/wlan")["wlans"]), 2)
+        _, erg = self.senden("/api/wlan/entfernen", {"name": "Jans Handy"})
+        self.assertTrue(erg["ok"], erg)
+        self.assertEqual([w["name"] for w in self.holen("/api/wlan")["wlans"]], ["Heim-Netz"])
+        _, erg = self.senden("/api/wlan/entfernen", {"name": "Gibtsnicht"})
+        self.assertFalse(erg["ok"])
+
+    def test_wlan_eingaben_werden_geprueft_und_aendern_nichts(self):
+        nm = self.wlan_vorbereiten()
+        for daten in ({}, {"name": "a"}, {"name": 5, "passwort": "12345678"}, {"name": "", "passwort": "12345678"},
+                      {"name": "A" * 33, "passwort": "12345678"}, {"name": "ok", "passwort": "1234567"},
+                      {"name": "ok", "passwort": "x" * 64}, {"name": "ok ", "passwort": "12345678"},
+                      {"name": "o\nk", "passwort": "12345678"}, {"name": "ok", "passwort": "1234\n5678"},
+                      {"name": "Heim-Netz", "passwort": "12345678"}):           # Heim-WLAN bleibt, wie es ist
+            _, erg = self.senden("/api/wlan/hinzufuegen", daten)
+            self.assertFalse(erg["ok"], daten)
+            self.assertNotIn("12345678", json.dumps(erg))
+        self.assertEqual(os.listdir(nm), ["peppa-wlan.nmconnection"])
+        with open(os.path.join(nm, "peppa-wlan.nmconnection")) as f:
+            self.assertIn("psk=heimgeheim", f.read())
+
+    def test_wlan_aktives_wlan_laesst_sich_nicht_entfernen(self):
+        nm = self.wlan_vorbereiten(aktiv="Jans Handy")
+        self.senden("/api/wlan/hinzufuegen", {"name": "Jans Handy", "passwort": "super-geheim"})
+        _, erg = self.senden("/api/wlan/entfernen", {"name": "Jans Handy"})
+        self.assertFalse(erg["ok"])
+        self.assertIn("gerade verbunden", erg["meldung"])
+        self.assertTrue(os.path.exists(os.path.join(nm, "peppa-wlan-Jans_Handy.nmconnection")))
+        self.assertTrue(self.holen("/api/wlan")["wlans"][1]["aktiv"])
+
+    def test_wlan_sonderzeichen_im_namen_kommen_unveraendert_zurueck(self):
+        self.wlan_vorbereiten()
+        for name in ("Jan’s Handy", "A\\B", "ä ö ü"):
+            _, erg = self.senden("/api/wlan/hinzufuegen", {"name": name, "passwort": "passwort-1"})
+            self.assertTrue(erg["ok"], (name, erg))
+        self.assertEqual(sorted(w["name"] for w in self.holen("/api/wlan")["wlans"] if not w["heim"]),
+                         sorted(["Jan’s Handy", "A\\B", "ä ö ü"]))
+
+    def test_wlan_passwort_steht_nie_im_protokoll(self):
+        self.wlan_vorbereiten()
+        puffer = io.StringIO()
+        with contextlib.redirect_stdout(puffer):
+            self.senden("/api/wlan/hinzufuegen", {"name": "Jans Handy", "passwort": "streng-geheim-42"})
+            self.senden("/api/wlan/hinzufuegen", {"name": "Jans Handy", "passwort": "kurz"})
+            self.senden("/api/wlan/hinzufuegen", {"name": "Heim-Netz", "passwort": "streng-geheim-42"})
+        self.assertNotIn("streng-geheim-42", puffer.getvalue())
+        self.assertIn("/api/wlan/hinzufuegen", puffer.getvalue())
+
+    def test_wlan_ohne_kopfeintrag_wird_abgelehnt(self):
+        nm = self.wlan_vorbereiten()
+        code, erg = self.senden("/api/wlan/hinzufuegen", {"name": "Jans Handy", "passwort": "super-geheim"}, kopf=False)
+        self.assertEqual(code, 403)
+        self.assertEqual(os.listdir(nm), ["peppa-wlan.nmconnection"])
+
+    def test_wlan_ohne_einrichtung_sagt_was_zu_tun_ist(self):
+        with mock.patch.object(peppa_web, "TROCKEN", False), mock.patch.object(peppa_web, "WLAN_HELFER", "/gibt/es/nicht"):
+            erg = self.holen("/api/wlan")
+            self.assertFalse(erg["ok"])
+            self.assertFalse(erg["eingerichtet"])
+            self.assertIn("dienst_einrichten.sh", erg["meldung"])
+            _, erg = self.senden("/api/wlan/hinzufuegen", {"name": "Jans Handy", "passwort": "super-geheim"})
+            self.assertFalse(erg["ok"])
+            self.assertIn("dienst_einrichten.sh", erg["meldung"])
+
+    def test_wlan_im_echten_betrieb_ruft_sudo_mit_eingabe_statt_argument(self):
+        """Name und Passwort dürfen nie in der Argumentliste stehen (sichtbar in der Prozessliste)."""
+        gesehen = {}
+
+        def fake_run(kommando, **kw):
+            gesehen.update(kommando=kommando, eingabe=kw.get("input"))
+            return mock.Mock(returncode=0, stdout="WLAN 'X' eingetragen (Prioritaet 5).\nDie Box sieht 'X' gerade nicht (Hotspot aus oder 5 GHz?). Eingetragen ist es trotzdem.", stderr="")
+        with mock.patch.object(peppa_web, "TROCKEN", False), mock.patch.object(peppa_web.os.path, "exists", return_value=True), \
+                mock.patch.object(peppa_web.subprocess, "run", fake_run):
+            erg = peppa_web.wlan_hinzufuegen({"name": "X Handy", "passwort": "streng-geheim-42"})
+        self.assertEqual(gesehen["kommando"], ["sudo", "-n", peppa_web.WLAN_HELFER])
+        self.assertEqual(gesehen["eingabe"], "X Handy\nstreng-geheim-42\n")
+        self.assertTrue(erg["ok"])
+        self.assertIn("gerade nicht", erg["meldung"])
 
     def test_karte_mit_bedienung_und_leser(self):
         self.player_status(leser="Kartenleser nicht bereit: Version 0x00")

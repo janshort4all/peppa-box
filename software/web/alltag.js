@@ -1,5 +1,5 @@
 // Alltag: Start, Zeiten, Hilfe. Einfache Worte, große Knöpfe; alles Technische steht unter "Entwickler".
-import {$, NB, S, TYPEN, abo, bedient, boxAktion, coverBild, einstLaden, einstSpeichern, esc, melden, sicher, symbol, toast, zustandLaden, zustandTexte} from './kern.js';
+import {$, NB, S, TYPEN, abo, bedient, boxAktion, coverBild, einstLaden, einstSpeichern, esc, frage, holen, melden, sicher, symbol, toast, zustandLaden, zustandTexte} from './kern.js';
 
 // ------------------------------------------------------------ gemeinsam: Schlummer-Timer
 
@@ -187,6 +187,69 @@ export function zeiten(w, signal) {
   });
 }
 
+// ------------------------------------------------------------ WLAN
+
+export function wlan(w, signal) {
+  w.innerHTML = `
+    <h1>WLAN</h1>
+    <p class="leise">Zu Hause nutzt die Box das Heim-WLAN. Unterwegs kann sie sich mit dem Hotspot eines Handys verbinden. Die Zugangsdaten trägst du hier ein.</p>
+    <section class="k"><h2>Gespeicherte WLANs</h2><div id="wliste"><p class="leise">Lade …</p></div>
+      <p class="leise klein" style="margin-bottom:0">Sind Heim-WLAN und Hotspot beide da, nimmt die Box das Heim-WLAN. Ist sie schon verbunden, bleibt sie dabei.</p></section>
+    <section class="k"><h2>WLAN hinzufügen</h2>
+      <form id="wform" autocomplete="off">
+        <label class="feldname" for="wname">Name des WLANs</label>
+        <input type="text" id="wname" maxlength="32" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" placeholder="zum Beispiel der Hotspot-Name">
+        <label class="feldname" for="wpass">Passwort</label>
+        <input type="password" id="wpass" maxlength="63" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="new-password">
+        <label class="zeile"><span>Passwort anzeigen</span><input type="checkbox" class="schalter" id="wzeigen" aria-label="Passwort anzeigen"></label>
+        <p class="leise klein">Name und Passwort genau so eingeben wie am Handy (Groß- und Kleinschreibung zählt). Das Passwort hat 8 bis 63 Zeichen.</p>
+        <button class="btn haupt gross" id="wspeichern" type="submit">${symbol('plus')} WLAN speichern</button>
+      </form>
+      <p class="leise klein" style="margin-bottom:0">Diese Seite ist nicht verschlüsselt. Gib das Passwort deshalb nur im eigenen Heim-WLAN ein, nicht in einem fremden.</p></section>`;
+
+  const liste = $('#wliste', w);
+  let nummer = 0;
+  async function laden() {
+    const meine = ++nummer;
+    let e;
+    try { e = await holen('/api/wlan'); } catch (x) { e = {ok: false, meldung: 'Keine Verbindung zur Box.'}; }
+    if (meine !== nummer || signal.aborted) return;                       // veraltete Antwort verwerfen
+    if (!e.ok) { liste.innerHTML = `<div class="hinweis ${e.eingerichtet === false ? 'warn' : 'fehler'}">${esc(e.meldung)}</div>`; return; }
+    liste.innerHTML = e.wlans.length
+      ? '<ul class="wlanliste">' + e.wlans.map((x, i) => `<li><span class="name"><span class="punkt ${x.aktiv ? 'gut' : ''}"></span>${esc(x.name)}<br>
+          <span class="leise klein" style="font-weight:400">${x.heim ? 'Heim-WLAN' : 'zusätzlich'}${x.aktiv ? ' · verbunden' : ''}</span></span>
+          ${x.heim ? '' : `<button class="btn klein gefahr" data-weg="${i}" ${x.aktiv ? 'disabled aria-disabled="true" title="Gerade verbunden"' : ''} aria-label="${esc(x.name)} entfernen">${symbol('papierkorb')} Entfernen</button>`}</li>`).join('') + '</ul>'
+      : '<p class="leise">Noch kein WLAN gespeichert.</p>';
+    liste._wlans = e.wlans;
+  }
+  laden();
+
+  liste.addEventListener('click', async ev => {
+    const b = ev.target.closest('[data-weg]');
+    if (!b) return;
+    const x = liste._wlans[+b.dataset.weg];
+    if (!x || !await frage({titel: 'WLAN entfernen?', text: `„${x.name}“ wird von der Box gelöscht. Sie verbindet sich dann nicht mehr damit.`, ok: 'Entfernen', art: 'gefahr'})) return;
+    melden(await sicher('/api/wlan/entfernen', {name: x.name}));
+    laden();
+  }, {signal});
+
+  $('#wzeigen', w).addEventListener('change', e => { $('#wpass', w).type = e.target.checked ? 'text' : 'password'; }, {signal});
+  $('#wform', w).addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const knopf = $('#wspeichern', w), name = $('#wname', w).value, passwort = $('#wpass', w).value;
+    if (!name) { toast('Bitte den Namen des WLANs eingeben.', 'fehler'); return; }
+    if (passwort.length < 8) { toast('Das Passwort muss mindestens 8 Zeichen haben.', 'fehler'); return; }
+    knopf.disabled = true;
+    const e = await sicher('/api/wlan/hinzufuegen', {name, passwort});
+    knopf.disabled = false;
+    melden(e);
+    // Nur leeren, was noch genau so dasteht (die Box braucht einige Sekunden; wer inzwischen Neues tippt, behält es).
+    // Bei Fehler bleiben die Eingaben stehen.
+    if (e.ok) { if ($('#wname', w).value === name) $('#wname', w).value = ''; if ($('#wpass', w).value === passwort) $('#wpass', w).value = ''; }
+    laden();
+  }, {signal});
+}
+
 // ------------------------------------------------------------ Hilfe
 
 const FAQ = [
@@ -198,6 +261,8 @@ const FAQ = [
     <li><span>Etiketten ausschneiden lassen (das macht der Automat), aufkleben. Danach in der App „als gedruckt“ markieren.</span></li></ol>`],
   ['Die Karte spielt nichts', `<p>Schau auf der Startseite, ob die Box die Karte sieht: Dort erscheint der Titel der Playlist. Steht dort „Diese Karte ist noch leer“, muss sie zuerst bespielt werden. Wird die Karte gar nicht erkannt, die Karte mittig auf das Kartenfach legen und kurz warten. Hilft das nicht, unten <b>Musik neu starten</b> versuchen.</p>`],
   ['Die Musik hängt oder bricht ab', `<p>Prüfe auf der Startseite den <b>Zustand</b>: Ohne WLAN oder mit schwachem WLAN gibt es keine Musik von Spotify. Danach hilft meist <b>Musik neu starten</b> (unten). Die Box bleibt dabei an.</p>`],
+  ['Wie verbinde ich die Box unterwegs mit dem Handy?', `<ol class="schritte"><li><span>Zu Hause, solange die Box im Heim-WLAN ist: Öffne <a href="#/wlan">WLAN</a> und trage Name und Passwort des Handy-Hotspots ein (genau wie am Handy).</span></li>
+    <li><span>Unterwegs den Hotspot am Handy einschalten und die Box einschalten. Sie sucht den Hotspot von selbst, wenn das Heim-WLAN nicht da ist.</span></li></ol>`],
   ['Was bedeutet „nur in dieser Box“?', `<p>Manche Karten lassen sich nicht beschreiben. Die Box merkt sich dann selbst, welche Playlist zur Karte gehört. Sie spielt wie jede andere Karte, aber nur an dieser Box.</p>`],
 ];
 

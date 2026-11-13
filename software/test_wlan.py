@@ -212,6 +212,31 @@ class Hinzufuegen(unittest.TestCase):
         self.assertEqual(sorted(os.listdir(self.nm)), ["peppa-wlan-JanHandy.nmconnection", "peppa-wlan.nmconnection"])
         self.assertNotEqual(self.lauf("", "--entfernen", "Gibtsnicht").returncode, 0)
 
+    def test_roh_liste_fuer_die_eltern_seite(self):
+        self.lauf("JanHandy\npasswort1\n")
+        self.lauf(" Handy\\Frau\npasswort2\n")                      # Leerzeichen am Anfang und Backslash
+        r = self.lauf("", "--roh")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        zeilen = sorted(r.stdout.splitlines())
+        self.assertEqual(zeilen, sorted(["10\theim\tWLAN-567C6T_2_4", "5\tweitere\tJanHandy",
+                                         "5\tweitere\t\\sHandy\\\\Frau"]))     # so steht es maskiert in der Datei
+        self.assertNotIn("passwort", r.stdout)
+
+    def test_als_root_ohne_sudo(self):
+        """Die root-eigene Kopie läuft als root und braucht kein sudo (PEPPA_OHNE_SUDO wird dann selbst gesetzt)."""
+        if os.getuid() != 0:
+            self.skipTest("nur als root aussagekräftig")
+        env = {k: v for k, v in self.env.items() if k != "PEPPA_OHNE_SUDO"}
+        with tempfile.TemporaryDirectory() as d:                          # ein sudo, das sofort scheitert
+            p = os.path.join(d, "sudo")
+            with open(p, "w") as f:
+                f.write("#!/bin/sh\necho sudo-benutzt >&2\nexit 99\n")
+            os.chmod(p, 0o755)
+            env["PATH"] = d + ":" + env["PATH"]
+            r = subprocess.run(["sh", os.path.join(HIER, "wlan_hinzufuegen.sh"), "--roh"], env=env, capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertNotIn("sudo-benutzt", r.stderr)
+
 
 class Suche(unittest.TestCase):
     """wlan_suche.sh: neue Suche nur, wenn das WLAN wirklich getrennt ist."""

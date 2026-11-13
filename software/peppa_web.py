@@ -16,6 +16,7 @@ import datetime
 import glob
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -44,8 +45,11 @@ STATUS_DATEI = einstellungen.lauf_pfad("status")           # schreibt der Player
 BEDIENUNG_DATEI = einstellungen.lauf_pfad("bedienung")     # Bedienelemente live (Player, bis 5 × je Sekunde)
 EINRICHTUNG = {"software/dienst_einrichten.sh", "software/lautsprecher_einrichten.sh",
                "software/bedienung_einrichten.sh", "software/peppa_ausgang.sh",
-               "software/ausgabe.py", "software/ereignis.py"}     # die beiden laufen als installierte Kopie
+               "software/ausgabe.py", "software/ereignis.py",
+               "software/wlan_hinzufuegen.sh"}                    # die drei laufen als installierte Kopie
 HELFER = "/usr/local/sbin/peppa-ausgang"
+WLAN_HELFER = "/usr/local/lib/peppa-box/wlan"       # root-eigene Kopie von wlan_hinzufuegen.sh (dienst_einrichten.sh)
+WLAN_SKRIPT = os.path.join(ORDNER, "wlan_hinzufuegen.sh")
 DIENSTE = ("peppa-player", "peppa-web", "raspotify", "peppa-stille", "peppa-standby")
 KONFIG = os.path.expanduser("~/.config/peppa-box")
 VORHER_DATEI = os.path.join(KONFIG, "vorherige_version.txt")
@@ -806,6 +810,124 @@ def ansage_spielen(daten):
     ok = toene.spielen(name, warten=False, log=log)
     return {"ok": ok, "meldung": f"„{toene.ANSAGEN[name]}“" if ok else "Ansage ließ sich nicht abspielen (siehe Meldungen)."}
 
+# ---------------------------------------------------------------- WLANs der Box (Heim-WLAN, Hotspots)
+
+_WLAN_SPERRE = threading.Lock()    # die Dateien der WLANs nie von zwei Anfragen gleichzeitig ändern
+
+
+def _wlan_befehl(args, eingabe=None, zeit=60):
+    """Ruft den Root-Helfer für die WLANs auf (sudo, ohne Passwortabfrage). Name und Passwort gehen nur über die
+    Standardeingabe, nie als Argument (sonst stünden sie in der Prozessliste). Gibt (Code, Ausgabe) zurück.
+    Im Probelauf: nur wenn PEPPA_NM_CONNECTIONS auf einen Testordner zeigt, dann wird das Skript direkt und ohne
+    echten NetworkManager ausgeführt, sonst wird nichts getan."""
+    umgebung = None
+    if TROCKEN:
+        if not os.environ.get("PEPPA_NM_CONNECTIONS"):
+            log("PROBELAUF, nicht ausgefuehrt: WLAN " + " ".join(args))
+            return 0, ""
+        kommando, umgebung = ["sh", WLAN_SKRIPT, *args], dict(os.environ, PEPPA_OHNE_SUDO="1", PEPPA_TROCKEN="1")
+    elif not os.path.exists(WLAN_HELFER):
+        return 127, "nicht eingerichtet"
+    else:
+        kommando = ["sudo", "-n", WLAN_HELFER, *args]
+    try:
+        r = subprocess.run(kommando, input=eingabe, capture_output=True, text=True, timeout=zeit, env=umgebung)
+        return r.returncode, (r.stdout + r.stderr).strip()
+    except subprocess.TimeoutExpired:
+        return 124, "Zeitüberschreitung"
+    except OSError as e:
+        return 127, str(e)
+
+
+def _wlan_entmaskieren(text):
+    """Rückgängig, was wlan_hinzufuegen.sh beim Schreiben der Datei maskiert (\\ und \\s am Anfang)."""
+    return re.sub(r"\\(.)", lambda m: " " if m.group(1) == "s" else m.group(1), text)
+
+
+def aktive_ssid():
+    """Name (SSID) des WLANs, mit dem die Box gerade verbunden ist, sonst None."""
+    code, aus = befehl(["nmcli", "-t", "-f", "ACTIVE,SSID", "device", "wifi"], zeit=5)
+    if code != 0:
+        return None
+    for zeile in aus.splitlines():
+        if zeile.startswith("yes:"):
+            return re.sub(r"\\(.)", r"\1", zeile[4:])       # nmcli schreibt ':' und '\\' mit Fluchtzeichen
+    return None
+
+
+def wlan_liste():
+    """Gespeicherte WLANs der Box. Passwörter werden nie angezeigt (und nie von hier aus gelesen)."""
+    code, aus = _wlan_befehl(["--roh"], zeit=15)
+    if code == 127:
+        return {"ok": False, "eingerichtet": False,
+                "meldung": "Das WLAN-Programm der Box ist noch nicht eingerichtet (einmal dienst_einrichten.sh ausführen)."}
+    if code != 0:
+        log(f"WLAN-Liste fehlgeschlagen ({code}): {aus}")
+        return {"ok": False, "eingerichtet": True, "meldung": "Die gespeicherten WLANs ließen sich nicht lesen."}
+    aktiv, liste = aktive_ssid(), []
+    for zeile in aus.splitlines():
+        teile = zeile.split("\t", 2)
+        if len(teile) != 3 or not teile[2]:
+            continue
+        name = _wlan_entmaskieren(teile[2])
+        liste.append({"name": name, "heim": teile[1] == "heim", "aktiv": name == aktiv,
+                      "prioritaet": int(teile[0]) if teile[0].isdigit() else None})
+    liste.sort(key=lambda w: (not w["heim"], w["name"].lower()))
+    return {"ok": True, "eingerichtet": True, "wlans": liste, "verbunden_mit": aktiv}
+
+
+def _wlan_text_pruefen(name, passwort):
+    """Gleiche Regeln wie wlan_hinzufuegen.sh, aber mit verständlichen Meldungen. Gibt eine Meldung zurück oder None."""
+    if not isinstance(name, str) or not isinstance(passwort, str):
+        return "Bitte Name und Passwort eingeben."
+    if any(ord(c) < 32 or ord(c) == 127 for c in name + passwort):
+        return "Name und Passwort dürfen keine Steuerzeichen oder Zeilenumbrüche enthalten."
+    if not name:
+        return "Bitte den Namen des WLANs eingeben."
+    if len(name.encode()) > 32:
+        return "Der Name darf höchstens 32 Zeichen lang sein."
+    if name != name.strip():
+        return "Der Name beginnt oder endet mit einem Leerzeichen. Bitte prüfen (die Handytastatur hängt gern eins an)."
+    if not 8 <= len(passwort.encode()) <= 63:
+        return "Das Passwort muss 8 bis 63 Zeichen lang sein."
+    return None
+
+
+def wlan_hinzufuegen(daten):
+    name, passwort = daten.get("name"), daten.get("passwort")
+    fehler = _wlan_text_pruefen(name, passwort)
+    if fehler:
+        return {"ok": False, "meldung": fehler}
+    with _WLAN_SPERRE:
+        code, aus = _wlan_befehl([], eingabe=f"{name}\n{passwort}\n")
+    # Die Ausgabe des Skripts enthält das Passwort nie; trotzdem nur geprüfte Teile ins Protokoll
+    if code == 127 and aus == "nicht eingerichtet":
+        return {"ok": False, "meldung": "Das WLAN-Programm der Box ist noch nicht eingerichtet (einmal dienst_einrichten.sh ausführen)."}
+    if code != 0:
+        log(f"  WLAN eintragen fehlgeschlagen ({code}): {aus.replace(passwort, '***')[:300]}")
+        if "Heim-WLAN" in aus:
+            return {"ok": False, "meldung": f"„{name}“ ist das Heim-WLAN der Box. Das bleibt, wie es ist."}
+        return {"ok": False, "meldung": "Das WLAN ließ sich nicht speichern."}
+    text = f"WLAN „{name}“ " + ("aktualisiert." if "aktualisiert" in aus else "gespeichert.")
+    if "Die Box sieht" in aus:                       # das Skript prüft nur, ob das WLAN gerade zu sehen ist
+        text += (" Die Box sieht es gerade nicht (Hotspot aus?). Gespeichert ist es trotzdem." if "gerade nicht" in aus
+                 else " Die Box sieht es gerade.")
+    return {"ok": True, "meldung": text}
+
+
+def wlan_entfernen(daten):
+    name = daten.get("name")
+    if not isinstance(name, str) or not name or len(name.encode()) > 32 or any(ord(c) < 32 for c in name):
+        return {"ok": False, "meldung": "Unbekanntes WLAN."}
+    if name == aktive_ssid():
+        return {"ok": False, "meldung": "Mit diesem WLAN ist die Box gerade verbunden. Es lässt sich erst entfernen, wenn sie ein anderes benutzt."}
+    with _WLAN_SPERRE:
+        code, aus = _wlan_befehl(["--entfernen", name], zeit=30)
+    if code != 0:
+        log(f"  WLAN entfernen fehlgeschlagen ({code}): {aus[:300]}")
+        return {"ok": False, "meldung": f"„{name}“ ist nicht gespeichert und lässt sich nicht entfernen."}
+    return {"ok": True, "meldung": f"WLAN „{name}“ entfernt."}
+
 
 AKTIONEN = {"/api/update/pruefen": update_pruefen, "/api/update/starten": update_starten,
             "/api/update/zurueck": zurueck, "/api/musik-neustart": musik_neu,
@@ -819,7 +941,8 @@ SCHNELL = {"/api/klang": klang_setzen, "/api/lautstaerke": lautstaerke_setzen, "
            "/api/karten/pruefen": karten_pruefen, "/api/karten/bespielen": karten_bespielen,
            "/api/karten/abbrechen": karten_abbrechen, "/api/karten/umbenennen": karten_umbenennen,
            "/api/karten/entfernen": karten_entfernen, "/api/karten/gedruckt": karten_gedruckt,
-           "/api/cover/neu": cover_neu, "/api/cover/titel": cover_titel}
+           "/api/cover/neu": cover_neu, "/api/cover/titel": cover_titel,
+           "/api/wlan/hinzufuegen": wlan_hinzufuegen, "/api/wlan/entfernen": wlan_entfernen}
 # Aktionen, deren Anfragetext eine Datei ist (kein JSON); die Parameter stehen in der Adresse (?s=...)
 ROH = {"/api/cover/hochladen": cover_hochladen}
 GROESSE = {"/api/cover/hochladen": BILD_MAX}                # sonst gilt 4096 Bytes
@@ -905,6 +1028,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._antwort(200, meldungen())
         if pfad == "/api/klang":
             return self._antwort(200, klang_info())
+        if pfad == "/api/wlan":
+            return self._antwort(200, wlan_liste())
         if pfad == "/api/diagnose":
             return self._antwort(200, diagnose())
         name = "index.html" if pfad in ("/", "/index.html") else pfad.lstrip("/")

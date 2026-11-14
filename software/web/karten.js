@@ -87,10 +87,11 @@ async function bildHochladen(datei, schluessel) {
 function kachel(k, imFach) {
   const marken = [
     imFach ? '<span class="marke">Im Fach</span>' : '',
+    k.vorrat ? '<span class="marke vorrat" title="Etikett ohne Karte. Die Karte dazu bespielst du später.">Vorrat, noch keine Karte</span>' : '',
     k.gedruckt ? '<span class="marke gut">Etikett gedruckt</span>' : '<span class="marke warn">Etikett offen</span>',
     k.auf_karte === false ? '<span class="marke" title="Der Link steht nicht auf der Karte, sondern nur in dieser Box.">nur in dieser Box</span>' : '',
   ].join('');
-  return `<button class="kachel ${imFach ? 'imfach' : ''}" data-uid="${esc(k.uid)}">${coverBild(k.cover, '', k.titel)}
+  return `<button class="kachel ${imFach ? 'imfach' : ''} ${k.vorrat ? 'vorrat' : ''}" data-uid="${esc(k.uid)}">${coverBild(k.cover, '', k.titel)}
     <div class="t">${esc(k.titel)}</div><div class="marken">${marken}</div></button>`;
 }
 
@@ -101,23 +102,48 @@ function etikettbox(e, liste) {
       Einmal am Pi eingeben: <b>sh ~/peppa-box/software/dienst_einrichten.sh</b></div>`;
   }
   if (!liste.length) return `<h2>Etiketten (${e.groesse_mm} × ${e.groesse_mm} mm)</h2><p class="leise" style="margin:0">Sobald du eine Karte bespielt hast, kannst du hier das Etikett dazu herunterladen.</p>`;
-  const bogen = Math.min(e.offen, e.plaetze), boegen = e.plaetze ? Math.ceil(e.offen / e.plaetze) : 1;
-  const rest = e.plaetze ? e.offen % e.plaetze : 0;                              // Etiketten auf dem letzten Bogen
-  const teile = [];
-  for (let i = 0, n = e.offen; i < boegen; i++, n -= e.plaetze) teile.push(Math.min(n, e.plaetze));
-  const aufteilung = boegen > 1 ? `<p class="leise klein">Das sind <b>${boegen} Bögen</b> (${teile.join(' + ')} Etiketten). Lade zuerst Bogen 1, drucke und klebe ihn auf, tippe auf „Bogen als gedruckt markieren“. Danach ist der nächste Bogen dran.</p>` : '';
+  const n = e.plaetze || 1, boegen = Math.max(1, Math.ceil(e.offen / n));
+  const rest = e.offen % n;                                                       // Etiketten auf dem letzten Bogen
+  const nachUid = new Map(liste.map(k => [k.uid, k]));
+  const alle = (e.offene || e.naechster_bogen || []).map(u => nachUid.get(u)).filter(Boolean);
+  const slides = Array.from({length: boegen}, (_, i) => alle.slice(i * n, (i + 1) * n)).filter(b => b.length).map((b, i, arr) => {
+    const url = '/etikett/bogen.png?laden=1&s=' + b.map(k => k.schluessel).join(',');
+    const uids = liste.filter(k => b.some(x => x.uri === k.uri)).map(k => k.uid);   // alle Karten dieser Playlisten
+    return `<div class="bogenseite" data-nr="${i}" data-s="${b.map(k => k.schluessel).join(',')}">
+      <div class="bogenkopf"><b>${arr.length > 1 ? `Bogen ${i + 1} von ${arr.length}` : 'Bogen'}</b> <span class="leise klein">${b.length} ${b.length === 1 ? 'Etikett' : 'Etiketten'}</span></div>
+      <div class="bogenbild"><img class="etikettvorschau" alt="" data-quelle="${esc(url.replace('?laden=1&', '?'))}" style="width:auto;max-height:200px;background:none"></div>
+      <div class="reihe"><a class="btn haupt" href="${esc(url)}" download>${symbol('laden')} Bogen laden</a>
+        <button class="btn gedruckt" data-uids="${uids.join(',')}">${symbol('haken')} Bogen als gedruckt markieren</button></div></div>`;
+  });
+  const wischen = slides.length > 1
+    ? `<div class="bogenpunkte">${slides.map((_, i) => `<button class="punkt" data-nr="${i}" aria-label="Bogen ${i + 1}"></button>`).join('')}</div>
+       <p class="leise klein" style="text-align:center;margin:2px 0 8px">Nach links und rechts wischen, um die Bögen durchzusehen. Gedruckt markieren musst du nur, was du wirklich geklebt hast.</p>` : '';
   const tipp = rest > 0
     ? `<p class="leise klein"><b>Spartipp:</b> Auf einen Bogen passen ${e.plaetze} Etiketten. Mit ${e.plaetze - rest} weiteren Karten ${boegen > 1 ? 'ist auch der letzte Bogen' : 'ist er'} voll, dann lohnt sich der Druck am meisten.</p>` : '';
   return `<h2>Etiketten (${e.groesse_mm} × ${e.groesse_mm} mm)</h2>
-    <p style="margin-top:0">${e.offen === 0 ? 'Alle Etiketten sind gedruckt.' : e.offen === 1 ? '<b>1 Etikett</b> ist noch nicht gedruckt.' : `<b>${e.offen} Etiketten</b> sind noch nicht gedruckt.`}</p>
-    ${e.offen ? `<div class="reihe"><a class="btn haupt" href="/etikett/bogen.png?laden=1" download>${symbol('laden')} Bogen laden (${bogen} ${bogen === 1 ? 'Etikett' : 'Etiketten'})</a>
-      <button class="btn" id="gedruckt">${symbol('haken')} Bogen als gedruckt markieren</button></div>${aufteilung}${tipp}` : ''}
+    <p style="margin-top:0">${e.offen === 0 ? 'Alle Etiketten sind gedruckt.' : e.offen === 1 ? '<b>1 Etikett</b> ist noch nicht gedruckt.' : `<b>${e.offen} Etiketten</b> sind noch nicht gedruckt${boegen > 1 ? ` (${boegen} Bögen)` : ''}.`}</p>
+    ${slides.length ? `<div class="bogenband">${slides.join('')}</div>${wischen}${tipp}` : ''}
     <details id="druckhilfe"><summary>So kommen die Etiketten auf die Karten</summary>
       <ol class="schritte"><li><span><b>Bogen laden</b> und das Bild aufs Handy oder auf einen Stick legen.</span></li>
         <li><span>Am Foto-Automaten im dm als <b>Freiform-Sticker</b> drucken. Die Etiketten sind schon freigestellt (runde Ecken, durchsichtiger Hintergrund), der Automat schneidet an der Kontur.</span></li>
         <li><span>Etiketten aufkleben und hier <b>Bogen als gedruckt markieren</b> tippen. Bleiben Etiketten übrig, erscheint danach der nächste Bogen.</span></li></ol>
       <p class="leise klein">Hinweis: Wie genau der Automat druckt und schneidet, hängt vom Gerät ab. Vor dem ersten großen Druck lohnt ein Testbogen (Entwickler → Etiketten).</p>
       <img class="etikettvorschau" id="bogenbild" alt="" style="width:auto;max-height:260px;background:none" hidden></details>`;
+}
+
+let kFilter = 'alle';                                                             // Karten-Liste: alle | karten | vorrat
+let bogenNr = 0;                                                                  // gemerkter Bogen, damit das Neuzeichnen nicht zurückspringt
+function bandStart(w, signal) {
+  const band = $('.bogenband', w); if (!band) return;
+  const seiten = [...band.querySelectorAll('.bogenseite')];
+  bogenNr = Math.min(bogenNr, seiten.length - 1);
+  const punkte = () => w.querySelectorAll('.punkt').forEach((p, i) => p.classList.toggle('an', i === bogenNr));
+  const laden = i => { const b = seiten[i] && seiten[i].querySelector('img[data-quelle]'); if (b && !b.src) { b.src = b.dataset.quelle + '&t=' + Date.now(); b.onerror = () => { b.hidden = true; }; } };
+  band.scrollLeft = band.clientWidth * bogenNr;
+  punkte(); laden(bogenNr); laden(bogenNr + 1);                                    // Pi rechnet: nur sichtbaren und nächsten Bogen laden
+  let t; band.addEventListener('scroll', () => { clearTimeout(t); t = setTimeout(() => {
+    bogenNr = Math.max(0, Math.min(seiten.length - 1, Math.round(band.scrollLeft / Math.max(1, band.clientWidth))));
+    punkte(); laden(bogenNr); laden(bogenNr + 1); }, 80); }, {signal});
 }
 
 export function liste(w, signal) {
@@ -136,14 +162,20 @@ export function liste(w, signal) {
     const d = S.karten; if (!d) return;
     const kd = S.karte && S.karte.laeuft ? S.karte.kartendaten : null;
     const uid = kd ? kd.uid : null;
-    const sig = JSON.stringify([d, uid]);
+    const sig = JSON.stringify([d, uid, kFilter]);
     if (sig === zuletzt) return;
     zuletzt = sig;
     const offen = $('#druckhilfe', w) && $('#druckhilfe', w).open;
     $('#etikettbox', w).innerHTML = etikettbox(d.etikett, d.karten);
+    bandStart(w, signal);
     if (offen && $('#druckhilfe', w)) $('#druckhilfe', w).open = true;
+    const nVorrat = d.karten.filter(k => k.vorrat).length, nKarten = d.karten.length - nVorrat;
+    if (!nVorrat) kFilter = 'alle';
+    const sichtbar = d.karten.filter(k => kFilter === 'alle' || (kFilter === 'vorrat') === !!k.vorrat);
+    const filter = nVorrat ? `<div class="filterzeile" role="group" aria-label="Anzeigen">${[['alle', 'Alle', d.karten.length], ['karten', 'Mit Karte', nKarten], ['vorrat', 'Vorrat', nVorrat]]
+      .map(([f, t, n]) => `<button class="filter ${kFilter === f ? 'an' : ''}" data-filter="${f}" aria-pressed="${kFilter === f}">${t} (${n})</button>`).join('')}</div>` : '';
     $('#raster', w).innerHTML = d.karten.length
-      ? `<div class="kachelraster">${d.karten.map(k => kachel(k, k.uid === uid)).join('')}</div>`
+      ? `${filter}<div class="kachelraster">${sichtbar.map(k => kachel(k, k.uid === uid)).join('')}</div>`
       : `<div class="k leerzustand"><div class="fach">${symbol('karten')}</div><h2>Noch keine Karten</h2>
          <p class="leise">Lege eine Karte auf das Fach, damit die Box sie kennenlernt, oder bespiele gleich eine neue.</p></div>`;
   };
@@ -152,9 +184,13 @@ export function liste(w, signal) {
   w.addEventListener('click', async e => {
     const kk = e.target.closest('.kachel');
     if (kk) { detail(kk.dataset.uid, signal); return; }
-    if (e.target.closest('#gedruckt')) {
-      const d = S.karten, uris = new Set(d.karten.filter(k => d.etikett.naechster_bogen.includes(k.uid)).map(k => k.uri));
-      const uids = d.karten.filter(k => uris.has(k.uri)).map(k => k.uid);       // alle Karten dieser Playlisten
+    const fb = e.target.closest('.filter');
+    if (fb) { kFilter = fb.dataset.filter; zuletzt = null; zeichnen(); return; }
+    const punkt = e.target.closest('.punkt');
+    if (punkt) { const band = $('.bogenband', w); if (band) band.scrollTo({left: band.clientWidth * +punkt.dataset.nr, behavior: 'smooth'}); return; }
+    const gb = e.target.closest('.gedruckt');
+    if (gb) {
+      const uids = gb.dataset.uids.split(',');
       const erg = await sicher('/api/karten/gedruckt', {uids, wert: true});
       melden(erg, 'Bogen als gedruckt markiert.'); kartenLaden();
     }
@@ -177,14 +213,18 @@ function detail(uid, signal) {
     $('#d-bilder', d).innerHTML = `<div>${coverBild(k.cover ? k.cover + '&t=' + t : null, '', k.titel)}<div class="leise klein" style="text-align:center;margin-top:4px">Cover</div></div>
       <div><img class="etikettvorschau" src="${esc(k.etikett)}?t=${t}" alt="Etikett" onerror="this.remove()"><div class="leise klein" style="text-align:center">Etikett ${S.karten.etikett.groesse_mm} × ${S.karten.etikett.groesse_mm} mm</div></div>`;
     $('#d-etikett', d).href = k.etikett + '?laden=1';
+    $('#d-titel', d).textContent = k.vorrat ? 'Etikett im Vorrat' : 'Karte';
+    $('[data-a=neu]', d).lastChild.textContent = k.vorrat ? ' Karte dafür bespielen' : ' Karte neu bespielen';
+    $('[data-a=weg]', d).lastChild.textContent = k.vorrat ? ' Aus dem Vorrat entfernen' : ' Aus der Liste entfernen';
     $('#d-gedruckt', d).checked = k.gedruckt;
     if (document.activeElement !== $('#d-name', d)) $('#d-name', d).value = k.titel;
-    $('#d-info', d).innerHTML = `${esc(typName(k.typ))} · Kartennummer ${esc(k.uid)} · <a href="${esc(k.link)}" target="_blank" rel="noopener">in Spotify öffnen</a>`
+    $('#d-info', d).innerHTML = `${esc(typName(k.typ))} · ${k.vorrat ? 'noch keine Karte' : 'Kartennummer ' + esc(k.uid)} · <a href="${esc(k.link)}" target="_blank" rel="noopener">in Spotify öffnen</a>`
+      + (k.vorrat ? '<br>Etikett drucken und auf eine leere Karte kleben. Danach „Karte dafür bespielen“ tippen und genau diese Karte auflegen. Das Etikett wird ihr dann von allein zugeordnet.' : '')
       + (k.auf_karte === false ? '<br>Der Link steht nicht auf der Karte, sondern nur in dieser Box. Die Karte spielt nur hier.' : '');
   };
   const neu = async () => { t = Date.now(); await kartenLaden(); fuellen(); };
   d.innerHTML = `
-    <div class="kopfzeile"><h3>Karte</h3><button class="btn klein" data-a="zu">${symbol('kreuz')} Schließen</button></div>
+    <div class="kopfzeile"><h3 id="d-titel">Karte</h3><button class="btn klein" data-a="zu">${symbol('kreuz')} Schließen</button></div>
     <div class="nebeneinander" id="d-bilder"></div>
     <label class="klein leise" for="d-name">Name (steht auf dem Etikett)</label>
     <input type="text" id="d-name" maxlength="80" autocomplete="off">
@@ -207,7 +247,7 @@ function detail(uid, signal) {
     if (a === 'cover') { b.disabled = true; melden(await sicher('/api/cover/neu', {uri: k.uri}), 'Cover aktualisiert.'); b.disabled = false; await neu(); }
     if (a === 'neu') { vorbelegt = k.link; schliessen(); location.hash = '#/karten/neu'; }
     if (a === 'weg') {
-      if (await frage({titel: 'Aus der Liste entfernen?', text: 'Die Karte selbst bleibt unverändert. Legst du sie wieder auf, erscheint sie wieder in der Liste.', ok: 'Entfernen', art: 'gefahr'})) {
+      if (await frage({titel: k.vorrat ? 'Aus dem Vorrat entfernen?' : 'Aus der Liste entfernen?', text: k.vorrat ? 'Das Etikett wird nicht mehr geführt. Du kannst es jederzeit neu anlegen.' : 'Die Karte selbst bleibt unverändert. Legst du sie wieder auf, erscheint sie wieder in der Liste.', ok: 'Entfernen', art: 'gefahr'})) {
         melden(await sicher('/api/karten/entfernen', {uid: k.uid})); schliessen(); kartenLaden();
       }
     }
@@ -251,6 +291,7 @@ export function assistent(w, signal) {
   const stufen = () => {
     $('#stufen', w).innerHTML = STUFEN.map((s, i) => `<li data-n="${i + 1}" class="${STUFE_VON[W.phase] === i + 1 ? 'jetzt' : STUFE_VON[W.phase] > i + 1 ? 'fertig' : ''}">${s}</li>`).join('');
   };
+  const bekannt = uri => (S.karten && S.karten.karten || []).find(k => k.uri === uri) || null;   // Karte oder Vorrat zu dieser Playlist
   const etikettMoeglich = () => !S.karten || !S.karten.etikett || S.karten.etikett.verfuegbar;
   const zeigeEtikett = (uri, titel) => etikettMoeglich() && uri
     ? `<img class="etikettvorschau" src="/etikett/${esc(schl(uri))}.png?t=${W.t}" alt="Etikett: ${esc(titel || '')}" onerror="this.remove()">` : '';
@@ -264,7 +305,9 @@ export function assistent(w, signal) {
       <div class="reihe" style="margin-top:8px">${navigator.clipboard && navigator.clipboard.readText ? `<button class="btn" id="einfuegen">${symbol('einfuegen')} Aus Zwischenablage einfügen</button>` : ''}
         <button class="btn hell" id="leeren">Löschen</button></div>
       <div id="pruefung"></div></section>
-      <button class="btn haupt gross" id="weiter" disabled>Weiter: Karte bespielen</button>`;
+      <button class="btn haupt gross" id="weiter" disabled>Weiter: Karte bespielen</button>
+      <button class="btn gross" id="vorrat" disabled style="margin-top:8px">Nur Etikett in den Vorrat legen</button>
+      <p class="leise klein" style="text-align:center;margin:6px 0 0">Für Etiketten auf Vorrat: Du druckst und klebst sie schon jetzt und bespielst die Karte später.</p>`;
     $('#link', w).value = W.text;
     pruefungZeigen();
   };
@@ -272,6 +315,8 @@ export function assistent(w, signal) {
     const p = $('#pruefung', w), weiter = $('#weiter', w); if (!p) return;
     const i = W.info;
     weiter.disabled = !(i && i.ok);
+    const vb = $('#vorrat', w);
+    if (vb) vb.disabled = !(i && i.ok) || !!bekannt(i.uri);
     if (W.suche) { p.innerHTML = `<div class="vorschau">${coverBild(null, 'suche')}<div class="leise">Suche Titel und Cover …</div></div>`; return; }
     if (W.fehler) { p.innerHTML = `<div class="hinweis fehler">${esc(W.fehler)}</div>`; return; }
     if (!i || !i.ok) { p.innerHTML = ''; return; }
@@ -280,6 +325,7 @@ export function assistent(w, signal) {
       ${i.hat_cover ? '' : `<div class="hinweis warn">${esc(i.meldung || 'Zu diesem Link wurde kein Cover gefunden.')} <br><b>So geht es trotzdem:</b> Mach in Spotify einen Screenshot vom Cover (am PC: Windows-Taste + Umschalt + S), klicke hier in die Seite und drücke <b>Strg + V</b>. Oder wähle unten ein Bild aus. Das Quadrat für das Etikett schiebst du danach zurecht. Ohne Bild bekommt das Etikett ein oranges Namensschild.</div>`}
       ${i.titel ? '' : `<div class="titelzeile" style="margin-top:10px"><label for="titelfeld"><b>Titel selbst eingeben</b> <span class="leise klein">(steht auf dem Etikett und in der Liste)</span></label>
         <div class="reihe"><input type="text" id="titelfeld" maxlength="80" placeholder="z. B. Folge 103: SOS im Bike-Park" autocomplete="off"><button class="btn" id="titelspeichern">Speichern</button></div></div>`}
+      ${(k => k ? `<div class="hinweis ${k.vorrat ? '' : 'warn'}" style="margin-top:10px">${k.vorrat ? `Für diese Playlist liegt schon ein Etikett im Vorrat (${k.gedruckt ? 'gedruckt' : 'noch nicht gedruckt'}). Mit „Weiter“ bespielst du die Karte, die dieses Etikett trägt.` : 'Zu dieser Playlist gibt es schon eine Karte. Ihr Etikett findest du unter „Karten“.'}</div>` : '')(bekannt(i.uri))}
       <div class="reihe"><button class="btn klein" id="nochmal">${symbol('neu')} Cover nochmal suchen</button>
         <label class="btn klein" for="eigenes">${symbol('bild')} Eigenes Bild wählen</label><input type="file" id="eigenes" accept="image/*" hidden></div>
       ${etikettMoeglich() ? `<div class="trenner" style="margin-top:12px"><div class="leise klein" style="text-align:center">So sieht dein Etikett aus (${S.karten && S.karten.etikett ? S.karten.etikett.groesse_mm : 40} × ${S.karten && S.karten.etikett ? S.karten.etikett.groesse_mm : 40} mm)</div>${zeigeEtikett(i.uri, i.titel)}</div>` : ''}`;
@@ -307,6 +353,7 @@ export function assistent(w, signal) {
   const bespielen = async (ueberschreiben = false) => {
     if (W.busy) return;                                                          // nie zwei Aufträge gleichzeitig stellen
     W.busy = true;
+    W.ausVorrat = (k => k && k.vorrat ? k : null)(bekannt(W.info.uri));            // Etikett lag schon im Vorrat?
     try {
       const erg = await sicher('/api/karten/bespielen', {uri: W.info.uri, ueberschreiben});
       if (!erg.ok) { W.erg = {meldung: erg.meldung}; W.phase = 'fehler'; zeigen(); return; }
@@ -319,7 +366,8 @@ export function assistent(w, signal) {
     $('#b', w).innerHTML = `<section class="k warten"><div class="fach">${symbol('karten')}</div>
       <h2 id="wtitel"></h2><p class="leise" id="wtext"></p><div class="grosszahl" id="wrest"></div>
       <div class="vorschau" style="grid-template-columns:70px 1fr;text-align:left;max-width:340px;margin:14px auto 0">${coverBild(a.cover, '', a.titel || '')}
-        <div><div class="leise klein">bekommt die Playlist</div><div class="titel" style="font-size:17px">${esc(a.titel || (W.info && W.info.titel) || 'Playlist')}</div></div></div></section>
+        <div><div class="leise klein">bekommt die Playlist</div><div class="titel" style="font-size:17px">${esc(a.titel || (W.info && W.info.titel) || 'Playlist')}</div></div></div>
+      ${W.ausVorrat ? `<p class="leise klein" style="margin-top:12px"><b>Nimm die Karte mit dem Etikett „${esc(W.ausVorrat.titel)}“.</b> ${W.ausVorrat.gedruckt ? '' : 'Das Etikett ist noch nicht als gedruckt markiert.'}</p>` : ''}</section>
       <button class="btn gross" id="abbrechen">Abbrechen</button>`;
     wartenAktualisieren(kd);
   };
@@ -352,7 +400,9 @@ export function assistent(w, signal) {
       ${coverBild(a.cover, '', titel)}<div class="titel" style="font-size:19px;font-weight:800">${esc(titel)}</div>
       ${nurBox ? `<div class="hinweis warn" style="text-align:left">${esc(a.meldung || '')}</div>` : '<p class="leise">Der Link steht jetzt auf der Karte.</p>'}
       <p class="leise klein">Zum Ausprobieren: Karte kurz abheben und wieder auflegen.</p></section>
-      ${etikettMoeglich() ? `<section class="k erfolg"><h2>Etikett (${S.karten && S.karten.etikett ? S.karten.etikett.groesse_mm : 40} × ${S.karten && S.karten.etikett ? S.karten.etikett.groesse_mm : 40} mm)</h2>
+      ${W.ausVorrat && W.ausVorrat.gedruckt ? `<section class="k erfolg"><h2>Etikett schon vorhanden</h2>
+        <p class="leise">Das Etikett lag im Vorrat und ist jetzt dieser Karte zugeordnet. Es muss nicht noch einmal gedruckt werden.</p></section>`
+      : etikettMoeglich() ? `<section class="k erfolg"><h2>Etikett (${S.karten && S.karten.etikett ? S.karten.etikett.groesse_mm : 40} × ${S.karten && S.karten.etikett ? S.karten.etikett.groesse_mm : 40} mm)</h2>
         ${zeigeEtikett(uri, titel)}
         <div class="stapel"><a class="btn haupt gross" href="/etikett/${esc(schl(uri))}.png?laden=1" download>${symbol('laden')} Etikett laden</a></div>
         <p class="leise klein">Alle noch nicht gedruckten Etiketten gibt es gesammelt als Bogen unter „Karten“.</p></section>` : ''}
@@ -408,6 +458,11 @@ export function assistent(w, signal) {
     if (id === 'nochmal' && W.phase === 'eingabe') pruefen(true);
     if (id === 'titelspeichern') titelSpeichern();
     if (id === 'weiter' && W.info && W.info.ok) bespielen(false);
+    if (id === 'vorrat' && W.info && W.info.ok) {
+      const erg = await sicher('/api/karten/vorrat', {uri: W.info.uri});
+      melden(erg, 'Etikett liegt im Vorrat.');
+      if (erg.ok) { W.text = ''; W.info = null; W.fehler = null; W.t = Date.now(); kartenLaden(); eingabeZeigen(); toast('Weiteres Etikett anlegen oder unter „Karten“ ansehen.'); }
+    }
     if (id === 'abbrechen') { await sicher('/api/karten/abbrechen', {}); W.phase = 'eingabe'; zeigen(); }
     if (id === 'ueber') bespielen(true);
     if (id === 'andere') { await sicher('/api/karten/abbrechen', {}); W.phase = 'andere'; zeigen(); }

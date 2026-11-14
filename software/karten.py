@@ -123,6 +123,71 @@ def _schreiben(daten):
     _cache["mtime"] = None
 
 
+# ---------------------------------------------------------------- Vorrat: Etiketten ohne Karte
+# Ein Etikett für eine Playlist, zu der es noch keine Karte gibt (vorrat.json, gleiche Sperre wie karten.json).
+# Wird später eine Karte mit dieser Playlist bespielt, übernimmt sie das Etikett samt "gedruckt"-Stand
+# und der Vorrat-Eintrag verschwindet (siehe eintragen). Kennung im Vorrat: "vorrat:<schluessel>".
+
+VORRAT = "vorrat:"
+
+
+def ist_vorrat(uid):
+    return isinstance(uid, str) and uid.startswith(VORRAT)
+
+
+def _vdatei():
+    return os.path.join(ordner(), "vorrat.json")
+
+
+def vorrat_laden():
+    """{schluessel: eintrag}; fehlt die Datei oder ist sie kaputt, ist der Vorrat leer."""
+    try:
+        with open(_vdatei(), encoding="utf-8") as f:
+            roh = json.load(f).get("vorrat", {})
+        return {k: e for k, e in roh.items() if isinstance(e, dict) and SCHLUESSEL.match(str(k))
+                and URI.match(str(e.get("uri", "")))}
+    except (OSError, ValueError, AttributeError):
+        return {}
+
+
+def _vschreiben(daten):
+    p = _vdatei()
+    os.makedirs(os.path.dirname(p), mode=0o700, exist_ok=True)
+    tmp = p + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump({"vorrat": daten}, f, indent=1, ensure_ascii=False)
+    os.replace(tmp, p)
+
+
+def vorrat_anlegen(uri, jetzt=None):
+    """Etikett für eine Playlist ohne Karte vormerken. Wirft ValueError, wenn es dazu schon eine Karte
+    oder einen Vorrat-Eintrag gibt (je Playlist gibt es nur ein Etikett)."""
+    sk = schluessel(uri)
+    with _Sperre():
+        if any(e["uri"] == uri for e in laden().values()):
+            raise ValueError("Zu dieser Playlist gibt es schon eine Karte. Ihr Etikett findest du in der Liste.")
+        v = vorrat_laden()
+        if sk in v:
+            raise ValueError("Für diese Playlist liegt schon ein Etikett im Vorrat.")
+        v[sk] = {"uri": uri, "angelegt": int(jetzt or time.time()), "gedruckt": False}
+        _vschreiben(v)
+    return v[sk]
+
+
+def vorrat_liste():
+    """Vorrat im selben Format wie liste(), mit 'vorrat': True und der Kennung 'vorrat:<schluessel>'."""
+    erg = []
+    for sk, e in vorrat_laden().items():
+        m = meta_lesen(e["uri"]) or {}
+        erg.append({"uid": VORRAT + sk, "id": sk, "uri": e["uri"], "link": uri_zu_link(e["uri"]),
+                    "typ": e["uri"].split(":")[1], "titel": e.get("titel") or m.get("titel") or "Ohne Namen",
+                    "eigener_titel": bool(e.get("titel")), "schluessel": sk,
+                    "hat_cover": bool(m.get("hat_cover")), "gedruckt": bool(e.get("gedruckt")),
+                    "auf_karte": None, "angelegt": e.get("angelegt", 0), "vorrat": True})
+    erg.sort(key=lambda k: (-k["angelegt"], k["uid"]))
+    return erg
+
+
 def link_fuer_uid(uid):
     """Link (open.spotify.com) der Karte laut Box, None wenn die Box die Karte nicht kennt. Für den Player."""
     e = laden().get(uid)
@@ -144,12 +209,38 @@ def eintragen(uid, uri, titel=None, auf_karte=None, typ=None, jetzt=None):
                 neu[k] = v
             elif k in alt:
                 neu[k] = alt[k]
+        aus_vorrat = False
+        v = vorrat_laden()
+        eintrag = v.get(schluessel(uri))
+        if eintrag:                                     # das Etikett lag schon im Vorrat: Karte übernimmt es
+            aus_vorrat = True
+            neu["gedruckt"] = bool(eintrag.get("gedruckt")) or neu["gedruckt"]
+            if "titel" not in neu and eintrag.get("titel"):
+                neu["titel"] = eintrag["titel"]
         daten[uid] = neu
         _schreiben(daten)
-    return neu
+        if aus_vorrat:
+            v.pop(schluessel(uri), None)
+            _vschreiben(v)
+    return dict(neu, aus_vorrat=True) if aus_vorrat else neu
+
+
+def _vorrat_aendern(uid, aendern):
+    """Eintrag im Vorrat ändern (aendern(eintrag) -> True zum Speichern, 'weg' zum Löschen); False, wenn unbekannt."""
+    sk = uid[len(VORRAT):]
+    with _Sperre():
+        v = vorrat_laden()
+        if sk not in v:
+            return False
+        if aendern(v[sk]) == "weg":
+            v.pop(sk)
+        _vschreiben(v)
+    return True
 
 
 def entfernen(uid):
+    if ist_vorrat(uid):
+        return _vorrat_aendern(uid, lambda e: "weg")
     with _Sperre():
         daten = laden()
         ok = daten.pop(uid, None) is not None
@@ -160,6 +251,13 @@ def entfernen(uid):
 
 def umbenennen(uid, titel):
     titel = (titel or "").strip()[:80]
+    if ist_vorrat(uid):
+        def aendern(e):
+            if titel:
+                e["titel"] = titel
+            else:
+                e.pop("titel", None)
+        return _vorrat_aendern(uid, aendern)
     with _Sperre():
         daten = laden()
         if uid not in daten:
@@ -173,6 +271,9 @@ def umbenennen(uid, titel):
 
 
 def gedruckt_setzen(uids, wert):
+    for u in uids:
+        if ist_vorrat(u):
+            _vorrat_aendern(u, lambda e: e.update(gedruckt=bool(wert)))
     with _Sperre():
         daten = laden()
         for u in uids:

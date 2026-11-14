@@ -455,7 +455,7 @@ def _bogen_plaetze():
 def _offene_etiketten():
     """Karten, deren Etikett noch nicht gedruckt ist (je Spotify-Adresse eine), älteste zuerst."""
     gesehen, erg = set(), []
-    for k in sorted(karten.liste(), key=lambda k: (k["angelegt"], k["uid"])):
+    for k in sorted(karten.liste() + karten.vorrat_liste(), key=lambda k: (k["angelegt"], k["uid"])):
         if not k["gedruckt"] and k["uri"] not in gesehen:
             gesehen.add(k["uri"])
             erg.append(k)
@@ -466,6 +466,8 @@ def karten_liste():
     spalten, zeilen = _bogen_plaetze()
     plaetze = spalten * zeilen
     liste = karten.liste()
+    vorrat = karten.vorrat_liste()
+    liste += vorrat                                     # Vorrat steht mit 'vorrat': True in derselben Liste
     for k in liste:
         meta = karten.meta_lesen(k["uri"])
         k["cover"] = _cover_url(k["uri"], meta)
@@ -474,7 +476,8 @@ def karten_liste():
     return {"ok": True, "karten": liste,
             "etikett": {"verfuegbar": etikett.verfuegbar(), "groesse_mm": _etikett_einst()["groesse_mm"],
                         "spalten": spalten, "zeilen": zeilen, "plaetze": plaetze,
-                        "offen": len(offen), "naechster_bogen": [k["uid"] for k in offen[:plaetze]]}}
+                        "offen": len(offen), "naechster_bogen": [k["uid"] for k in offen[:plaetze]],
+                        "offene": [k["uid"] for k in offen], "vorrat": len(vorrat)}}
 
 
 def _uid(daten):
@@ -482,6 +485,10 @@ def _uid(daten):
     wert = daten.get("uid") if isinstance(daten, dict) else None
     if not isinstance(wert, str):
         raise ValueError("Kartennummer fehlt.")
+    if karten.ist_vorrat(wert):                         # Etikett im Vorrat, ohne Karte
+        if not karten.SCHLUESSEL.match(wert[len(karten.VORRAT):]):
+            raise ValueError("Ungültige Kennung")
+        return wert
     return wert.upper() if ":" in wert else karten.uid_aus_url(wert)
 
 
@@ -513,6 +520,17 @@ def karten_bespielen(daten):
     return {"ok": True, "meldung": "Bitte jetzt die Karte in das Kartenfach legen.", "auftrag": auftrag_info()}
 
 
+def karten_vorrat(daten):
+    """Etikett für eine Playlist anlegen, zu der es noch keine Karte gibt."""
+    uri = daten.get("uri") if isinstance(daten, dict) else None
+    try:
+        karten.vorrat_anlegen(uri)
+    except ValueError as e:
+        return {"ok": False, "meldung": str(e)}
+    cover_im_hintergrund(uri)
+    return {"ok": True, "meldung": "Etikett liegt im Vorrat. Die Karte dazu kannst du später bespielen."}
+
+
 def karten_abbrechen(daten=None):
     karten.auftrag_abbrechen()
     return {"ok": True, "meldung": "Abgebrochen."}
@@ -536,8 +554,11 @@ def karten_entfernen(daten):
         uid = _uid(daten)
     except ValueError as e:
         return {"ok": False, "meldung": str(e)}
+    vorrat = karten.ist_vorrat(uid)
     if not karten.entfernen(uid):
         return {"ok": False, "meldung": "Diese Karte kennt die Box nicht."}
+    if vorrat:
+        return {"ok": True, "meldung": "Aus dem Vorrat entfernt."}
     return {"ok": True, "meldung": "Aus der Liste entfernt. Die Karte selbst bleibt unverändert; "
                                    "liegt sie wieder im Fach, erscheint sie wieder."}
 
@@ -594,7 +615,7 @@ def cover_titel(daten):
 
 
 def _titel_zu_uri(uri):
-    for k in karten.liste():
+    for k in karten.liste() + karten.vorrat_liste():
         if k["uri"] == uri and k["eigener_titel"]:
             return k["titel"]
     return (karten.meta_lesen(uri) or {}).get("titel") or "Peppa Box"
@@ -818,7 +839,7 @@ SCHNELL = {"/api/klang": klang_setzen, "/api/lautstaerke": lautstaerke_setzen, "
            "/api/ansage": ansage_spielen,
            "/api/karten/pruefen": karten_pruefen, "/api/karten/bespielen": karten_bespielen,
            "/api/karten/abbrechen": karten_abbrechen, "/api/karten/umbenennen": karten_umbenennen,
-           "/api/karten/entfernen": karten_entfernen, "/api/karten/gedruckt": karten_gedruckt,
+           "/api/karten/entfernen": karten_entfernen, "/api/karten/gedruckt": karten_gedruckt, "/api/karten/vorrat": karten_vorrat,
            "/api/cover/neu": cover_neu, "/api/cover/titel": cover_titel}
 # Aktionen, deren Anfragetext eine Datei ist (kein JSON); die Parameter stehen in der Adresse (?s=...)
 ROH = {"/api/cover/hochladen": cover_hochladen}

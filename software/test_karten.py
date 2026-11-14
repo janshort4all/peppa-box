@@ -258,6 +258,45 @@ class Verwaltung(Basis):
         self.assertEqual(os.stat(karten.ordner()).st_mode & 0o077, 0)
 
 
+class Vorrat(Basis):
+    def test_anlegen_umbenennen_drucken_entfernen(self):
+        karten.vorrat_anlegen(PL, jetzt=5)
+        v = karten.vorrat_liste()
+        self.assertEqual(len(v), 1)
+        self.assertTrue(v[0]["vorrat"])
+        self.assertFalse(v[0]["gedruckt"])
+        uid = v[0]["uid"]
+        self.assertTrue(karten.umbenennen(uid, "Meine Folge"))
+        karten.gedruckt_setzen([uid], True)
+        self.assertEqual((karten.vorrat_liste()[0]["titel"], karten.vorrat_liste()[0]["gedruckt"]), ("Meine Folge", True))
+        self.assertEqual(karten.liste(), [])                       # der Player sieht den Vorrat nie
+        self.assertTrue(karten.entfernen(uid))
+        self.assertEqual(karten.vorrat_liste(), [])
+
+    def test_doppelt_oder_schon_karte_wird_abgelehnt(self):
+        karten.vorrat_anlegen(PL)
+        with self.assertRaises(ValueError):
+            karten.vorrat_anlegen(PL)
+        karten.eintragen("04:11:22:33", AL)
+        with self.assertRaises(ValueError):
+            karten.vorrat_anlegen(AL)
+
+    def test_karte_loest_vorrat_ein_und_uebernimmt_gedruckt(self):
+        karten.vorrat_anlegen(PL)
+        karten.umbenennen(karten.vorrat_liste()[0]["uid"], "Mein Titel")
+        karten.gedruckt_setzen([karten.vorrat_liste()[0]["uid"]], True)
+        neu = karten.eintragen("04:11:22:33", PL)
+        self.assertTrue(neu["aus_vorrat"])
+        self.assertTrue(neu["gedruckt"])
+        self.assertEqual(neu["titel"], "Mein Titel")
+        self.assertEqual(karten.vorrat_liste(), [])
+        self.assertNotIn("aus_vorrat", karten.laden()["04:11:22:33"])
+
+    def test_ungedrucktes_etikett_bleibt_offen(self):
+        karten.vorrat_anlegen(PL)
+        self.assertFalse(karten.eintragen("04:11:22:33", PL)["gedruckt"])
+
+
 class Auftrag(Basis):
     def test_ablauf(self):
         self.assertEqual(karten.auftrag_status()["status"], "keiner")

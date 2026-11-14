@@ -207,6 +207,37 @@ class Browser(unittest.TestCase):
             self.assertEqual(Image.open(karten.cover_pfad(uri)).size[0], Image.open(karten.cover_pfad(uri)).size[1])
         self.assertEqual(self.fehler, [])
 
+    def test_mehrere_etikettenboegen_wischen(self):
+        pg = self.pg
+        plaetze = (lambda sp, ze: sp * ze)(*__import__("etikett").plaetze(__import__("einstellungen").laden()["etikett"]))
+        for i in range(plaetze + 2):
+            karten.eintragen("04:00:00:%02X" % i, "spotify:playlist:37i9dQZF1DXcBWIGoYBM5%d" % i, jetzt=i + 1)
+        pg.goto(self.url + "/#/karten")
+        expect(pg.locator(".bogenseite")).to_have_count(2)
+        expect(pg.locator(".punkt")).to_have_count(2)
+        pg.click(".punkt[data-nr='1']")
+        expect(pg.locator(".punkt.an")).to_have_attribute("data-nr", "1")
+        self.assertEqual(self.fehler, [])
+
+    def test_vorrat_filter_und_einloesen(self):
+        pg = self.pg
+        karten.eintragen("04:11:22:33", "spotify:album:4aawyAB9vmqN3uQ7FjRGTy", jetzt=1)
+        karten.vorrat_anlegen("spotify:playlist:37i9dQZF1DXcBWIGoYBM5M", jetzt=2)
+        pg.goto(self.url + "/#/karten")
+        expect(pg.locator(".kachel")).to_have_count(2)
+        expect(pg.locator(".kachel.vorrat")).to_have_count(1)
+        pg.click(".filter[data-filter='vorrat']")
+        expect(pg.locator(".kachel")).to_have_count(1)
+        pg.click(".filter[data-filter='karten']")
+        expect(pg.locator(".kachel.vorrat")).to_have_count(0)
+        pg.click(".filter[data-filter='alle']")
+        pg.locator(".kachel.vorrat").click()
+        expect(pg.locator("#d-titel")).to_have_text("Etikett im Vorrat")
+        pg.click("[data-a=zu]")
+        karten.eintragen("04:AA:BB:CC", "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M")   # Karte löst den Vorrat ein
+        expect(pg.locator(".kachel.vorrat")).to_have_count(0, timeout=8000)
+        self.assertEqual(self.fehler, [])
+
     def test_kartenliste_detail_und_etikettenbogen(self):
         pg = self.pg
         karten.eintragen("04:11:22:33", "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M", jetzt=1)
@@ -221,7 +252,7 @@ class Browser(unittest.TestCase):
         pg.keyboard.press("Enter")
         pg.click("[data-a=zu]")
         expect(pg.locator(".kachel .t", has_text="Gute-Nacht-Lieder")).to_be_visible()
-        pg.click("#gedruckt")
+        pg.click(".gedruckt")
         expect(pg.locator("text=Alle Etiketten sind gedruckt")).to_be_visible()
         self.assertEqual(self.fehler, [])
 

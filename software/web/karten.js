@@ -101,16 +101,21 @@ function etikettbox(e, liste) {
       Einmal am Pi eingeben: <b>sh ~/peppa-box/software/dienst_einrichten.sh</b></div>`;
   }
   if (!liste.length) return `<h2>Etiketten (${e.groesse_mm} × ${e.groesse_mm} mm)</h2><p class="leise" style="margin:0">Sobald du eine Karte bespielt hast, kannst du hier das Etikett dazu herunterladen.</p>`;
-  const tipp = e.offen > 0 && e.offen < e.plaetze
-    ? `<p class="leise klein"><b>Spartipp:</b> Auf einen Bogen passen ${e.plaetze} Etiketten. Mit ${e.plaetze - e.offen} weiteren Karten ist er voll, dann lohnt sich der Druck am meisten.</p>` : '';
+  const bogen = Math.min(e.offen, e.plaetze), boegen = e.plaetze ? Math.ceil(e.offen / e.plaetze) : 1;
+  const rest = e.plaetze ? e.offen % e.plaetze : 0;                              // Etiketten auf dem letzten Bogen
+  const teile = [];
+  for (let i = 0, n = e.offen; i < boegen; i++, n -= e.plaetze) teile.push(Math.min(n, e.plaetze));
+  const aufteilung = boegen > 1 ? `<p class="leise klein">Das sind <b>${boegen} Bögen</b> (${teile.join(' + ')} Etiketten). Lade zuerst Bogen 1, drucke und klebe ihn auf, tippe auf „Bogen als gedruckt markieren“. Danach ist der nächste Bogen dran.</p>` : '';
+  const tipp = rest > 0
+    ? `<p class="leise klein"><b>Spartipp:</b> Auf einen Bogen passen ${e.plaetze} Etiketten. Mit ${e.plaetze - rest} weiteren Karten ${boegen > 1 ? 'ist auch der letzte Bogen' : 'ist er'} voll, dann lohnt sich der Druck am meisten.</p>` : '';
   return `<h2>Etiketten (${e.groesse_mm} × ${e.groesse_mm} mm)</h2>
     <p style="margin-top:0">${e.offen === 0 ? 'Alle Etiketten sind gedruckt.' : e.offen === 1 ? '<b>1 Etikett</b> ist noch nicht gedruckt.' : `<b>${e.offen} Etiketten</b> sind noch nicht gedruckt.`}</p>
-    ${e.offen ? `<div class="reihe"><a class="btn haupt" href="/etikett/bogen.png?laden=1" download>${symbol('laden')} Bogen laden (${Math.min(e.offen, e.plaetze)} ${Math.min(e.offen, e.plaetze) === 1 ? 'Etikett' : 'Etiketten'})</a>
-      <button class="btn" id="gedruckt">${symbol('haken')} Als gedruckt markieren</button></div>${tipp}` : ''}
+    ${e.offen ? `<div class="reihe"><a class="btn haupt" href="/etikett/bogen.png?laden=1" download>${symbol('laden')} Bogen laden (${bogen} ${bogen === 1 ? 'Etikett' : 'Etiketten'})</a>
+      <button class="btn" id="gedruckt">${symbol('haken')} Bogen als gedruckt markieren</button></div>${aufteilung}${tipp}` : ''}
     <details id="druckhilfe"><summary>So kommen die Etiketten auf die Karten</summary>
       <ol class="schritte"><li><span><b>Bogen laden</b> und das Bild aufs Handy oder auf einen Stick legen.</span></li>
         <li><span>Am Foto-Automaten im dm als <b>Freiform-Sticker</b> drucken. Die Etiketten sind schon freigestellt (runde Ecken, durchsichtiger Hintergrund), der Automat schneidet an der Kontur.</span></li>
-        <li><span>Etiketten aufkleben und hier <b>Als gedruckt markieren</b> tippen.</span></li></ol>
+        <li><span>Etiketten aufkleben und hier <b>Bogen als gedruckt markieren</b> tippen. Bleiben Etiketten übrig, erscheint danach der nächste Bogen.</span></li></ol>
       <p class="leise klein">Hinweis: Wie genau der Automat druckt und schneidet, hängt vom Gerät ab. Vor dem ersten großen Druck lohnt ein Testbogen (Entwickler → Etiketten).</p>
       <img class="etikettvorschau" id="bogenbild" alt="" style="width:auto;max-height:260px;background:none" hidden></details>`;
 }
@@ -151,7 +156,7 @@ export function liste(w, signal) {
       const d = S.karten, uris = new Set(d.karten.filter(k => d.etikett.naechster_bogen.includes(k.uid)).map(k => k.uri));
       const uids = d.karten.filter(k => uris.has(k.uri)).map(k => k.uid);       // alle Karten dieser Playlisten
       const erg = await sicher('/api/karten/gedruckt', {uids, wert: true});
-      melden(erg, 'Als gedruckt markiert.'); kartenLaden();
+      melden(erg, 'Bogen als gedruckt markiert.'); kartenLaden();
     }
   }, {signal});
   w.addEventListener('toggle', e => {                                            // Vorschau des Bogens erst beim Öffnen laden (Pi rechnet)

@@ -319,7 +319,7 @@ class Seite(unittest.TestCase):
         s, kopf, daten = self.datei("/etikett/bogen.png?laden=1")
         b = Image.open(io.BytesIO(daten))
         self.assertEqual(b.size, (1063, 1654))                                # 90 × 140 mm bei 300 dpi
-        self.assertEqual(kopf["Content-Disposition"], 'attachment; filename="peppa-box-etiketten.png"')
+        self.assertRegex(kopf["Content-Disposition"], r'^attachment; filename="peppa-box-bogen-\d{4}-\d{2}-\d{2}-\d+-etiketten-[0-9a-f]{6}\.png"$')
         s, kopf, daten = self.datei("/etikett/testbogen.png")
         self.assertEqual(Image.open(io.BytesIO(daten)).size, (1063, 1654))
 

@@ -14,6 +14,7 @@ Probelauf ohne Wirkung (sudo-Befehle werden nur angezeigt):  PEPPA_WEB_TROCKEN=1
 """
 import datetime
 import glob
+import hashlib
 import json
 import os
 import shutil
@@ -643,7 +644,10 @@ def etikett_antwort(name, abfrage):
         if not uris:
             raise ValueError("Keine Karten für den Bogen.")
         bilder = [etikett.etikett(karten.cover_bytes(u), _titel_zu_uri(u), einst) for u in uris]
-        return etikett.png_bytes(etikett.bogen(bilder, einst)), "peppa-box-etiketten.png"
+        # Eindeutiger Name je Bogen (Datum, Anzahl, Kurzkennung aus den Playlists), damit sich Bögen beim Laden nie überschreiben
+        kenn = hashlib.sha1(",".join(sorted(uris)).encode()).hexdigest()[:6]
+        return (etikett.png_bytes(etikett.bogen(bilder, einst)),
+                f"peppa-box-bogen-{time.strftime('%Y-%m-%d')}-{len(uris)}-etiketten-{kenn}.png")
     uri = karten.uri_aus_schluessel(name)
     titel = _titel_zu_uri(uri)
     bild = etikett.etikett(karten.cover_bytes(uri), titel, einst)

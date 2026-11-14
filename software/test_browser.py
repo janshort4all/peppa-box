@@ -246,7 +246,7 @@ class Browser(unittest.TestCase):
         expect(pg.locator(".kachel")).to_have_count(2)
         with pg.expect_download() as d:
             pg.click("text=Bogen laden")
-        self.assertEqual(d.value.suggested_filename, "peppa-box-etiketten.png")
+        self.assertRegex(d.value.suggested_filename, r"^peppa-box-bogen-\d{4}-\d{2}-\d{2}-2-etiketten-[0-9a-f]{6}\.png$")
         pg.locator(".kachel").first.click()
         pg.fill("#d-name", "Gute-Nacht-Lieder")
         pg.keyboard.press("Enter")

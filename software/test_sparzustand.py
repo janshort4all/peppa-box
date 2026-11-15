@@ -26,6 +26,11 @@ class Uhr:
 
 class Basis(unittest.TestCase):
     def setUp(self):
+        tmp = tempfile.TemporaryDirectory()                 # „ganz aus“ wird in ~/.config gemerkt: nie echt schreiben
+        self.addCleanup(tmp.cleanup)
+        p = mock.patch.dict(os.environ, {"HOME": tmp.name})
+        p.start()
+        self.addCleanup(p.stop)
         self.uhr = Uhr()
         self.t0 = self.uhr.t
         self.gedrueckt = []                  # Liste (von, bis) in Sekunden seit Beginn, in denen die Taste gedrückt ist
@@ -117,6 +122,12 @@ class Aufwecken(Basis):
 
 
 class GanzAus(Basis):
+    def test_ganz_aus_aus_dem_sparzustand_wird_gemerkt(self):
+        import einstellungen
+        w = self.wache(aus_nach=60)
+        self.assertEqual(w.lauf(), "aus_zeit")
+        self.assertTrue(einstellungen.aus_abholen()["grund"].startswith("aus dem Sparzustand"))
+
     def test_nach_der_eingestellten_zeit_ganz_aus(self):
         w = self.wache(aus_nach=3600 * 6)
         self.assertEqual(w.lauf(), "aus_zeit")

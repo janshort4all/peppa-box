@@ -116,6 +116,7 @@ class Wache:
             return
         self._aus_versucht = True
         self.log(f"Sparzustand: Box wird ganz ausgeschaltet ({grund}).")
+        einstellungen.aus_merken(f"aus dem Sparzustand, {grund}")
         try:
             ok, meldung = self.ausschalten_befehl()
         except Exception as e:
@@ -123,6 +124,7 @@ class Wache:
         if ok:
             self.ergebnis = ergebnis
         else:
+            einstellungen.aus_abholen()
             self.log(f"Ausschalten fehlgeschlagen: {meldung}")
             self._aus_versucht = False        # beim nächsten Durchlauf noch einmal
 

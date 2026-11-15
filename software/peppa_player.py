@@ -170,6 +170,15 @@ def akku_lesen_gesperrt():
         return akku.lesen()
 
 
+ZEIT_ABGEGLICHEN = "/run/systemd/timesync/synchronized"   # legt systemd-timesyncd nach dem Zeitabgleich an
+
+
+def laufzeit():
+    """Sekunden seit dem Einschalten (/proc/uptime)."""
+    with open("/proc/uptime", encoding="ascii") as f:
+        return float(f.read().split()[0])
+
+
 def poweroff():
     r = subprocess.run(["sudo", "-n", SYSTEMCTL, "poweroff"], capture_output=True, text=True, timeout=60)
     return r.returncode == 0, (r.stdout + r.stderr).strip()
@@ -272,6 +281,7 @@ class Player:
         self._leser_pruefen(self.jetzt())
         status_schreiben(self.zustand)
         systemd_melden("READY=1")
+        self._aus_melden_start()
         self.log("Warte auf Spotify, Karten werden schon gelesen.")
 
     def _faeden_pruefen(self):
@@ -525,8 +535,12 @@ class Player:
         self.aufraeumen()
         if sparen:
             self._fuers_aufwachen_zuruecksetzen()
+        if not sparen:
+            einstellungen.aus_merken(grund)     # beim nächsten Start ins Protokoll (Befund 15.11.2026)
         ok, aus = (self.sparen_befehl if sparen else self.ausschalten_befehl)()
         if not ok:
+            if not sparen:
+                einstellungen.aus_abholen()
             self.log(f"{'Sparzustand' if sparen else 'Ausschalten'} fehlgeschlagen: {aus}")
             try:
                 self.hw.wecken()                # Touchfelder wieder an (sie lagen schon schlafen)
@@ -552,6 +566,33 @@ class Player:
             finally:
                 self._leser_sperre.release()
 
+    # ------------------------------------------------------------ Start nach „ganz aus“ (Befund 15.11.2026)
+
+    def _aus_melden_start(self):
+        """War die Box zuletzt ganz aus? Grund und Uhrzeit ins Protokoll. Wie lange sie aus war, steht erst nach
+        dem Zeitabgleich fest (keine Echtzeituhr): das meldet _aus_dauer_melden."""
+        self._aus_marke = einstellungen.aus_abholen()
+        if self._aus_marke:
+            zeit = time.strftime("%d.%m. %H:%M:%S", time.localtime(self._aus_marke["zeit"]))
+            self.log(f"Start nach „ganz aus“ ({self._aus_marke.get('grund')}, ausgeschaltet {zeit}).")
+
+    def _aus_dauer_melden(self):
+        marke = getattr(self, "_aus_marke", None)
+        if not marke:
+            return
+        if not os.path.exists(ZEIT_ABGEGLICHEN):
+            if laufzeit() > 600:                # ohne Zeitabgleich nach 10 min aufgeben
+                self._aus_marke = None
+            return
+        self._aus_marke = None
+        an = time.time() - laufzeit()           # Einschaltzeitpunkt nach richtiger Uhr
+        minuten = (an - marke["zeit"]) / 60
+        if minuten < 0:
+            return
+        self.log(f"Die Box war {minuten:.0f} min ganz aus (aus {time.strftime('%H:%M:%S', time.localtime(marke['zeit']))}, "
+                 f"wieder an {time.strftime('%H:%M:%S', time.localtime(an))})."
+                 + (" Sehr kurz – hat jemand gedrückt, oder ist sie von selbst angegangen?" if minuten < 3 else ""))
+
     # ------------------------------------------------------------ Hauptschleife
 
     def durchlauf(self):
@@ -571,6 +612,11 @@ class Player:
             self._stelle_merken()
         except Exception as e:                      # Merken darf nie die Kartenabfrage stören
             self.log(f"Stelle merken: Fehler {e!r}")
+        try:
+            self._aus_dauer_melden()
+        except Exception as e:
+            self._aus_marke = None
+            self.log(f"Ausschaltdauer nicht bestimmbar: {e!r}")
         self.zustand.update(self.auto.status)
         self.zustand.update(self.st.status)
         self.zustand["karte"] = self.aktuell

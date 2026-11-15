@@ -314,6 +314,46 @@ def musik_gesperrt(cfg, jetzt):
     return ruhezeit_aktiv(cfg, jetzt) and cfg["ruhezeit"]["modus"] == "aus"
 
 
+# ---------------------------------------------------------------- Ganz aus: über das Ausschalten hinweg merken
+
+def aus_pfad():
+    """Liegt neben den Einstellungen (SD-Karte), nicht in /dev/shm: muss das Ausschalten überstehen."""
+    return os.path.join(os.path.dirname(pfad()), "ausgeschaltet.json")
+
+
+def aus_merken(grund, zeit=None):
+    """Vor `systemctl poweroff`: Grund und Uhrzeit festhalten. Beim nächsten Start schreibt der Player sie ins
+    Protokoll – so sieht man, ob die Box danach von selbst wieder angegangen ist (Befund 15.11.2026)."""
+    p = aus_pfad()
+    try:
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        tmp = p + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump({"grund": str(grund), "zeit": time.time() if zeit is None else zeit}, f, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, p)
+    except OSError:
+        pass
+
+
+def aus_abholen():
+    """Gemerktes Ausschalten lesen und löschen (einmal je Start). None, wenn es keins gibt."""
+    p = aus_pfad()
+    try:
+        with open(p, encoding="utf-8") as f:
+            daten = json.load(f)
+    except (OSError, ValueError):
+        daten = None
+    try:
+        os.remove(p)
+    except OSError:
+        pass
+    if not isinstance(daten, dict) or not isinstance(daten.get("zeit"), (int, float)):
+        return None
+    return daten
+
+
 # ---------------------------------------------------------------- Laufzeit-Dateien
 
 def lauf_pfad(name):

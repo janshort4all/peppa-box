@@ -258,6 +258,37 @@ class Probelauf(unittest.TestCase):
         self.pl.herunterfahren("Akku leer", "akku_leer")
         self.assertEqual((self.aus, self.spar), ([1], []))
 
+    # Befund 15.11.2026: Box ging nach „ganz aus“ wieder an; nächster Start soll das im Protokoll zeigen
+    def test_ganz_aus_wird_gemerkt_und_beim_start_gemeldet(self):
+        self.pl.herunterfahren("Ein-Taste", None)
+        self.assertEqual(einstellungen.aus_abholen()["grund"], "Ein-Taste")
+        einstellungen.aus_merken("Ein-Taste", zeit=time.time() - 300)
+        log = []
+        self.pl.log = log.append
+        sync = os.path.join(self.tmp.name, "synchronized")
+        with mock.patch.object(peppa_player, "ZEIT_ABGEGLICHEN", sync), \
+                mock.patch.object(peppa_player, "laufzeit", lambda: 60.0):
+            self.pl._aus_melden_start()
+            self.assertTrue(any(t.startswith("Start nach „ganz aus“ (Ein-Taste") for t in log), log)
+            self.assertIsNone(einstellungen.aus_abholen())         # nur einmal
+            self.pl._aus_dauer_melden()
+            self.assertFalse(any("min ganz aus" in t for t in log))  # Uhr noch nicht abgeglichen
+            open(sync, "w").close()
+            self.pl._aus_dauer_melden()
+            self.pl._aus_dauer_melden()
+        dauer = [t for t in log if "min ganz aus" in t]
+        self.assertEqual(len(dauer), 1)
+        self.assertIn("4 min ganz aus", dauer[0])                  # 300 s vor jetzt aus, seit 60 s an
+        self.assertNotIn("Sehr kurz", dauer[0])
+
+    def test_sparzustand_und_gescheitertes_aus_merken_nichts(self):
+        self.pl.sparzustand("Ein-Taste", None)
+        self.assertIsNone(einstellungen.aus_abholen())
+        self.pl.faehrt_runter = False
+        self.aus_ok = False
+        self.pl.herunterfahren("Ein-Taste", None)
+        self.assertIsNone(einstellungen.aus_abholen())
+
     def test_ausschalten_setzt_nichts_zurueck(self):
         einstellungen.lauf_schreiben("gestartet", {"zeit": 1})
         self.pl.herunterfahren("Eltern", None)

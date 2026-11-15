@@ -19,7 +19,8 @@ Belegung (Verdrahtungsplan 08.11.2026; welche Elektrode welches Feld ist, steht 
 Schutz gegen Fehlbedienung: Berührungen unter 70 ms lösen nichts aus (Rauschen, kein Finger; das
 Protokoll zählt sie zusammengefasst); mehrere Felder gleichzeitig (Hand auf dem Deckel) lösen nichts aus;
 ein Feld, das über 60 s „berührt“ meldet, wird neu kalibriert; eine Ein-Taste, die schon beim Start
-gedrückt ist oder über 15 s gedrückt bleibt, schaltet nie aus.
+gedrückt ist oder über 30 s gedrückt bleibt, schaltet nie aus (bis 15.11.2026: 15 s; wer nach der Ansage
+„ganz aus“ noch etwas weiterhielt, brach das Ausschalten ab).
 
 Hardware: eigener Faden, alle 20 ms (Hardware.schritt). Touch-Chip über INT (P05) und zur
 Sicherheit alle 0,25 s abgefragt; Ein-Taste über den Pegel von SCL (nur gelesen, wenn gerade keine
@@ -50,7 +51,7 @@ AKKU_HALTEN_S = 5.0
 AUS_HALTEN_S = 2.0           # Ein-Taste: Sparzustand
 GANZ_AUS_HALTEN_S = 10.0     # Ein-Taste: ganz ausschalten (Eltern)
 TASTE_MIN_S = 0.05
-TASTE_KLEMMT_S = 15.0
+TASTE_KLEMMT_S = 30.0        # 10 s trifft niemand genau: bis hierhin gilt Loslassen noch als „ganz aus“
 TIMER_STUFEN = (15, 30, 45, 60)
 KNOPF_MIN = 5
 SPERRE_ANSAGE_S = {"karte_auflegen": 8, "ruhezeit": 8, "karte_leer": 3, "akku_unbekannt": 3}
@@ -227,7 +228,7 @@ class Bedienung:
             if dauer >= TASTE_KLEMMT_S:
                 if not self.taste_klemmt:
                     self.taste_klemmt, self.taste_aus, self.taste_ganz_aus = True, False, False
-                    self.log("Ein-Taste über 15 s gedrückt – klemmt sie? Es wird nicht ausgeschaltet.")
+                    self.log(f"Ein-Taste über {TASTE_KLEMMT_S:.0f} s gedrückt – klemmt sie? Es wird nicht ausgeschaltet.")
                 return
             if dauer >= AUS_HALTEN_S and not self.taste_aus and not self.taste_klemmt:
                 self.taste_aus = True

@@ -275,7 +275,7 @@ class EinTaste(Basis):
 
     def test_klemmt_schaltet_nie_aus(self):
         self.b.ein_taste(False, self.uhr.t)
-        self.lauf(16, taste=True)
+        self.lauf(bedienung.TASTE_KLEMMT_S + 1, taste=True)
         self.lauf(0.1, taste=False)
         self.assertEqual(self.aus, [])
 
@@ -323,9 +323,17 @@ class EinTasteSparzustand(Basis):
 
     def test_klemmt_weder_sparzustand_noch_aus(self):
         self.b.ein_taste(False, self.uhr.t)
-        self.lauf(16, taste=True)
+        self.lauf(bedienung.TASTE_KLEMMT_S + 1, taste=True)
         self.lauf(0.1, taste=False)
         self.assertEqual((self.spar, self.aus), ([], []))
+
+    def test_nach_der_ansage_etwas_laenger_gehalten_ist_trotzdem_ganz_aus(self):
+        for dauer in (12, 16, 25):                          # 15.11.2026: niemand trifft 10 s genau
+            self.aus.clear()
+            self.gesagt.clear()
+            self.drueck(dauer)
+            self.assertEqual(self.gesagt, ["ganz_aus"], dauer)
+            self.assertEqual((self.spar, self.aus), ([], [("Ein-Taste", None)]), dauer)
 
     def test_nach_sparzustand_wieder_normal(self):
         self.b.ein_taste(False, self.uhr.t)

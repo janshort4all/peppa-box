@@ -55,7 +55,7 @@ const pivot=new THREE.Group(); pivot.position.set(0,ZH,-YH); S.add(pivot);
 const P={};
 const bin=Uint8Array.from(atob("@GLB@"),c=>c.charCodeAt(0));
 new GLTFLoader().parse(bin.buffer,'',g=>{
-  const names=['basis','deckel','inlay','stift','karten'];
+  const names=['basis','deckel','inlay','stift','lasche','karten'];
   g.scene.traverse(o=>{ if(o.isMesh){ let n=o.name; let p=o; while(p&&!names.includes(n)){p=p.parent;n=p?p.name:'';}
      const m=o.material; m.side=THREE.DoubleSide; m.clippingPlanes=[]; m.roughness=n==='karten'?0.7:0.55;
      o.userData.part=n; } });
@@ -64,7 +64,7 @@ new GLTFLoader().parse(bin.buffer,'',g=>{
   for(const o of all){ const n=o.userData.part; const wp=new THREE.Vector3(); o.getWorldPosition(wp);
      const q=new THREE.Quaternion(); o.getWorldQuaternion(q); const sc=new THREE.Vector3(); o.getWorldScale(sc);
      o.parent.remove(o); o.position.copy(wp); o.quaternion.copy(q); o.scale.copy(sc);
-     if(n==='deckel'){ o.position.sub(pivot.position); pivot.add(o);} else S.add(o);
+     if(n==='deckel'||n==='lasche'){ o.position.sub(pivot.position); pivot.add(o);} else S.add(o);
      (P['_'+n]=P['_'+n]||[]).push(o); }
   document.getElementById('load').remove(); setAngle(70);
 },e=>{document.getElementById('load').textContent='Laden fehlgeschlagen: '+e;});

@@ -1,4 +1,4 @@
-"""Ansichten (PNG) der Kartenbox v2. Aufruf: python3 render.py [name ...]"""
+"""Ansichten (PNG) der Kartenbox v3. Aufruf: python3 render.py [name ...]"""
 import os, sys, math
 import numpy as np
 import pyvista as pv
@@ -24,7 +24,7 @@ def parts():
     if not _cache:
         card = M.card_mesh()
         _cache.update(base=M.base(), lid=M.lid(), inlay=M.inlay(), cards=M.cards_stack(card),
-                      pins=M.pin() + M.pin().mirror([1, 0, 0]))
+                      pins=M.pin() + M.pin().mirror([1, 0, 0]), clip=M.clip(), cpin=M.clip_pin())
     return _cache
 
 
@@ -43,6 +43,8 @@ def shot(name, ang=0.0, eye=(330, -330, 250), focus=(0, 0, 55), cards=True, lid=
     add(p["pins"], STEEL)
     if lid:
         add(M.rot_lid(p["lid"], ang), ORANGE)
+        add(M.rot_lid(p["clip"], ang), BEIGE)
+        add(M.rot_lid(p["cpin"], ang), STEEL)
     if cards:
         add(p["cards"], CARD)
     pl.enable_lightkit()
@@ -54,12 +56,15 @@ def shot(name, ang=0.0, eye=(330, -330, 250), focus=(0, 0, 55), cards=True, lid=
 
 VIEWS = {
     "v_iso_zu.png": dict(ang=0, eye=(330, -360, 260)),
-    "v_iso_offen.png": dict(ang=104, eye=(300, -380, 330), focus=(0, 10, 70)),
+    "v_iso_offen.png": dict(ang=95, eye=(300, -380, 330), focus=(0, 10, 70)),
     "v_hinten.png": dict(ang=0, eye=(-300, 380, 220), cards=False),
     "v_vorne.png": dict(ang=0, eye=(0, -520, 70), cards=False),
     "v_schnitt_seite.png": dict(ang=0, eye=(600, 0, 60), focus=(0, 0, 60), clip_x=-40.0, zoom=1.6),
-    "v_schnitt_offen.png": dict(ang=104, eye=(600, 0, 80), focus=(0, 10, 80), clip_x=-40.0, zoom=1.3),
-    "v_oben_offen.png": dict(ang=104, eye=(0, -140, 520), focus=(0, 0, 60)),
+    "v_schnitt_offen.png": dict(ang=95, eye=(600, 0, 80), focus=(0, 10, 80), clip_x=-40.0, zoom=1.3),
+    "v_oben_offen.png": dict(ang=95, eye=(0, -140, 520), focus=(0, 0, 60)),
+    "v_verschluss.png": dict(ang=0, eye=(160, -240, 90), focus=(0, -50, 75), cards=False, zoom=2.6),
+    "v_schnitt_verschluss.png": dict(ang=0, eye=(400, -50, 75), focus=(0, -50, 75), clip_x=0.0, cards=False, zoom=3.2),
+    "v_halb_offen.png": dict(ang=35, eye=(330, -360, 230), cards=True),
 }
 
 if __name__ == "__main__":

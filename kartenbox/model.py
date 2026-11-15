@@ -1,4 +1,4 @@
-"""Kartenbox v2 für 30 Peppa-Box-Karten – parametrisches Modell (manifold3d).
+"""Kartenbox v3 (Stülpdeckel, Klemmlasche) für 30 Peppa-Box-Karten – parametrisches Modell (manifold3d).
 
 Koordinaten: x nach rechts, y nach hinten (Vorderseite bei y = -D_O/2), z nach oben, z = 0 Standfläche.
 Box geschlossen in Einbaulage. Alle Maße in mm. Jede Größe trägt einen Status:
@@ -43,7 +43,7 @@ RB = par("RB", 12.0, "festgelegt", "Rundung unten außen; unterhalb 45° als Fas
 RT = par("RT", 16.0, "festgelegt", "Rundung oben am Deckel außen; Deckel liegt kopfüber, daher ebenfalls 45°-begrenzt; innen RT - T")
 BY = par("BY", 2.5, "festgelegt", "Wölbung der langen Seiten (vorn/hinten) in der Mitte nach außen – weicher, kissenartiger Grundriss")
 BX = par("BX", 1.5, "festgelegt", "Wölbung der Stirnseiten (links/rechts) in der Mitte nach außen")
-GROOVE = par("GROOVE", 0.8, "festgelegt", "V-Fuge an der Teilungsebene, je Seite 45°")
+GROOVE = par("GROOVE", 0.5, "festgelegt", "feine V-Fuge an der Auflage des Deckels (Z_L), je Seite 45°; klein, damit der Deckelrand breit aufliegt")
 CH_ANG = par("CH_ANG", 42.0, "festgelegt", "Rundungen unten/oben gehen ab diesem Winkel (gegen die Senkrechte) in eine Fase über; < 45°, damit auch nach der Wölbung kein Überhang > 45° entsteht")
 P = par("P", 78.0, "festgelegt", "Teilungsebene Basis/Deckel (Höhe)")
 LIP = par("LIP", 5.0, "festgelegt", "Inlay-Rand ragt so weit über P in den Deckel (Führung, beiger Rand)")
@@ -101,27 +101,39 @@ P_["W_O"] = (W_O, "berechnet", "Breite außen ohne Ösen")
 P_["D_O"] = (D_O, "berechnet", "Tiefe außen ohne Scharnier")
 P_["H"] = (H, "berechnet", "Höhe außen")
 
-# ----------------------------------------------------------------------------- Verschluss
-TW = par("TW", 30.0, "festgelegt", "Breite der Rastzunge im Deckel vorne")
-SLOT = par("SLOT", 1.0, "festgelegt", "Schlitz neben der Zunge")
-T_TONGUE = par("T_TONGUE", 2.0, "festgelegt", "Zungendicke (Deckelwand innen 0,5 mm freigestellt)")
-Z_ROOT = par("Z_ROOT", P + 18.0, "festgelegt", "Zungenwurzel (Schlitzende oben)")
-Z_TIP = par("Z_TIP", P - 11.0, "festgelegt", "Zungenende unten (ragt in die Mulde der Basis)")
-HOOK = par("HOOK", 1.2, "festgelegt", "Haken ragt so weit innen aus der Zunge")
-HOOK_Z = par("HOOK_Z", P - 8.0, "festgelegt", "Unterkante der Haltefläche am Hakenende")
-HOLD_ANG = par("HOLD_ANG", 60.0, "Probedruck", "Haltefläche gegen die Zugrichtung (senkrecht): 90° = hält starr, kleiner = lässt sich mit Gewalt aufziehen; 60° = 30° zur Waagerechten, im Druck kurzer Überhang 1 mm")
-LEAD_ANG = par("LEAD_ANG", 30.0, "festgelegt", "Einlaufschräge gegen die Senkrechte (leichtes Schließen)")
-REC_GAP = par("REC_GAP", 0.4, "Probedruck", "Luft zwischen Zungen-Innenseite und Mulde")
-REC_SIDE = par("REC_SIDE", 0.6, "festgelegt", "seitliche Luft Zunge ↔ Mulde")
-GROOVE_D = par("GROOVE_D", 1.0, "festgelegt", "Tiefe der Rastnut in der Mulde")
-PLAY_V = par("PLAY_V", 0.2, "festgelegt", "senkrechtes Spiel Haken ↔ Nut (Deckel liegt auf, nicht auf dem Haken)")
-LIP_OUT = par("LIP_OUT", 1.2, "festgelegt", "Griffnase außen am Zungenende")
-BOSS_T = par("BOSS_T", 5.4, "festgelegt", "Wand der Basis hinter der Mulde, gesamt")
-BOSS_W = par("BOSS_W", 20.0, "festgelegt", "halbe Breite der Verstärkung innen")
+# ----------------------------------------------------------------------------- Stülpdeckel (v3, 15.11.2026)
+OV = par("OV", 12.0, "festgelegt", "Deckelrand stülpt sich so weit über den Hals der Basis (Fuge liegt OV unter P)")
+SK_T = par("SK_T", 1.68, "festgelegt", "Deckelrand über dem Hals: Wand 4 Linien")
+SK_CLR = par("SK_CLR", 0.35, "Probedruck", "Spiel Deckelrand ↔ Hals je Seite (unten am Hals; nach oben wächst es um NECK_TAPER)")
+S_N = SK_T + SK_CLR
+P_["S_N"] = (S_N, "berechnet", "Hals springt so weit hinter die Außenfläche zurück; Basis unter der Fuge und Deckel stehen um S_N über die Außenhaut von v2 hinaus")
+NECK_TAPER = par("NECK_TAPER", 0.8, "festgelegt", "Hals verjüngt sich nach oben um diesen Betrag (Freigang des Deckelrands beim Aufschwenken, Prüfung in check.py)")
+NECK_CH = par("NECK_CH", 0.6, "festgelegt", "45°-Fase an der Halsoberkante außen (Einfädeln)")
+Z_L = P - OV
+P_["Z_L"] = (Z_L, "berechnet", "Fuge: Deckelrand liegt hier auf der Stufe der Basis; Scharnierachse auf dieser Höhe")
+
+# ----------------------------------------------------------------------------- Verschluss: Klemmlasche (v3)
+CL_W = par("CL_W", 22.0, "festgelegt", "Breite der Klemmlasche")
+CL_T = par("CL_T", 2.0, "Probedruck", "Federdicke der Lasche (5 Linien; Lasche liegt beim Druck auf der Seite, Schichten laufen entlang der Biegung)")
+CL_GAP = par("CL_GAP", 0.2, "festgelegt", "Luft Lasche ↔ Außenfläche Deckel/Basis")
+HOOK_D = par("HOOK_D", 1.6, "festgelegt", "Haken ragt so weit in die Basis (= Federweg beim Schließen und Öffnen)")
+HOOK_FLAT = par("HOOK_FLAT", 1.0, "festgelegt", "senkrechte Stirn des Hakens")
+Z_HC = par("Z_HC", Z_L - 3.0, "festgelegt", "Haltefläche des Hakens (waagerecht, Oberseite)")
+PLAY_V = par("PLAY_V", 0.2, "festgelegt", "senkrechtes Spiel Haken ↔ Nut (Deckel liegt auf der Stufe, nicht auf dem Haken)")
+GR_CLR = par("GR_CLR", 0.4, "festgelegt", "Nut tiefer als der Haken")
+L_FLEX = par("L_FLEX", 26.0, "festgelegt", "freie Federlänge der Lasche (Kopf bis Haken)")
+BLK_T = par("BLK_T", 8.5, "festgelegt", "Laschenkopf dick (Bohrung für den Stift)")
+BLK_H = par("BLK_H", 11.0, "festgelegt", "Laschenkopf hoch")
+CHEEK_W = par("CHEEK_W", 5.0, "festgelegt", "Lagerbock am Deckel, Breite je Seite")
+CHEEK_CLR = par("CHEEK_CLR", 0.4, "festgelegt", "seitliche Luft Lasche ↔ Lagerbock")
+GRIP = par("GRIP", 3.5, "festgelegt", "Griffnase unten an der Lasche, steht so weit vor")
+Z_BLK0 = Z_HC + L_FLEX
+Z_CPIN = Z_BLK0 + BLK_H / 2
+Z_GRIP = Z_HC - 11.0
 
 # ----------------------------------------------------------------------------- Scharnier
 PX = par("PX", 70.0, "festgelegt", "Mitte der beiden Scharniere (±)")
-E_AX = par("E_AX", 6.0, "festgelegt", "Achse so weit hinter der Rückwand (auf Höhe P)")
+E_AX = par("E_AX", 6.0, "festgelegt", "Achse so weit hinter der Rückwand (auf Höhe der Fuge Z_L)")
 R_K = par("R_K", 5.0, "festgelegt", "Knöchelradius")
 KB_L = par("KB_L", 9.0, "festgelegt", "Länge Basisknöchel")
 KL_L = par("KL_L", 14.0, "festgelegt", "Länge Deckelknöchel")
@@ -136,13 +148,13 @@ TAIL_DIR = par("TAIL_DIR", 61.0, "festgelegt", "Anschlagnase am Deckelknöchel: 
 TAIL_R = par("TAIL_R", 2.5, "festgelegt", "Anschlagnase Radius")
 TAIL_E = par("TAIL_E", 6.0, "festgelegt", "Anschlagnase Abstand zur Achse")
 
-Y_BACK_PX = D_O / 2 + BY * (1 - (PX / (W_O / 2)) ** 2)   # Rückwand außen in Scharniermitte
+Y_BACK_PX = D_O / 2 + S_N + BY * (1 - (PX / (W_O / 2)) ** 2)   # Rückwand außen in Scharniermitte
 Y_H = Y_BACK_PX + E_AX
-Z_H = P
+Z_H = Z_L
 POD = 2 * KB_L + KL_L + 2 * K_GAP
 
 # ----------------------------------------------------------------------------- Bandösen
-EAR_Z = par("EAR_Z", P - 24.0, "festgelegt", "Höhe der Bandöse (Mitte)")
+EAR_Z = par("EAR_Z", Z_L - 16.0, "festgelegt", "Höhe der Bandöse (Mitte), unter der Fuge")
 EAR_OUT = par("EAR_OUT", 12.0, "festgelegt", "Öse steht so weit seitlich vor")
 EAR_HOLE = par("EAR_HOLE", 5.2, "festgelegt", "senkrechtes Loch Ø für Kordel bis 4 mm (z. B. Paracord)")
 EAR_HX = par("EAR_HX", 5.6, "festgelegt", "Lochmitte so weit von der Seitenwand")
@@ -255,10 +267,20 @@ def loft(zs, insets, hx=None, hy=None, r=None, warp=True):
 
 
 # ============================================================================= Profile (inset über z)
+def inset_skin(z):
+    """Außenhaut v2 (ohne Fuge) – Bezug für Hals und Innenraum."""
+    return max(_round(z, RB), _round(H - z, RT))
+
+
 def inset_outer(z):
-    v = max(_round(z, RB), _round(H - z, RT))
-    v += max(0.0, GROOVE - abs(z - P))
-    return v
+    """Außenhaut v3: um S_N größer als v2, feine V-Fuge an der Auflage Z_L."""
+    return inset_skin(z) - S_N + max(0.0, GROOVE - abs(z - Z_L))
+
+
+def neck_inset(z):
+    """Hals der Basis: v2-Außenhaut, nach oben um NECK_TAPER verjüngt, oben 45°-Fase."""
+    t = NECK_TAPER * min(max((z - Z_L) / OV, 0.0), 1.0)
+    return inset_skin(z) + t + max(0.0, NECK_CH - (P - z))
 
 
 def inset_cavity(z):
@@ -281,15 +303,27 @@ def zs_between(z0, z1, extra=()):
 
 def zs_outer(z0, z1):
     a = math.radians(CH_ANG)
-    keys = [P - GROOVE, P, P + GROOVE, RB * (1 - math.sin(a)), H - RT * (1 - math.sin(a))]
+    keys = [Z_L - GROOVE, Z_L, Z_L + GROOVE, RB * (1 - math.sin(a)), H - RT * (1 - math.sin(a))]
     pts = [z for z in zs_between(z0, z1, keys)
-           if z <= RB + 0.5 or z >= H - RT - 0.5 or abs(z - P) <= GROOVE + 0.5 or z in (z0, z1) or abs(z / 6 - round(z / 6)) < 0.05]
+           if z <= RB + 0.5 or z >= H - RT - 0.5 or abs(z - Z_L) <= GROOVE + 0.5 or z in (z0, z1) or abs(z / 6 - round(z / 6)) < 0.05]
     return sorted(set(pts))
 
 
 def outer_body(z0, z1, extra=0.0):
     zs = zs_outer(z0, z1)
     return loft(zs, [inset_outer(z) + extra for z in zs])
+
+
+def neck_body(z0, z1, extra=0.0):
+    """Hals der Basis."""
+    zs = sorted(set([z0, z1, min(max(P - NECK_CH, z0), z1)] + list(zs_between(z0, z1))))
+    return loft(zs, [neck_inset(z) + extra for z in zs])
+
+
+def skirt_clear(z0, z1):
+    """Freiraum innen im Deckelrand: senkrecht, SK_CLR vor dem Halsfuß."""
+    zs = [z0, z1]
+    return loft(zs, [inset_skin(Z_L + 1) - SK_CLR for _ in zs])
 
 
 def cavity_body(z0, z1, extra=0.0):
@@ -321,8 +355,8 @@ def base_knuckles():
     for side in (1, -1):
         outer, _, inner = pod_ranges(side)
         for k, (x0, x1) in enumerate((outer, inner)):
-            web = Manifold.batch_hull([cyl_x(x0 + 0.6, x1 - 0.6, Y_BACK_PX - 2.6, P - 12.5, 2.4, 40),
-                                       cyl_x(x0, x1, Y_BACK_PX - 2.6, P - 12.5, 1.8, 40)])
+            web = Manifold.batch_hull([cyl_x(x0 + 0.6, x1 - 0.6, Y_BACK_PX - 2.6, Z_H - 12.5, 2.4, 40),
+                                       cyl_x(x0, x1, Y_BACK_PX - 2.6, Z_H - 12.5, 1.8, 40)])
             parts.append(Manifold.batch_hull([_knuckle(x0, x1, R_K), web]))
     return Manifold.batch_boolean(parts, manifold3d_op("add"))
 
@@ -351,8 +385,8 @@ def lid_knuckles():
     ty, tz = tail_center()
     for side in (1, -1):
         _, (x0, x1), _ = pod_ranges(side)
-        web = Manifold.batch_hull([cyl_x(x0 + 0.6, x1 - 0.6, Y_BACK_PX - 2.6, P + 12.5, 2.4, 40),
-                                   cyl_x(x0, x1, Y_BACK_PX - 2.6, P + 12.5, 1.8, 40)])
+        web = Manifold.batch_hull([cyl_x(x0 + 0.6, x1 - 0.6, Y_BACK_PX - 2.6, Z_H + 12.5, 2.4, 40),
+                                   cyl_x(x0, x1, Y_BACK_PX - 2.6, Z_H + 12.5, 1.8, 40)])
         tail = Manifold.batch_hull([cyl_x(x0 + 0.6, x1 - 0.6, ty, tz, TAIL_R, 32), cyl_x(x0, x1, ty, tz, TAIL_R - 0.6, 32)])
         parts.append(Manifold.batch_hull([_knuckle(x0, x1, R_K), web, tail]))
     return Manifold.batch_boolean(parts, manifold3d_op("add"))
@@ -407,84 +441,98 @@ def _xz_prism(pts_xz, y0, y1):
     return m
 
 
-Y_OUT_F = -D_O / 2 - BY                  # Außenfläche vorne in der Mitte (im Bereich der Zunge praktisch flach)
-Y_TI = Y_OUT_F + T_TONGUE                # Zunge innen
-Y_RB = Y_TI + REC_GAP                    # Muldenrückwand
-TH = 1.0 / math.tan(math.radians(HOLD_ANG))     # Anstieg der Haltefläche je mm Hakentiefe
+Y_OUT_F = -(D_O / 2 + S_N) * (1 + BY / (D_O / 2))   # Außenfläche vorn in der Mitte nach der Wölbung (Deckel und Basis bündig; im Bereich der Lasche praktisch eben)
+Y_CI = Y_OUT_F - CL_GAP                  # Lasche innen
+Y_PIN = Y_OUT_F - 0.1 - BLK_T / 2        # Stiftachse der Lasche
+CL_X = CL_W / 2
+CHEEK_X0 = CL_X + CHEEK_CLR
+CHEEK_X1 = CHEEK_X0 + CHEEK_W
+R_CHEEK = 4.8
 
 
-def hook_profile():
-    """Haken an der Zungeninnenseite (y-z), geschlossene Lage."""
-    yi, h = Y_TI, HOOK
-    z_lead0 = HOOK_Z - 2.5
-    z_lead1 = z_lead0 + h / math.tan(math.radians(LEAD_ANG))
-    return [(yi - 0.01, z_lead0), (yi + h, z_lead1), (yi + h, HOOK_Z), (yi - 0.01, HOOK_Z + h * TH)]
+def clip_profile():
+    """Profil der Klemmlasche (y-z, Einbaulage, geschlossen): Kopf, Feder, Haken, Griffnase."""
+    yi, yo = Y_CI, Y_CI - CL_T
+    yb = Y_OUT_F - 0.1                      # Kopf liegt fast am Deckel an (Verdrehsicherung)
+    z0, z1 = Z_BLK0, Z_BLK0 + BLK_H
+    hz1 = Z_HC
+    hz0 = Z_HC - HOOK_FLAT
+    hz_r = hz0 - (HOOK_D + CL_GAP)           # 45°-Einlauf
+    ytip = Y_OUT_F + HOOK_D
+    gz = Z_GRIP
+    return [
+        (yi, hz_r), (ytip, hz0), (ytip, hz1), (yi, hz1),          # Haken
+        (yi, z0 - 0.01), (yb, z0), (yb, z1),                      # Innenseite bis Kopf
+        (yb - BLK_T + 1.5, z1), (yb - BLK_T, z1 - 1.5),           # Kopf, Kanten gefast
+        (yb - BLK_T, z0 + 1.5), (yb - BLK_T + 1.5, z0),
+        (yo - 2.5, z0 - 0.01), (yo - 1.2, z0 - 1.0), (yo - 0.4, z0 - 2.4), (yo, z0 - 4.0),   # Übergang Kopf → Feder (gerundet)
+        (yo, gz + GRIP + 3.5), (yo - GRIP, gz + 1.6), (yo - GRIP, gz + 0.8), (yo - GRIP + 0.8, gz),  # Griffnase
+        (yi, gz),
+    ]
+
+
+def clip():
+    """Klemmlasche in Einbaulage (geschlossen), mit Bohrung für den Stift."""
+    m = _yz_prism(clip_profile(), -CL_X, CL_X)
+    trim = Manifold.batch_boolean([box(-CL_X - 1, Y_CI + 0.01, Z_HC - 6, -CL_X + 1.0, Y_OUT_F + HOOK_D + 1, Z_HC + 1),
+                                   box(CL_X - 1.0, Y_CI + 0.01, Z_HC - 6, CL_X + 1, Y_OUT_F + HOOK_D + 1, Z_HC + 1)], manifold3d_op("add"))
+    m = m - trim                                                         # Haken 1 mm schmaler je Seite
+    m = m - cyl_x(-CL_X - 1, CL_X + 1, Y_PIN, Z_CPIN, HOLE_LID / 2, 48)  # dreht frei; im Druck senkrecht, rund
+    return m
+
+
+def cheeks():
+    """Lagerböcke am Deckel: Tropfenprofil, Spitze oben (im Kopfüber-Druck 45° nach unten), an die Deckelwand angebunden."""
+    tip_z = Z_CPIN + R_CHEEK * math.sqrt(2)
+    parts = []
+    for s_ in (-1, 1):
+        x0, x1 = sorted((s_ * CHEEK_X0, s_ * CHEEK_X1))
+        c = Manifold.batch_hull([cyl_x(x0 + 0.5, x1 - 0.5, Y_PIN, Z_CPIN, R_CHEEK, 64), cyl_x(x0, x1, Y_PIN, Z_CPIN, R_CHEEK - 0.5, 64),
+                                 box(x0 + 0.5, Y_PIN - 0.01, tip_z - 0.01, x1 - 0.5, Y_PIN + 0.01, tip_z),
+                                 box(x0, Y_OUT_F - 0.01, Z_CPIN - R_CHEEK, x1, Y_OUT_F + 2.0, tip_z + 1.2 * (Y_OUT_F - 0.01 - Y_PIN))])
+        parts.append(c)
+    return Manifold.batch_boolean(parts, manifold3d_op("add"))
+
+
+def cheek_holes():
+    cut = [teardrop_x(-CHEEK_X1 - 1, -CHEEK_X0 + 0.5, Y_PIN, Z_CPIN, HOLE_PRESS, up=False),   # links: Stift klemmt
+           teardrop_x(CHEEK_X0 - 0.5, CHEEK_X1 + 1, Y_PIN, Z_CPIN, HOLE_SLIP, up=False)]      # rechts: Stift schiebt sich durch
+    d = HEAD_T + 0.2
+    cut.append(teardrop_x(CHEEK_X1 - d, CHEEK_X1 + 1, Y_PIN, Z_CPIN, HEAD_D + 0.6, up=False))  # Senkung für den Kopf
+    return Manifold.batch_boolean(cut, manifold3d_op("add"))
+
+
+def clip_pin(d=None):
+    """Stift der Lasche (Einbaulage, Kopf rechts), gleiche Bauart wie die Scharnierstifte."""
+    x_head = CHEEK_X1
+    x_end = -CHEEK_X1 + 0.3
+    r = (PIN_D if d is None else d) / 2
+    shaft = cyl_x(x_end + 0.5, x_head - HEAD_T, Y_PIN, Z_CPIN, r, 48)
+    tip = Manifold.batch_hull([cyl_x(x_end, x_end + 0.5, Y_PIN, Z_CPIN, r - 0.5, 48), cyl_x(x_end + 0.5, x_end + 0.6, Y_PIN, Z_CPIN, r, 48)])
+    head = cyl_x(x_head - HEAD_T, x_head, Y_PIN, Z_CPIN, HEAD_D / 2, 48)
+    p = shaft + tip + head
+    flat = box(x_end - 1, Y_PIN - 10, Z_CPIN - 10, x_head + 1, Y_PIN + 10, Z_CPIN - r + 0.3)
+    return p - flat
 
 
 def groove_profile():
-    """Rastnut in der Muldenrückwand der Basis (y-z)."""
-    yb, d = Y_RB, GROOVE_D
-    # Haltefläche parallel zur Hakenfläche, PLAY_V darüber
-    def z_hold(y):
-        return HOOK_Z + PLAY_V + (Y_TI + HOOK - y) * TH
-    zb_top = HOOK_Z - 2.5            # Unterkante innen
-    return [(yb - 0.5, HOOK_Z - 3.5 - 0.5), (yb + d, zb_top), (yb + d, z_hold(yb + d)), (yb - 0.5, z_hold(yb - 0.5))]
-
-
-def tongue():
-    """Zunge unterhalb der Teilungsebene (oberhalb ist sie Teil der Deckelwand) + Haken + Griffnase."""
-    x0, x1 = -TW / 2, TW / 2
-    lower = box(x0, Y_OUT_F, Z_TIP + 1.0, x1, Y_TI, P + GROOVE + 0.5)
-    tipr = Manifold.batch_hull([box(x0, Y_OUT_F + 0.5, Z_TIP, x1, Y_TI, Z_TIP + 1.0), box(x0, Y_OUT_F, Z_TIP + 1.0, x1, Y_TI, Z_TIP + 1.01)])
-    hook = _yz_prism(hook_profile(), x0 + 1.0, x1 - 1.0)
-    # Griffnase: Oberseite 45° (im Kopfüber-Druck Unterseite), außen senkrecht, unten gerundet
-    zt = Z_TIP
-    nose = _yz_prism([(Y_OUT_F + 0.01, zt + 0.6), (Y_OUT_F - LIP_OUT + 0.4, zt), (Y_OUT_F - LIP_OUT, zt + 0.6),
-                      (Y_OUT_F - LIP_OUT, zt + 3.3), (Y_OUT_F + 0.01, zt + 3.3 + LIP_OUT)], x0 + 2, x1 - 2)
-    return lower + tipr + hook + nose
-
-
-def lid_tongue_cuts():
-    """Schlitze links/rechts der Zunge und Freistellung innen (Zunge 2,0 statt 2,5 mm)."""
-    cuts = []
-    for s in (-1, 1):
-        xa = s * TW / 2
-        xb = s * (TW / 2 + SLOT)
-        x0, x1 = min(xa, xb), max(xa, xb)
-        cuts.append(box(x0, Y_OUT_F - 2, P - 2, x1, Y_OUT_F + T + 1.5, Z_ROOT - SLOT / 2))
-        cuts.append(Manifold.cylinder(T + 3.5, SLOT / 2, SLOT / 2, 24).rotate([-90, 0, 0]).translate([(x0 + x1) / 2, Y_OUT_F - 2, Z_ROOT - SLOT / 2]))
-    cuts.append(box(-TW / 2 - 0.01, Y_TI, P - 2, TW / 2 + 0.01, Y_OUT_F + T + 1, Z_ROOT - 3))
-    # unter der Zunge darf nichts vom Deckel bleiben (V-Fuge)
-    cuts.append(box(-TW / 2 - SLOT, Y_OUT_F - 2, P - 5, TW / 2 + SLOT, Y_OUT_F + T + 1, P + GROOVE + 0.5))
-    return Manifold.batch_boolean(cuts, manifold3d_op("add"))
-
-
-def base_latch_add():
-    """Verstärkung innen hinter der Mulde (Unterseite 45°)."""
-    yw = Y_OUT_F + T                     # Innenfläche der gewölbten Vorderwand in der Mitte
-    a = box(-BOSS_W, yw - 1.0, P - 20.0, BOSS_W, Y_OUT_F + BOSS_T, P)
-    b = box(-BOSS_W, yw - 1.0, P - 23.0, BOSS_W, yw + 0.1, P)
-    a2 = box(-BOSS_W - 2.0, yw - 1.0, P - 20.0, -BOSS_W, yw + 0.1, P)
-    b2 = box(BOSS_W, yw - 1.0, P - 20.0, BOSS_W + 2.0, yw + 0.1, P)
-    return Manifold.batch_hull([a, b, a2, b2])
+    """Rastnut in der Basis (y-z): Haltefläche waagerecht (im Druck Brücke über die Nutbreite), Boden 45°."""
+    yb = Y_OUT_F + HOOK_D + GR_CLR
+    zt = Z_HC + PLAY_V
+    zb = Z_HC - HOOK_FLAT - 0.4
+    return [(Y_OUT_F - 1.0, zt), (Y_OUT_F - 1.0, zb - (yb - Y_OUT_F + 1.0)), (yb, zb), (yb, zt)]
 
 
 def base_latch_cut():
-    xr = TW / 2 + REC_SIDE
-    rec = box(-xr, Y_OUT_F - 3, Z_TIP - 1.0, xr, Y_RB, P + 2)
-    # Einführfase oben an der Muldenrückwand
-    ch = _yz_prism([(Y_RB - 0.01, P - 1.2), (Y_RB + 1.2, P + 0.01), (Y_RB + 1.2, P + 2), (Y_RB - 0.01, P + 2)], -xr, xr)
-    gro = _yz_prism(groove_profile(), -xr, xr)
-    # Fingermulde unter dem Zungenende
-    dip = Manifold.sphere(1.0, 64).scale([13.0, 2.9, 8.0]).translate([0, Y_OUT_F - 0.5, Z_TIP - 1.0])
-    return rec + ch + gro + dip
+    xr = CL_X - 1.0 + 0.6
+    return _yz_prism(groove_profile(), -xr, xr)
 
 
 # ============================================================================= Bandösen
 def ears():
     parts = []
     for s in (1, -1):
-        xw = s * (W_O / 2 + BX)
+        xw = s * (W_O / 2 + BX + S_N)
         def sp(dx, y, z, r):
             return Manifold.sphere(r, 40).translate([xw + s * dx, y, z])
         hull = Manifold.batch_hull([sp(EAR_OUT - 5, y, EAR_Z + dz, 5) for y in (-6, 6) for dz in (-3, 3)] +
@@ -497,24 +545,35 @@ def ears():
 def ear_holes():
     cut = []
     for s in (1, -1):
-        cut.append(cyl_z(s * (W_O / 2 + BX + EAR_HX), 0, EAR_Z - 25, EAR_Z + 25, EAR_HOLE / 2, 40))
+        cut.append(cyl_z(s * (W_O / 2 + BX + S_N + EAR_HX), 0, EAR_Z - 25, EAR_Z + 25, EAR_HOLE / 2, 40))
     return Manifold.batch_boolean(cut, manifold3d_op("add"))
 
 
 # ============================================================================= Teile
+def lid_inner():
+    """Innenraum des Deckels: Freiraum über dem Hals (senkrecht) + Raum darüber (Wand T zur neuen Außenhaut)."""
+    return skirt_clear(Z_L - 1, P + 0.01) + cavity_body(P, CEIL, extra=-S_N)
+
+
+def lid_front_zone():
+    """Lagerböcke nur vor der Deckelwand und oberhalb der Fuge."""
+    return box(-60, Y_OUT_F - 20, Z_L + 1.0, 60, Y_OUT_F + 2.0, H - 2)
+
+
 def base():
     cav = cavity_body(T, P + 1)
-    shell = outer_body(0, P) - cav
-    shell = shell + (base_latch_add() ^ outer_body(0, P)) + (base_knuckles() - cav - cavity_body(P - 1, CEIL)) + (ears() - cav)
+    body = outer_body(0, Z_L) + neck_body(Z_L - 0.01, P)
+    shell = body - cav
+    shell = shell + (base_knuckles() - cav - lid_inner()) + (ears() - cav)
     shell = shell - base_latch_cut() - base_knuckle_holes() - ear_holes()
     return shell
 
 
 def lid():
-    shell = outer_body(P, H) - cavity_body(P - 1, CEIL)
-    shell = shell - lid_tongue_cuts()
-    shell = shell + tongue() + (lid_knuckles() - cavity_body(P - 1, CEIL) - cavity_body(T, P + 1))
-    shell = shell - lid_knuckle_holes()
+    inner = lid_inner()
+    shell = outer_body(Z_L, H) - inner
+    shell = shell + (cheeks() ^ lid_front_zone()) + (lid_knuckles() - inner - neck_body(Z_L - 1, P + 0.5, extra=-SK_CLR))
+    shell = shell - lid_knuckle_holes() - cheek_holes()
     return shell
 
 
@@ -569,13 +628,7 @@ def inlay():
     m = out - cut
     m = m - Manifold.batch_boolean([scoop_cut(k * (CMP_W + IW)) for k in (-1, 0, 1)], manifold3d_op("add"))
     m = bulge(m.refine_to_length(6.0), inlay=True)
-    # Aussparung für die Verschluss-Verstärkung der Basis: das Inlay muss beim Einsetzen senkrecht daran vorbei.
-    # Die Vorderwand des mittleren Fachs springt dort um die Verstärkung zurück (U-förmig).
-    xb = BOSS_W + 2.0 + 0.5
-    yb = Y_OUT_F + BOSS_T + 0.3
-    clear = box(-xb, -200, -1, xb, yb, 200)
-    jog = box(-xb - IW, Y_OUT_F - 1, T - 0.5, xb + IW, yb + IW, SCOOP_Z) ^ bulge(inlay_outer(warp=False), inlay=True)
-    return (m + jog) - clear
+    return m
 
 
 # ----------------------------------------------------------------------------- Karten (Prüfkörper)
@@ -619,17 +672,17 @@ def rot_lid(m, ang):
 # ============================================================================= Fuzzy-Modifier
 def fuzzy_modifier(part):
     """Modifier-Körper für Fuzzy Skin (Kontur): Band 0,6 mm außen bis 1,2 mm innen an der Außenhaut.
-    Glatt bleiben: Fasen an Boden/Dach, V-Fuge, Scharniere, Verschluss, Ösen (Passflächen, Optik)."""
+    Glatt bleiben: Fasen an Boden/Dach, Fuge, Hals (verdeckt), Scharniere, Lasche mit Lagerböcken und Nut, Ösen."""
     if part == "basis":
-        z0, z1 = 3.0, P - GROOVE - 0.8
+        z0, z1 = 3.0, Z_L - GROOVE - 0.8
     else:
-        z0, z1 = P + GROOVE + 0.8, H - 3.0
+        z0, z1 = Z_L + GROOVE + 0.8, H - 3.0
     band = outer_body(z0, z1, extra=-0.6) - outer_body(z0 - 1, z1 + 1, extra=1.2)
     ex = []
     for s in (1, -1):
-        ex.append(box(s * PX - POD / 2 - 4, D_O / 2 - 6, P - 24, s * PX + POD / 2 + 4, D_O / 2 + 20, P + 22))
+        ex.append(box(s * PX - POD / 2 - 4, D_O / 2 - 6, Z_H - 24, s * PX + POD / 2 + 4, D_O / 2 + 30, Z_H + 22))
         ex.append(box(-400, -16, EAR_Z - 24, -(W_O / 2 - 4), 16, EAR_Z + 16) if s < 0 else box(W_O / 2 - 4, -16, EAR_Z - 24, 400, 16, EAR_Z + 16))
-    ex.append(box(-TW / 2 - SLOT - 3, -D_O / 2 - 20, P - 24, TW / 2 + SLOT + 3, -D_O / 2 + 6, Z_ROOT + 3))
+    ex.append(box(-CHEEK_X1 - 3, -D_O / 2 - 30, Z_GRIP - 4, CHEEK_X1 + 3, -D_O / 2 + 8, Z_CPIN + 12))
     return band - Manifold.batch_boolean(ex, manifold3d_op("add"))
 
 
@@ -638,6 +691,7 @@ def orient_tf(name, m):
     """Drehung + Verschiebung in Druckausrichtung (nur Drehungen, nie spiegeln), als Funktion für Teil und Modifier."""
     rot = {"basis": [0, 0, 45],          # diagonal: mit Ösen breiter als 256 mm
            "deckel": [180, 0, 0],        # kopfüber, Dach auf der Platte
+           "lasche": [0, -90, 0],        # auf der Seite: Profil auf der Platte, Schichten entlang der Feder
            }.get(name, [0, 0, 0])
     r = m.rotate(rot)
     b = r.bounding_box()
@@ -650,7 +704,7 @@ def orient(name, m):
 
 
 if __name__ == "__main__":
-    print(f"Außen {W_O:.1f} × {D_O:.1f} × {H:.1f} mm, Teilung {P}, Achse y {Y_H:.1f}")
-    for name, f in (("basis", base), ("deckel", lid), ("inlay", inlay)):
+    print(f"Außen {W_O + 2 * S_N:.1f} × {D_O + 2 * S_N:.1f} × {H:.1f} mm, Fuge {Z_L}, Halsoberkante {P}, Achse y {Y_H:.1f} z {Z_H}")
+    for name, f in (("basis", base), ("deckel", lid), ("inlay", inlay), ("lasche", clip)):
         m = f()
         print(name, m.status(), round(m.volume() / 1000, 1), "cm³", [round(v, 1) for v in m.bounding_box()])

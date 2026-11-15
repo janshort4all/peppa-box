@@ -63,7 +63,8 @@ def main():
     files += [stl(tf(lid), os.path.join(DR, "02_deckel_orange_kopfueber.stl")),
               stl(tf(fz_l), os.path.join(DR, "02f_modifier_deckel_FUZZY.stl"), None)]
     files.append(stl(M.orient("inlay", inl), os.path.join(DR, "03_inlay_beige.stl")))
-    files.append(stl(M.orient("lasche", M.clip()), os.path.join(DR, "05_klemmlasche_beige_auf_der_seite.stl")))
+    cf = M.clip_free()[0]
+    files.append(stl(M.orient_tf("lasche", cf)(cf), os.path.join(DR, "05_klemmlasche_beige_auf_der_seite.stl")))
     p = M.orient("stift", M.pin())
     pc = M.orient("stift", M.clip_pin())
     pins = Manifold.batch_boolean([p.translate([0, k * 10, 0]) for k in (-1, 0, 1)] + [pc.translate([0, k * 10, 0]) for k in (2, 3)], M.manifold3d_op("add"))
@@ -91,9 +92,10 @@ def main():
     files.append(stl(M.orient("basis_k", kb), os.path.join(PR, "K2a_lasche_basis.stl")))
     files.append(stl(M.orient("deckel", kl), os.path.join(PR, "K2b_lasche_deckel_kopfueber.stl")))
     t0 = M.CL_T
-    for t in (1.8, 2.0, 2.2):
+    for t in (1.6, 1.8, 2.0):
         M.CL_T = t
-        files.append(stl(M.orient("lasche", M.clip()), os.path.join(PR, f"K2c_lasche_feder_{t:.1f}.stl")))
+        cf = M.clip_free()[0]
+        files.append(stl(M.orient_tf("lasche", cf)(cf), os.path.join(PR, f"K2c_lasche_feder_{t:.1f}.stl")))
     M.CL_T = t0
     files.append(stl(Manifold.batch_boolean([M.orient("stift", M.clip_pin(d)).translate([0, k * 10, 0]) for k, d in enumerate((3.9, 4.0, 4.1))], M.manifold3d_op("add")),
                      os.path.join(PR, "K2d_laschenstifte_3.9_4.0_4.1.stl"), 3))

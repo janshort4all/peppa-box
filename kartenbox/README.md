@@ -11,12 +11,17 @@ Parametrisches Modell `model.py` (manifold3d), jede Größe mit Status in `P_` (
 2. **Neuer Verschluss: Klemmlasche.** Die v2-Zunge war Teil der Deckelwand und wurde kopfüber gedruckt – die Schichten lagen quer zur Biegung,
    darum ist sie beim Nachbiegen gebrochen. Und ihre Haltefläche (30° zur Waagerechten) ließ den Haken unter Zug herausrutschen.
    Jetzt: eine **eigene beige Lasche**, an zwei Lagerböcken am Deckel mit einem gedruckten Stift befestigt. Sie wird **auf der Seite liegend**
-   gedruckt, die Schichten laufen entlang der Feder. Ihr Haken greift unter eine **waagerechte** Haltefläche in der Basis: Zug am Deckel kann
-   den Haken nicht herausdrücken. Die Lasche ist ein kleines Ersatzteil (5 g), falls doch einmal etwas bricht.
+   gedruckt, die Schichten laufen entlang der Feder. Ihr Haken greift **2,4 mm** tief unter eine **waagerechte** Haltefläche in der Basis:
+   Zug am Deckel kann den Haken nicht herausdrücken. Damit der tiefe Haken beim Zuklappen am Hals vorbeikommt, hat der Hals vorn eine
+   flache Rinne (vom Deckel verdeckt). Die Lasche wird **leicht nach innen vorgebogen** gedruckt: eingebaut drückt sie unten mit ca. 2 N
+   gegen die Basis – sie klappert nicht und kann beim Tragen nicht von selbst aufgehen. Im Laschenkopf sitzt der Stift mit wenig Spiel
+   (Bohrung 4,3), der Kopf liegt flach am Deckel an. Auch im ungünstigen Fall (Spiel, gerundete Druckkanten) bleiben ca. 1,9 mm Eingriff.
+   Die Lasche ist ein kleines Ersatzteil (5 g), falls doch einmal etwas bricht.
 
 ## Bedienung
-- **Öffnen:** Griffnase unten an der Lasche ca. 2 mm nach vorn ziehen (ca. 7 N), Deckel hochklappen. Er bleibt bei ca. 95° offen stehen.
-- **Schließen:** Deckel zuklappen und vorn kurz andrücken – der Haken gleitet über die Kante der Stufe und schnappt hörbar ein (ca. 13 N).
+- **Öffnen:** einen Finger hinter die Griffnase legen (sie steht unten 8 mm vor, unten gerundet), ca. 2,5 mm nach vorn ziehen (ca. 7 N),
+  Deckel hochklappen. Er bleibt bei ca. 95° offen stehen.
+- **Schließen:** Deckel zuklappen und vorn kurz andrücken – der Haken gleitet mit seiner 30°-Schräge über die Kante der Stufe und schnappt ein (ca. 10 N).
 - Die Lasche liegt flach am Deckel an; nach innen kann sie nicht umklappen.
 
 ## Maße
@@ -44,10 +49,11 @@ Skripte: `python3 export.py` (alle Dateien), `python3 check.py` (Prüfung), `pyt
 ## Reihenfolge
 1. **Probedrucke** (orange bzw. beige PETG wie später):
    - **K2 Klemmlasche** (zuerst, ca. 1 h zusammen): `K2a` Basis-Vorderstück (Stufe, Hals, Nut), `K2b` Deckel-Vorderstück mit Lagerböcken (kopfüber),
-     `K2c` drei Laschen mit Federdicke 1,8 / 2,0 / 2,2 mm (auf der Seite), `K2d` Laschenstifte Ø 3,9 / 4,0 / 4,1.
+     `K2c` drei Laschen mit Federdicke 1,6 / 1,8 / 2,0 mm (auf der Seite, vorgebogen), `K2d` Laschenstifte Ø 3,9 / 4,0 / 4,1.
      Lasche mit Stift einbauen (Stift **von rechts**, Kopf rechts; klemmt im linken Bock), Deckelstück auf das Basisstück drücken:
      rastet es hörbar ein? Geht es mit der Griffnase leicht auf? Hält es, wenn man am Deckelstück zieht, ohne die Lasche zu betätigen?
-     Welche Federdicke fühlt sich richtig an? → `CL_T` (2,0) bzw. `PIN_D`/`HOLE_*` anpassen.
+     Kann ein Kind sie mit einem Finger öffnen? Liegt die Lasche geschlossen spürbar an (kein Klappern)? Welche Federdicke fühlt sich richtig an?
+     → `CL_T` (1,8), `PRE_N` (2 N), `HOLE_CLIP` (4,3) bzw. `PIN_D`/`HOLE_*` anpassen.
    - **K3 Stülpdeckel** (rechtes Ende, Basis + Inlay + Deckel, mit Fuzzy-Modifiern): Deckelstück über den Hals stülpen.
      Gleitet es ohne Klemmen bis auf die Stufe? Wackelt es kaum? Fuge gleichmäßig? Inlay geht leicht hinein? → `SK_CLR` (0,35), `G_I` (0,3).
    - **K1 Scharnier**: Deckelstück zwischen die Basisknöchel, Stifte Ø 3,9 / 4,0 / 4,1 probieren; Anschlag bei ca. 95°?
@@ -69,12 +75,12 @@ Skripte: `python3 export.py` (alle Dateien), `python3 check.py` (Prüfung), `pyt
 | Elefantenfuß-Kompensation | 0,15 | 0,15 | 0,1 | 0,1 |
 | Fuzzy Skin | nur über den Modifier: beide Dateien zusammen hineinziehen („ein Objekt mit mehreren Teilen“), `01f`/`02f` → Typ Modifizierer, dort Fuzzy Skin **Kontur**; Objekt selbst ohne Fuzzy. Werte wie am Korpus: Punktabstand 0,30, Stärke 0,20, Klassisch, nicht auf der ersten Schicht | – | – | – |
 | Naht | aufmalen an einer hinteren Ecke (Rundung), senkrecht | hinten | egal | – |
-| Brücken | Standard (Rastnut-Decke ist eine 21 mm breite Brücke) | Standard | – | – |
+| Brücken | Standard (Rastnut-Decke ist eine 23 mm breite Brücke) | Standard | – | – |
 
 Kühlung, Temperaturen und Mindest-Schichtdauer wie beim Korpus (`v4/out/README.md`, Abschnitt Korpus). Rolle vorher trocknen.
-Fuzzy bleibt aus an: Fasen unten/oben, Fuge, Hals (verdeckt), Scharnieren, Lasche mit Lagerböcken und Nut, Ösen.
+Fuzzy bleibt aus an: Fasen unten/oben, Fuge, Hals (verdeckt, mit Rinne für den Haken), Scharnieren, Lasche mit Lagerböcken und Nut, Ösen.
 
-Überhänge (aus `PRUEFBERICHT.md`, Schichtprüfung der fertigen STL): Basis nur die Decke der Rastnut (37 mm², Brücke über 21 mm),
+Überhänge (aus `PRUEFBERICHT.md`, Schichtprüfung der fertigen STL): Basis nur die Decke der Rastnut (59 mm², Brücke über 23 mm),
 Deckel keine, Lasche keine (auf der Seite), Inlay die Brücken über den Hohlräumen hinter den Kartenstützen (≤ 14 mm Spannweite).
 Bohrungen sind Tropfen (Spitze 45°).
 
@@ -91,7 +97,7 @@ etwa 0,65 kg (ca. 0,47 kg orange, 0,2 kg beige). Gegenüber v2 ca. 0,1 kg mehr, 
 
 ## Offene Punkte / Grenzen
 1. Nichts davon ist gedruckt. Spiele (`SK_CLR`, `G_I`, Bohrungen, `CL_T`) sind Startwerte → Probedrucke K1–K3.
-2. Federkraft der Lasche (ca. 7 N zum Öffnen) und Tragkraft (Hakenwurzel ca. 450 N, Stift ca. 250 N) sind mit Annahmen gerechnet
+2. Kräfte der Lasche (ca. 7 N zum Öffnen, ca. 10 N zum Schließen, 2 N Vorspannung) und Tragkraft (Hakenwurzel ca. 500 N, Stift ca. 250 N) sind mit Annahmen gerechnet
    (PETG E = 1800 MPa, Scherfestigkeit 10–15 MPa, Reibung 0,3).
 3. **Leere Box mit offenem Deckel** kippt schon bei ca. 15° nach hinten (Deckel hängt hinter der Achse); mit Karten erst bei 29°. Geschlossen 41°.
 4. Die Lasche steht vorn ca. 9 mm vor (Lagerböcke). Falls sie beim Tragen stört: kürzere Lagerböcke gehen nur mit dünnerem Stift (Ø 3, dann Stahlstift kaufen).

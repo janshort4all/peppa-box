@@ -74,7 +74,7 @@ say()
 say("## 2. Geschlossen: Überschneidungen (mm³; 0 = frei)")
 pairs = [("Deckel ↔ Basis", lid, base), ("Inlay ↔ Basis", inl, base), ("Inlay ↔ Deckel", inl, lid),
          ("Klemmlasche ↔ Basis (Haken frei in der Nut)", clip, base), ("Klemmlasche ↔ Deckel", clip, lid),
-         ("Laschenstift ↔ Lasche (Lasche dreht frei)", cpin, clip), ("Laschenstift ↔ Basis", cpin, base),
+         ("Laschenstift ↔ Lasche (Lasche dreht)", cpin, clip), ("Laschenstift ↔ Basis", cpin, base),
          ("Scharnierstifte ↔ Deckel (Deckelknöchel muss frei drehen)", pins, lid)]
 for n, a, b in pairs:
     v = inter(a, b)
@@ -159,7 +159,7 @@ say(f"Cover-Fenster der Karte beginnt {43.5:.1f} mm über der Kartenunterkante (
 # ----------------------------------------------------------------------------- 4 Schwenk
 say()
 say("## 4. Deckelschwenk um die Scharnierachse (Schritt 1°)")
-hook_zone = M.box(-M.CL_X - 1, -90, M.Z_HC - 6, M.CL_X + 1, M.Y_OUT_F + M.HOOK_D + M.GR_CLR + 0.5, M.Z_L + 1.5)
+hook_zone = M.box(-M.CL_X - 1.5, -90, M.Z_HC - 6, M.CL_X + 1, M.Y_OUT_F + M.HOOK_D + M.GR_CLR + 0.5, M.Z_L + 1.5)
 stop = None
 max_other = 0.0
 hook_depth = []
@@ -188,6 +188,14 @@ if hook_depth:
     dmax = max(d for _, d in hook_depth)
     say(f"Haken beim Schließen/Öffnen: größte Überdeckung mit der Basis {dmax:.2f} mm quer (Federweg der Lasche; Soll {M.HOOK_D:.2f} mm)")
     ok(dmax <= M.HOOK_D + 0.3, "Haken überdeckt nur so weit, wie die Lasche federn soll")
+_py, _pz = M.clip_pivot()
+_Lp, _Lh = _pz - (M.Z_GRIP + 1.8), _pz - M.Z_HC
+_d = M.clip_free()[1]
+_back = _d * _Lh ** 2 * (3 * _Lp - _Lh) / (2 * _Lp ** 3)        # Rückweg am Haken, wenn der Druckpunkt um _d zurückgedrückt wird
+_hook_in = _d * _Lh / _Lp - _back                                 # Haken bleibt so weit weiter innen als in der Zeichnung
+say(f"Vorspannung eingebaut: der Druckpunkt unten liegt an der Basis an (gedruckt {_d:.2f} mm weiter innen); der Haken steht dann {_hook_in:.2f} mm tiefer in der Nut als gezeichnet, "
+    f"Luft zur Nutrückwand bleibt {M.GR_CLR - _hook_in:.2f} mm")
+ok(M.GR_CLR - _hook_in >= 0.1, "Vorspannung geht über den Druckpunkt, der Haken bleibt frei in der Nut")
 # geschlossen: Haken frei in der Nut?
 v = inter(lid, base)
 v = inter(clip, base)
@@ -201,40 +209,60 @@ ok(gap >= 0.5, f"Basisknöchel ↔ Deckelrückwand: kleinster Abstand {gap:.2f} 
 say()
 say("## 5. Klemmlasche und Scharnier (rechnerisch)")
 MU = 0.3  # Reibung PETG/PETG (ANNAHME)
-L_t = M.L_FLEX
-d = M.HOOK_D
+py_, pz_ = M.clip_pivot()
 t = M.CL_T
 b = M.CL_W
 I = b * t ** 3 / 12
-eps = 1.5 * d * t / L_t ** 2
-F = 3 * E_PETG * I * d / L_t ** 3
-say(f"Feder der Lasche {b:.0f} × {t:.1f} mm, frei {L_t:.0f} mm, Federweg {d:.2f} mm → Randdehnung {eps * 100:.2f} %, Kraft am Haken {F:.1f} N (ANNAHME E = {E_PETG:.0f} MPa)")
-ok(eps < 0.012, "Dehnung unter 1,2 %: Lasche liegt beim Druck auf der Seite, die Biegung läuft entlang der Schichten (PETG-Streckdehnung ca. 4 %)")
-eps_10 = 1.5 * 10.0 * t / L_t ** 2
-say(f"Zum Vergleich: wer die Lasche 10 mm vom Deckel abbiegt, dehnt sie um {eps_10 * 100:.1f} % – noch unter der Streckdehnung, sie bricht dabei nicht (im Gegensatz zur Zunge v2, die quer zu den Schichten bog).")
-ok(F <= 8, f"Öffnen: Griffnase {M.HOOK_D:.1f} mm nach vorn ziehen, ca. {F:.0f} N (Kinderhand; ANNAHME, Coupon K2 prüft)")
-W_close = F * (MU + 1.0) / (1 - MU * 1.0)
-say(f"Schließen: Deckel zudrücken, der Haken gleitet mit seiner 45°-Schräge über die Kante der Stufe und schnappt in die Nut, ca. {W_close:.0f} N (Reibung {MU}, ANNAHME).")
+L_h = pz_ - M.Z_HC                    # Wurzel → Haken
+L_g = pz_ - (M.Z_GRIP + 2.9)          # Wurzel → Griffnase (Fingerpunkt)
+L_p = pz_ - (M.Z_GRIP + 1.8)          # Wurzel → Druckpunkt (Vorspannung)
+_, d_pre = M.clip_free()
+P0 = 3 * E_PETG * I * d_pre / L_p ** 3
+# Öffnen: Haken muss HOOK_D nach außen; Kraft am Fingerpunkt L_g, Weg am Haken = P·L_h²(3L_g − L_h)/(6EI)
+P_open = M.HOOK_D * 6 * E_PETG * I / (L_h ** 2 * (3 * L_g - L_h)) + P0 * L_p / L_g
+M_root = P_open * L_g
+eps = M_root * (t / 2) / I / E_PETG
+F = P_open
+say(f"Feder der Lasche {b:.0f} × {t:.1f} mm; Wurzel → Haken {L_h:.0f} mm, → Griffnase {L_g:.0f} mm. Gedruckt um {d_pre:.2f} mm vorgebogen: "
+    f"geschlossen drückt sie mit ca. {P0:.1f} N gegen die Basis (kein Klappern, Haken bleibt in der Nut).")
+say(f"Öffnen: Haken {M.HOOK_D:.1f} mm aus der Nut ziehen braucht an der Griffnase ca. {P_open:.1f} N; Randdehnung an der Wurzel {eps * 100:.2f} % (ANNAHME E = {E_PETG:.0f} MPa)")
+ok(eps < 0.015, "Dehnung unter 1,5 %: Lasche liegt beim Druck auf der Seite, die Biegung läuft entlang der Schichten (PETG-Streckdehnung ca. 4 %)")
+eps_10 = 1.5 * 10.0 * t / L_g ** 2
+say(f"Zum Vergleich: wer die Griffnase 10 mm vom Deckel abbiegt, dehnt die Feder um {eps_10 * 100:.1f} % – unter der Streckdehnung, sie bricht dabei nicht (die v2-Zunge bog quer zu den Schichten).")
+ok(P_open <= 9, f"Öffnen mit einem Finger hinter der Griffnase ({M.GRIP:.0f} mm Vorsprung): ca. {P_open:.0f} N (Kinderhand; ANNAHME, Probedruck K2 prüft)")
+P_hook = 3 * E_PETG * I * M.HOOK_D / L_h ** 3 + P0 * L_p / L_h
+ta = math.tan(math.radians(M.LEAD_ANG))
+W_close = P_hook * (MU + ta) / (1 - MU * ta)
+ok(W_close <= 15, f"Schließen höchstens 15 N (Deckel mit der Hand zudrücken): ca. {W_close:.0f} N")
+say(f"Schließen: Deckel zudrücken, der Haken gleitet mit seiner {M.LEAD_ANG:.0f}°-Schräge über die Kante der Stufe und schnappt in die Nut, ca. {W_close:.0f} N (Reibung {MU}, ANNAHME).")
 say("Halten: Haltefläche von Haken und Nut liegt waagerecht (90° zur Zugrichtung). Zug am Deckel drückt den Haken nicht heraus – "
     "der Deckel geht nur auf, wenn die Lasche an der Griffnase nach vorn gezogen wird. Kraft geht als Zug durch die Feder in den Stift.")
-A_hook = (M.CL_W - 2) * (M.HOOK_FLAT + 0.5)
+play = (M.HOLE_CLIP - M.PIN_D) / 2
+tilt = play * (pz_ - M.Z_HC) / (M.BLK_H / 2)
+say(f"Spiel der Lasche: Stift Ø {M.PIN_D} in Ø {M.HOLE_CLIP} ({play:.2f} mm je Seite), Kopf liegt am Deckel an; schlimmstenfalls weicht der Haken um ca. {play + 0.1:.1f} mm nach außen – "
+    f"es bleiben ≥ {M.HOOK_D - play - 0.1 - 0.3:.1f} mm Eingriff (mit 0,3 mm Kantenrundung im Druck). Die Vorspannung hält die Lasche ohnehin angelegt.")
+ok(M.HOOK_D - play - 0.1 - 0.3 >= 1.5, "Eingriff auch im ungünstigen Fall ≥ 1,5 mm")
+A_hook = M.CL_W * (M.HOOK_FLAT + 0.5)
 tau = 15.0  # MPa, ANNAHME: Scherfestigkeit PETG in der Schichtebene, vorsichtig
 F_hook = A_hook * tau
 F_pin = 2 * math.pi / 4 * M.PIN_D ** 2 * 10.0   # zweischnittig, 10 MPa ANNAHME (gedruckter Stift, quer zu den Schichten)
-rest = (M.T + M.S_N) - (M.HOOK_D + M.GR_CLR)
 say(f"Grobe Tragkraft (ANNAHMEN Scherfestigkeit): Hakenwurzel ca. {F_hook:.0f} N, Stift zweischnittig ca. {F_pin:.0f} N. Deckel wiegt ca. {mass['Deckel']:.0f} g.")
 ok(min(F_hook, F_pin) >= 100, "Verschluss trägt ein Vielfaches dessen, was beim Tragen und Umkippen am Deckel zieht (≥ 100 N)")
-ok(rest >= 2.0, f"Restwand der Basis hinter der Rastnut {rest:.2f} mm")
-say(f"Lagerböcke: Stift Ø {M.PIN_D} (wie Scharnier), rechts Bohrung {M.HOLE_SLIP} (schiebt sich durch) mit Senkung für den Kopf, links {M.HOLE_PRESS} (klemmt), Lasche {M.HOLE_LID} (dreht frei). "
+rest = (M.T + M.S_N) - (M.HOOK_D + M.GR_CLR)
+ok(rest >= 1.6, f"Restwand der Basis hinter der Rastnut {rest:.2f} mm (≥ 4 Linien)")
+neck_ch = M.T + M.S_N - (M.HOOK_D + M.CH_CLR)
+ok(neck_ch >= 1.6, f"Hals an der Rinne für den Haken {neck_ch:.2f} mm (wie oben am Hals; vom Deckel verdeckt)")
+say(f"Lagerböcke: Stift Ø {M.PIN_D} (wie Scharnier), rechts Bohrung {M.HOLE_SLIP} (schiebt sich durch) mit Senkung für den Kopf, links {M.HOLE_PRESS} (klemmt), Lasche {M.HOLE_CLIP} (dreht mit wenig Spiel). "
       f"Der Laschenkopf liegt flach am Deckel an: die Lasche kann nicht nach innen umklappen, Ziehen an der Griffnase biegt nur die Feder.")
 ok(M.R_CHEEK - M.HOLE_SLIP / 2 >= 2.4, f"Wand um die Bohrung im Lagerbock {M.R_CHEEK - M.HOLE_SLIP / 2:.2f} mm")
-ok(M.BLK_T / 2 - M.HOLE_LID / 2 >= 1.9, f"Wand um die Bohrung im Laschenkopf {M.BLK_T / 2 - M.HOLE_LID / 2:.2f} mm")
+ok(M.BLK_T / 2 - M.HOLE_CLIP / 2 >= 1.9, f"Wand um die Bohrung im Laschenkopf {M.BLK_T / 2 - M.HOLE_CLIP / 2:.2f} mm")
 say(f"Scharnier: 2 × 3 Knöchel (Basis {M.KB_L:.0f} / Deckel {M.KL_L:.0f} / Basis {M.KB_L:.0f} mm, Spiel {M.K_GAP} mm), Knöchel R {M.R_K} mm, "
     f"Stift Ø {M.PIN_D} gedruckt (Bohrungen: außen {M.HOLE_SLIP}, Deckel {M.HOLE_LID}, innen {M.HOLE_PRESS} klemmt). Achse jetzt auf Höhe der Fuge ({M.Z_H:.0f} mm), "
     f"damit der Deckelrand hinten beim Öffnen vom Hals weg schwenkt.")
+ok((M.HOLE_CLIP - M.PIN_D) / 2 >= 0.1, f"Lasche dreht auf dem Stift: {(M.HOLE_CLIP - M.PIN_D) / 2:.2f} mm Luft je Seite")
 ok(M.R_K - M.HOLE_LID / 2 >= 2.4, f"Wand um die Deckelbohrung {M.R_K - M.HOLE_LID / 2:.2f} mm")
 ok(M.R_K - M.HOLE_SLIP / 2 >= 2.4, f"Wand um die Basisbohrungen {M.R_K - M.HOLE_SLIP / 2:.2f} mm")
-ok((M.HOLE_LID - M.PIN_D) / 2 >= 0.25, f"Deckelknöchel und Lasche drehen frei: {(M.HOLE_LID - M.PIN_D) / 2:.2f} mm Luft je Seite")
+ok((M.HOLE_LID - M.PIN_D) / 2 >= 0.25, f"Deckelknöchel drehen frei: {(M.HOLE_LID - M.PIN_D) / 2:.2f} mm Luft je Seite")
 
 # ----------------------------------------------------------------------------- 6 Wände
 say()
@@ -330,7 +358,7 @@ for n, o in printed.items():
 
 say()
 say("Erwartete Überhänge (bewusst): Bohrungen als Tropfen (Spitze 45°, zählen wegen Rundung auf genau 45° mit), Brücke über den Hohlräumen des Inlays (Dach ≤ 14 mm Spannweite), "
-    f"Haltefläche der Rastnut in der Basis (waagerecht, {M.HOOK_D + M.GR_CLR + 1.0:.1f} mm tief, {M.CL_W - 0.8:.1f} mm breit: druckt als kurze Brücke zwischen den Nutwänden), "
+    f"Haltefläche der Rastnut in der Basis (waagerecht, {M.HOOK_D + M.GR_CLR + 1.0:.1f} mm tief, {M.CL_W + 1.2:.1f} mm breit: druckt als kurze Brücke zwischen den Nutwänden), "
     "Unterseite der Stiftrundung direkt über dem Bett. Die Lasche liegt auf der Seite: alle Formen liegen in der Druckebene, keine Überhänge.")
 fp = M.inset_outer(0)
 say(f"Haftfläche: Basis {M.W_O - 2 * fp:.0f} × {M.D_O - 2 * fp:.0f} mm, Deckel-Dach {M.W_O - 2 * M.inset_outer(M.H):.0f} × {M.D_O - 2 * M.inset_outer(M.H):.0f} mm – kein Brim nötig")

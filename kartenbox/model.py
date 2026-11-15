@@ -114,19 +114,23 @@ P_["Z_L"] = (Z_L, "berechnet", "Fuge: Deckelrand liegt hier auf der Stufe der Ba
 
 # ----------------------------------------------------------------------------- Verschluss: Klemmlasche (v3)
 CL_W = par("CL_W", 22.0, "festgelegt", "Breite der Klemmlasche")
-CL_T = par("CL_T", 2.0, "Probedruck", "Federdicke der Lasche (5 Linien; Lasche liegt beim Druck auf der Seite, Schichten laufen entlang der Biegung)")
+CL_T = par("CL_T", 1.8, "Probedruck", "Federdicke der Lasche (5 Linien; Lasche liegt beim Druck auf der Seite, Schichten laufen entlang der Biegung)")
 CL_GAP = par("CL_GAP", 0.2, "festgelegt", "Luft Lasche ↔ Außenfläche Deckel/Basis")
-HOOK_D = par("HOOK_D", 1.6, "festgelegt", "Haken ragt so weit in die Basis (= Federweg beim Schließen und Öffnen)")
+HOOK_D = par("HOOK_D", 2.4, "festgelegt", "Haken ragt so weit in die Basis (= Federweg beim Schließen und Öffnen); der Hals hat dafür vorn eine Rinne")
 HOOK_FLAT = par("HOOK_FLAT", 1.0, "festgelegt", "senkrechte Stirn des Hakens")
-Z_HC = par("Z_HC", Z_L - 3.0, "festgelegt", "Haltefläche des Hakens (waagerecht, Oberseite)")
+Z_HC = par("Z_HC", Z_L - 8.0, "festgelegt", "Haltefläche des Hakens (waagerecht, Oberseite); tief genug unter der Fuge für eine lange, weiche Feder")
+LEAD_ANG = par("LEAD_ANG", 30.0, "festgelegt", "Einlaufschräge am Haken gegen die Senkrechte (leichtes Schließen)")
 PLAY_V = par("PLAY_V", 0.2, "festgelegt", "senkrechtes Spiel Haken ↔ Nut (Deckel liegt auf der Stufe, nicht auf dem Haken)")
 GR_CLR = par("GR_CLR", 0.4, "festgelegt", "Nut tiefer als der Haken")
-L_FLEX = par("L_FLEX", 26.0, "festgelegt", "freie Federlänge der Lasche (Kopf bis Haken)")
+L_FLEX = par("L_FLEX", 31.0, "festgelegt", "Laschenkopf beginnt so weit über der Haltefläche des Hakens")
 BLK_T = par("BLK_T", 8.5, "festgelegt", "Laschenkopf dick (Bohrung für den Stift)")
 BLK_H = par("BLK_H", 11.0, "festgelegt", "Laschenkopf hoch")
 CHEEK_W = par("CHEEK_W", 5.0, "festgelegt", "Lagerbock am Deckel, Breite je Seite")
 CHEEK_CLR = par("CHEEK_CLR", 0.4, "festgelegt", "seitliche Luft Lasche ↔ Lagerbock")
-GRIP = par("GRIP", 3.5, "festgelegt", "Griffnase unten an der Lasche, steht so weit vor")
+GRIP = par("GRIP", 6.0, "festgelegt", "Griffnase unten an der Lasche, steht so weit vor (Finger greift dahinter)")
+HOLE_CLIP = par("HOLE_CLIP", 4.3, "Probedruck", "Bohrung im Laschenkopf (dreht, aber wenig Spiel: Haken bleibt in der Nut)")
+PRE_N = par("PRE_N", 2.0, "Probedruck", "Vorspannung: Lasche drückt geschlossen mit dieser Kraft unten gegen die Basis (gedruckt leicht nach innen vorgebogen)")
+CH_CLR = par("CH_CLR", 0.4, "festgelegt", "Rinne im Hals: Luft vor der Hakenspitze beim Zuklappen")
 Z_BLK0 = Z_HC + L_FLEX
 Z_CPIN = Z_BLK0 + BLK_H / 2
 Z_GRIP = Z_HC - 11.0
@@ -443,7 +447,7 @@ def _xz_prism(pts_xz, y0, y1):
 
 Y_OUT_F = -(D_O / 2 + S_N) * (1 + BY / (D_O / 2))   # Außenfläche vorn in der Mitte nach der Wölbung (Deckel und Basis bündig; im Bereich der Lasche praktisch eben)
 Y_CI = Y_OUT_F - CL_GAP                  # Lasche innen
-Y_PIN = Y_OUT_F - 0.1 - BLK_T / 2        # Stiftachse der Lasche
+Y_PIN = Y_OUT_F - 0.02 - BLK_T / 2       # Stiftachse der Lasche
 CL_X = CL_W / 2
 CHEEK_X0 = CL_X + CHEEK_CLR
 CHEEK_X1 = CHEEK_X0 + CHEEK_W
@@ -453,11 +457,11 @@ R_CHEEK = 4.8
 def clip_profile():
     """Profil der Klemmlasche (y-z, Einbaulage, geschlossen): Kopf, Feder, Haken, Griffnase."""
     yi, yo = Y_CI, Y_CI - CL_T
-    yb = Y_OUT_F - 0.1                      # Kopf liegt fast am Deckel an (Verdrehsicherung)
+    yb = Y_OUT_F - 0.02                     # Kopf liegt am Deckel an (Verdrehsicherung)
     z0, z1 = Z_BLK0, Z_BLK0 + BLK_H
     hz1 = Z_HC
     hz0 = Z_HC - HOOK_FLAT
-    hz_r = hz0 - (HOOK_D + CL_GAP)           # 45°-Einlauf
+    hz_r = hz0 - (HOOK_D + CL_GAP) / math.tan(math.radians(LEAD_ANG))   # Einlaufschräge
     ytip = Y_OUT_F + HOOK_D
     gz = Z_GRIP
     return [
@@ -466,19 +470,39 @@ def clip_profile():
         (yb - BLK_T + 1.5, z1), (yb - BLK_T, z1 - 1.5),           # Kopf, Kanten gefast
         (yb - BLK_T, z0 + 1.5), (yb - BLK_T + 1.5, z0),
         (yo - 2.5, z0 - 0.01), (yo - 1.2, z0 - 1.0), (yo - 0.4, z0 - 2.4), (yo, z0 - 4.0),   # Übergang Kopf → Feder (gerundet)
-        (yo, gz + GRIP + 3.5), (yo - GRIP, gz + 1.6), (yo - GRIP, gz + 0.8), (yo - GRIP + 0.8, gz),  # Griffnase
-        (yi, gz),
+        (yo, gz + GRIP + 4.0), (yo - GRIP + 0.6, gz + 4.6), (yo - GRIP, gz + 3.6), (yo - GRIP, gz + 2.2),   # Griffnase (oben 45°)
+        (yo - GRIP + 0.5, gz + 1.0), (yo - GRIP + 1.6, gz + 0.2), (yo - GRIP + 3.0, gz),                  # unten gerundet (Finger)
+        (Y_OUT_F - 0.05, gz + 0.6), (Y_OUT_F - 0.05, gz + 3.0), (yi, gz + 3.6),                           # Druckpunkt innen (Vorspannung)
     ]
 
 
 def clip():
     """Klemmlasche in Einbaulage (geschlossen), mit Bohrung für den Stift."""
     m = _yz_prism(clip_profile(), -CL_X, CL_X)
-    trim = Manifold.batch_boolean([box(-CL_X - 1, Y_CI + 0.01, Z_HC - 6, -CL_X + 1.0, Y_OUT_F + HOOK_D + 1, Z_HC + 1),
-                                   box(CL_X - 1.0, Y_CI + 0.01, Z_HC - 6, CL_X + 1, Y_OUT_F + HOOK_D + 1, Z_HC + 1)], manifold3d_op("add"))
-    m = m - trim                                                         # Haken 1 mm schmaler je Seite
-    m = m - cyl_x(-CL_X - 1, CL_X + 1, Y_PIN, Z_CPIN, HOLE_LID / 2, 48)  # dreht frei; im Druck senkrecht, rund
+    m = m - cyl_x(-CL_X - 1, CL_X + 1, Y_PIN, Z_CPIN, HOLE_CLIP / 2, 48)  # dreht; im Druck senkrecht, rund
     return m
+
+
+def clip_pivot():
+    """Wurzel der Feder (Übergang Kopf → Feder), Mitte der Federdicke."""
+    return Y_CI - CL_T / 2, Z_BLK0 - 4.0
+
+
+def clip_free():
+    """Lasche wie gedruckt: Feder und Griff um die Wurzel nach innen vorgebogen, so dass sie eingebaut mit PRE_N
+    am Druckpunkt gegen die Basis drückt."""
+    m = clip()
+    py, pz = clip_pivot()
+    L = pz - (Z_GRIP + 1.8)
+    E, I = 1800.0, CL_W * CL_T ** 3 / 12
+    d = PRE_N * L ** 3 / (3 * E * I)           # Weg am Druckpunkt für PRE_N (Kragarm ab der Wurzel; ANNAHME E = 1800 MPa)
+    a = math.atan2(d, L)
+    lower = m ^ box(-50, -200, -50, 50, 200, pz)
+    upper = m - box(-50, -200, -50, 50, 200, pz)
+    c, s_ = math.cos(a), math.sin(a)
+    # Drehung um x durch (py, pz), Unterseite wandert nach +y (Richtung Basis)
+    T = np.array([[1, 0, 0, 0], [0, c, -s_, py - c * py + s_ * pz], [0, s_, c, pz - s_ * py - c * pz]], dtype=np.float32)
+    return upper + lower.transform(T), d
 
 
 def cheeks():
@@ -516,15 +540,23 @@ def clip_pin(d=None):
 
 
 def groove_profile():
-    """Rastnut in der Basis (y-z): Haltefläche waagerecht (im Druck Brücke über die Nutbreite), Boden 45°."""
+    """Rastnut in der Basis (y-z): Haltefläche waagerecht (im Druck Brücke über die Nutbreite), Boden parallel zur Einlaufschräge."""
     yb = Y_OUT_F + HOOK_D + GR_CLR
     zt = Z_HC + PLAY_V
     zb = Z_HC - HOOK_FLAT - 0.4
-    return [(Y_OUT_F - 1.0, zt), (Y_OUT_F - 1.0, zb - (yb - Y_OUT_F + 1.0)), (yb, zb), (yb, zt)]
+    k = 1.0 / math.tan(math.radians(LEAD_ANG))
+    yo = Y_OUT_F - 1.0
+    return [(yo, zt), (yo, zb - k * (yb - yo)), (yb, zb), (yb, zt)]
+
+
+def neck_channel():
+    """Rinne vorn im Hals, durch die der Haken beim Zuklappen gleitet (vom Deckel verdeckt)."""
+    xr = CL_X + 0.5
+    return box(-xr, Y_OUT_F - 10, Z_L, xr, Y_OUT_F + HOOK_D + CH_CLR, P + 1)
 
 
 def base_latch_cut():
-    xr = CL_X - 1.0 + 0.6
+    xr = CL_X + 0.6
     return _yz_prism(groove_profile(), -xr, xr)
 
 
@@ -563,6 +595,7 @@ def lid_front_zone():
 def base():
     cav = cavity_body(T, P + 1)
     body = outer_body(0, Z_L) + neck_body(Z_L - 0.01, P)
+    body = body - neck_channel()
     shell = body - cav
     shell = shell + (base_knuckles() - cav - lid_inner()) + (ears() - cav)
     shell = shell - base_latch_cut() - base_knuckle_holes() - ear_holes()

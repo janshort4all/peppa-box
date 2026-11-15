@@ -20,6 +20,11 @@ import time
 PORT = 47150
 FLUSS_ALTER_S = 2.5
 NEU_VERSUCH_S = 10.0
+# Befund 15.11.2026: Nach "Verbindung zu Spotify getrennt" scheitert der nächste Titel ("nicht abspielbar"),
+# librespot meldet dafür ein Ende-Ereignis. Das galt bisher als "Karte zu Ende gehört" – der Wächter holte die
+# Musik nicht zurück und die gemerkte Stelle wurde gelöscht. Ein Ende zählt jetzt nur, wenn der Titel wirklich
+# lief, die Verbindung steht und in den letzten STOERUNG_FENSTER_S Sekunden keine Störung gemeldet wurde.
+STOERUNG_FENSTER_S = 120.0
 
 
 class Rueckmeldung:
@@ -40,6 +45,8 @@ class Rueckmeldung:
         self.dauer_ms = None
         self._pos = None                 # (Position in ms, Zeit) aus playing/paused/seeked
         self.verbunden = None            # session_connected / session_disconnected
+        self.stoerung_zeit = None        # letzte Störung: session_disconnected oder unavailable
+        self.titel_gespielt = False      # kam für den aktuellen Titel ein "playing"?
         self._faden = None
         self.empfang_ok = False
 
@@ -133,7 +140,14 @@ class Rueckmeldung:
             if name in ("track_changed", "playing", "paused", "loading") and n.get("track_id"):
                 if n.get("track_id") != self.titel:
                     self._pos = None
+                    self.titel_gespielt = False
                 self.titel = n.get("track_id")
+            if name == "track_changed":
+                self.titel_gespielt = False
+            if name == "playing":
+                self.titel_gespielt = True
+            if name in ("session_disconnected", "unavailable"):
+                self.stoerung_zeit = t
             if name == "track_changed":
                 self.titel_uri = n.get("uri") or self.titel_uri
                 try:
@@ -174,6 +188,21 @@ class Rueckmeldung:
         if not self.spielt or not self.titel_uri or p is None:
             return None
         return self.titel_uri, p
+
+    def am_ende(self):
+        """Lief der letzte Titel wirklich aus (Karte zu Ende gehört)? Nicht, wenn der Titel gar nicht lief,
+        die Verbindung zu Spotify fehlt oder eben eine Störung war (Befund 15.11.2026, siehe oben)."""
+        with self._sperre:
+            ereignis, gespielt = self.ereignis, self.titel_gespielt
+            verbunden, stoerung = self.verbunden, self.stoerung_zeit
+        if not ereignis or not gespielt or verbunden is False:
+            return False
+        if stoerung is not None and self.jetzt() - stoerung < STOERUNG_FENSTER_S:
+            return False
+        if ereignis[0] == "end_of_track":
+            return True
+        pos, dauer = self.position(), self.dauer_ms
+        return ereignis[0] == "stopped" and pos is not None and bool(dauer) and dauer - pos < 10000
 
     def relais_aktiv(self):
         return self.relais_zeit is not None

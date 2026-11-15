@@ -178,7 +178,8 @@ class Dienste:
 
 class Steuerung:
     def __init__(self, spotify, dienste=None, geraet="Peppa Box", jetzt=time.monotonic,
-                 log=print, bei_bereit=None, lokal=None, fortschritt=None, zu_ende=None, stumm=None, ton=None):
+                 log=print, bei_bereit=None, lokal=None, fortschritt=None, zu_ende=None, stumm=None, ton=None,
+                 sagen=None):
         self.sp, self.dienste = spotify, dienste or Dienste()
         self.lokal = lokal or (lambda: None)   # Messfühler: spielt Raspotify wirklich? (LibrespotLast)
         self.geraet, self.jetzt, self.log, self.bei_bereit = geraet, jetzt, log, bei_bereit
@@ -227,6 +228,7 @@ class Steuerung:
         # unsicher; ohne Tonausgabe-Meldung unternimmt der Wächter nichts.
         self.ton = ton or (lambda: None)
         self.zu_ende = zu_ende      # Rückfrage: ist die Karte zu Ende gehört? (Player, aus den librespot-Ereignissen)
+        self.sagen = sagen          # Ansage (Name aus toene.ANSAGEN), z. B. wenn der Wächter aufgibt
         self.still_seit = None      # seit wann bei laufender Karte kein Ton fließt
         self.fluss_seit = None      # seit wann wieder Ton fließt
         self.waechter_versuche = 0
@@ -475,11 +477,17 @@ class Steuerung:
                 self.ist = None                         # nicht "weiter", sondern an der gemerkten Stelle neu
                 self.erledigt_nr = self.wunsch_nr - 1
                 self.fehler = 0
+                self.wunsch_zeit = jetzt                # Wartezeit neu: „Einen Moment …“, „kein Internet“ (15.11.)
                 text = (f"Musik ist ausgegangen (seit {still} s kein Ton, Karte liegt) – wird zurückgeholt "
                         f"(Versuch {self.waechter_versuche} von {WAECHTER_VERSUCHE}).")
         if text:
             self.log(text)
         else:
+            if self.sagen:
+                try:
+                    self.sagen("musik_weg")
+                except Exception as e:
+                    self.log(f"  Wächter: Ansage nicht möglich: {e!r}")
             self._melden(f"Musik ist wieder ausgegangen und wurde schon {WAECHTER_VERSUCHE} mal zurückgeholt. "
                          "Die Box lässt sie jetzt aus (spielt vielleicht ein Handy mit demselben Spotify-Konto?). "
                          "Play antippen oder Karte neu einstecken startet sie wieder.")

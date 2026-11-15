@@ -58,6 +58,7 @@ ANSAGEN = {
     "moment": "Einen Moment, die Musik kommt gleich.",
     "kein_internet": "Ich finde gerade kein Internet. Ich versuche es weiter.",
     "anmeldung": "Ich bin nicht bei Spotify angemeldet. Bitte frag Mama oder Papa.",
+    "musik_weg": "Die Musik geht gerade nicht. Tipp auf Play, dann versuche ich es noch einmal.",
     "timer_15": "Schlummer-Timer: Die Musik geht in fünfzehn Minuten aus.",
     "timer_30": "Schlummer-Timer: Die Musik geht in dreißig Minuten aus.",
     "timer_45": "Schlummer-Timer: Die Musik geht in fünfundvierzig Minuten aus.",

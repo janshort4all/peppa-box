@@ -118,6 +118,26 @@ class Befund1Waechter(MitSteuerung):
         self.lauf(15)
         self.assertEqual(self.starts()[-1], ("spielen", A))
 
+    # Befund 15.11.2026: Ansagen beim Zurückholen und beim Aufgeben
+    def test_zurueckholen_setzt_wartezeit_neu(self):
+        self.spielen()
+        vorher = self.st.wunsch_zeit
+        self.sp.spielend = False
+        self.lauf(steuerung.STILL_NACH_S + 3)
+        self.assertTrue(any("zurückgeholt" in t for t in self.log))
+        self.assertGreater(self.st.wunsch_zeit, vorher)   # „Einen Moment …“ / „kein Internet“ greifen wieder
+
+    def test_aufgeben_sagt_musik_weg(self):
+        gesagt = []
+        self.st.sagen = gesagt.append
+        self.spielen()
+        kein_ton = [True]
+        self.ton = lambda: not kein_ton[0]                # Spotify meint „spielt“, aber es kommt kein Ton
+        self.st.lokal = lambda: self.sp.spielend
+        self.lauf(steuerung.WAECHTER_VERSUCHE * 40 + 60)
+        self.assertEqual(gesagt.count("musik_weg"), 1)
+        self.assertIsNone(self.st.wunsch)
+
     def test_kurze_luecke_und_unbekannter_tonfluss_loesen_nichts_aus(self):
         self.spielen()
         n = len(self.starts())

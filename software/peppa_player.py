@@ -200,7 +200,8 @@ class Player:
                             lokal=lokaler_beleg(self.rueck, LibrespotLast()) if sp is spotify else None,
                             fortschritt=self.fortschritt, zu_ende=self._karte_zu_ende,
                             ton=self._tonfluss if sp is spotify else None,
-                            stumm=lambda an: self.ausgang.zwangsstumm(an))
+                            stumm=lambda an: self.ausgang.zwangsstumm(an),
+                            sagen=lambda name: self.ansager.sagen(name))
         self._spielte = None                    # Karte, die im letzten Durchlauf lief
         self._link_offen = None                 # (Kartennummer, seit wann): Link der Karte wird noch versucht
         self.auto = automatik.Automatik(SpotifyFuerAutomatik(self.st, sp, GERAET), lautstaerke, einstellungen,
@@ -527,6 +528,10 @@ class Player:
         ok, aus = (self.sparen_befehl if sparen else self.ausschalten_befehl)()
         if not ok:
             self.log(f"{'Sparzustand' if sparen else 'Ausschalten'} fehlgeschlagen: {aus}")
+            try:
+                self.hw.wecken()                # Touchfelder wieder an (sie lagen schon schlafen)
+            except Exception:
+                pass
             with self._aus_sperre:
                 self.faehrt_runter = False
 
@@ -587,12 +592,7 @@ class Player:
 
     def _karte_zu_ende(self):
         """Ist die Karte zu Ende gehört (letzter Titel lief aus)? Aus den Ereignissen von librespot."""
-        ereignis = self.rueck.ereignis
-        if not ereignis:
-            return False
-        pos, dauer = self.rueck.position(), self.rueck.dauer_ms
-        return ereignis[0] == "end_of_track" or (
-            ereignis[0] == "stopped" and pos is not None and bool(dauer) and dauer - pos < 10000)
+        return self.rueck.am_ende()
 
     def _stelle_merken(self):
         """Jede Sekunde: Wo ist die Musik der liegenden Karte? (aus den librespot-Ereignissen)"""
@@ -604,11 +604,8 @@ class Player:
             stelle = self.rueck.stelle()
             if stelle:
                 self.fortschritt.merken(karte, *stelle)
-            ereignis, alter = self.rueck.ereignis, self.rueck.status.get("ereignis_vor_s")
-            pos, dauer = self.rueck.position(), self.rueck.dauer_ms
-            am_ende = ereignis and (ereignis[0] == "end_of_track" or (
-                ereignis[0] == "stopped" and pos is not None and dauer and dauer - pos < 10000))
-            if am_ende and alter is not None and alter > 5:
+            alter = self.rueck.status.get("ereignis_vor_s")
+            if alter is not None and alter > 5 and self.rueck.am_ende():
                 self.fortschritt.vergessen(karte)   # zu Ende gehört: nächstes Mal von vorn
         elif self._spielte:
             self.fortschritt.sichern(sofort=True)   # Pause/Karte weg: Stelle gleich auf die Karte schreiben

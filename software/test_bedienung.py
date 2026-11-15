@@ -568,11 +568,33 @@ class HardwareAbfrage(Basis):
         self.assertIsNotNone(self.hw.mpr)
         self.bed.felder_abbrechen.assert_called()
 
+    # Befund 15.11.2026: vor dem Sparzustand schlafen gelegter Chip wurde gleich wieder eingerichtet
+    def test_schlafender_chip_wird_nicht_neu_eingerichtet(self):
+        self.schritte(0.1)
+        n = len(FakeMPR.instanzen)
+        self.hw.schlafen()
+        FakeMPR.instanzen[-1].fehler = OSError("misst nicht mehr")
+        self.schritte(3.0)
+        self.assertEqual(len(FakeMPR.instanzen), n)
+        self.assertFalse(any("neu eingerichtet" in t for t in self.log))
+        self.hw.wecken()                                     # Ausschalten gescheitert: Touch wieder an
+        self.schritte(0.1)
+        self.assertEqual(len(FakeMPR.instanzen), n + 1)
+
+    def test_chip_nach_kurzer_stoerung_schnell_wieder_da(self):
+        self.schritte(0.1)
+        FakeMPR.einrichten_fehler = OSError("[Errno 5] Input/output error")
+        FakeMPR.instanzen[-1].fehler = OSError("[Errno 5] Input/output error")
+        self.schritte(5.0)                                   # Störung (vorher: 19 s ohne Touch)
+        FakeMPR.einrichten_fehler = None
+        self.schritte(4.0)
+        self.assertIsNotNone(self.hw.mpr)
+
     def test_chip_fehlt_wachsender_abstand_und_bus_befreien(self):
         FakeMPR.einrichten_fehler = OSError("kein Gerät")
         self.schritte(20)
         versuche = len(FakeMPR.instanzen)
-        self.assertTrue(3 <= versuche <= 5, versuche)          # 1 + 2 + 5 + 10 s
+        self.assertTrue(6 <= versuche <= 8, versuche)          # 1 + 1 + 2 + 2 + 3 + 5 + 10 s (15.11.2026)
         self.assertEqual(self.befreit, versuche)
         self.assertIsNotNone(self.hw.touch_fehler)
         FakeMPR.einrichten_fehler = None

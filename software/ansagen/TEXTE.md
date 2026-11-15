@@ -18,6 +18,7 @@ Probehören: Eltern-Seite → Bedienung → Ansagen anhören, oder `python3 ~/pe
 | `moment.wav` | Einen Moment, die Musik kommt gleich. | Karte wartet 8 s auf Musik |
 | `kein_internet.wav` | Ich finde gerade kein Internet. Ich versuche es weiter. | Karte wartet 25 s, kein Netz |
 | `anmeldung.wav` | Ich bin nicht bei Spotify angemeldet. Bitte frag Mama oder Papa. | Karte wartet 25 s, Spotify-Anmeldung abgelaufen |
+| `musik_weg.wav` | Die Musik geht gerade nicht. Tipp auf Play, dann versuche ich es noch einmal. | Musik ist bei liegender Karte ausgegangen und kam auch nach 2 Versuchen nicht zurück |
 | `timer_15.wav` | Schlummer-Timer: Die Musik geht in fünfzehn Minuten aus. | Mond-Feld antippen |
 | `timer_30.wav` | Schlummer-Timer: Die Musik geht in dreißig Minuten aus. | Mond-Feld antippen |
 | `timer_45.wav` | Schlummer-Timer: Die Musik geht in fünfundvierzig Minuten aus. | Mond-Feld antippen |

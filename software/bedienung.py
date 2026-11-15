@@ -61,7 +61,9 @@ TOUCH_ABFRAGE_S = 0.25
 TOUCH_PRUEFEN_S = 5.0
 TOUCH_KLEMMT_S = 60.0
 INT_HAENGT_S = 2.0
-NEU_VERSUCH_S = [1, 2, 5, 10, 30, 60]
+# Touch-Chip neu einrichten: erst mehrmals kurz hintereinander (15.11.2026: nach einer kurzen I2C-Störung
+# waren die Felder 19 s tot, weil der Abstand schon beim 4. Versuch 10 s betrug), dann seltener.
+NEU_VERSUCH_S = [1, 1, 2, 2, 3, 5, 10, 30, 60]
 SEITE_OFFEN_S = 5.0
 STUMM_PRUEFEN_S = 2.0
 LIVE_MIN_S, LIVE_MAX_S = 0.2, 2.0
@@ -429,6 +431,7 @@ class Hardware:
         self._mpr_versuche = 0
         self._mpr_schwellen = None
         self._mpr_fehler = 0
+        self._schlaeft = False          # Touch-Chip vor dem Ausschalten schlafen gelegt: nicht wieder wecken
         self.touch_fehler = None
         self._gemeldet = None
         self._touch_naechste = 0.0
@@ -582,6 +585,8 @@ class Hardware:
         self.log(f"Touch-Chip bereit (Schwelle {schwellen[0]}, loslassen {schwellen[1]}).")
 
     def _touch(self, w, t, cfg):
+        if self._schlaeft:              # 15.11.2026: sonst „misst nicht mehr – wird neu eingerichtet“ und der
+            return                      # Chip war vor dem Sparzustand / Ausschalten wieder wach
         if self.mpr is not None:
             b = cfg["bedienung"]
             if (b["touch_schwelle"], b["touch_loslassen"]) != self._mpr_schwellen:
@@ -695,8 +700,15 @@ class Hardware:
 
     # ------------------------------------------------------------ Ausschalten
 
+    def wecken(self):
+        """Ausschalten ist gescheitert, die Box läuft weiter: Touch-Chip wieder einrichten."""
+        self._schlaeft = False
+        self.mpr = None
+        self._mpr_naechster = 0.0
+
     def schlafen(self):
-        """Touch-Chip in den Stopp-Betrieb (vor dem Ausschalten)."""
+        """Touch-Chip in den Stopp-Betrieb (vor dem Ausschalten). Danach bleibt er aus, bis der Player endet."""
+        self._schlaeft = True
         if self.mpr is None:
             return
         if i2c.SPERRE.acquire(timeout=1):

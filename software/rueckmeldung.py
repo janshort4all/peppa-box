@@ -25,6 +25,7 @@ NEU_VERSUCH_S = 10.0
 # Musik nicht zurück und die gemerkte Stelle wurde gelöscht. Ein Ende zählt jetzt nur, wenn der Titel wirklich
 # lief, die Verbindung steht und in den letzten STOERUNG_FENSTER_S Sekunden keine Störung gemeldet wurde.
 STOERUNG_FENSTER_S = 120.0
+UEBERGANG_S = 20.0               # end_of_track höchstens so lange vor track_changed: natürlicher Übergang
 
 
 class Rueckmeldung:
@@ -47,6 +48,9 @@ class Rueckmeldung:
         self.verbunden = None            # session_connected / session_disconnected
         self.stoerung_zeit = None        # letzte Störung: session_disconnected oder unavailable
         self.titel_gespielt = False      # kam für den aktuellen Titel ein "playing"?
+        # Titelwechsel für die Titelfolge-Wache (17.11.2026): (Nr, vorher, nachher, natürlich, Zeit)
+        self.uebergang = None
+        self._ende = None                # (Titel-ID, Zeit) des letzten end_of_track
         self._faden = None
         self.empfang_ok = False
 
@@ -133,6 +137,14 @@ class Rueckmeldung:
         name = n.get("player_event")
         with self._sperre:
             self.ereignis, self.ereignis_zeit = (name, n.get("track_id")), t
+            if name == "end_of_track" and n.get("track_id"):
+                self._ende = (n.get("track_id"), t)
+            if name == "track_changed" and n.get("uri") and n.get("uri") != self.titel_uri:
+                vorher = self.titel_uri
+                natuerlich = bool(vorher and self._ende and self._ende[0] == vorher.split(":")[-1]
+                                  and t - self._ende[1] <= UEBERGANG_S)
+                nr = self.uebergang[0] + 1 if self.uebergang else 1
+                self.uebergang = (nr, vorher, n.get("uri"), natuerlich, t)
             if name in ("playing",):
                 self.spielt = True
             elif name in ("paused", "stopped", "end_of_track", "unavailable"):

@@ -192,7 +192,7 @@ class Dienste:
 class Steuerung:
     def __init__(self, spotify, dienste=None, geraet="Peppa Box", jetzt=time.monotonic,
                  log=print, bei_bereit=None, lokal=None, fortschritt=None, zu_ende=None, stumm=None, ton=None,
-                 sagen=None):
+                 sagen=None, titelliste=None):
         self.sp, self.dienste = spotify, dienste or Dienste()
         self.lokal = lokal or (lambda: None)   # Messfühler: spielt Raspotify wirklich? (LibrespotLast)
         self.geraet, self.jetzt, self.log, self.bei_bereit = geraet, jetzt, log, bei_bereit
@@ -256,6 +256,10 @@ class Steuerung:
         # librespot hat die Verbindung verloren (sitzungswache.py): (seit wann, Meldung) oder None
         self.verloren = None
         self.librespot_stoerungen = []              # Zeitpunkte der letzten librespot-Störungen
+        # Titelfolge (17.11.2026): titelliste(uri) -> [Titel-URI, …] | None (nur Gespeichertes, kein Netz)
+        self.titelliste = titelliste or (lambda uri: None)
+        self.titel_wunsch = None    # (Karte, Titel, Index): Titelfolge-Wache bittet um den richtigen Titel
+        self._soll = None           # [Karte, Titel, Position, Versuch]: Start an gemerkter Stelle, wird geprüft
         # Vorbeugender Neustart: seit wann weder Musik lief noch Raspotify frisch gestartet ist
         self.frisch_seit = jetzt()
 
@@ -351,6 +355,12 @@ class Steuerung:
         der Steuerung (nie zwei Neustarts gleichzeitig); lief Musik, geht es an derselben Stelle weiter."""
         with self._sperre:
             self.reparatur = grund
+            self._sperre.notify_all()
+
+    def titel_korrigieren(self, uri, titel, index=None):
+        """Von der Titelfolge-Wache: librespot hat Titel übersprungen, bitte `titel` der Karte `uri` spielen."""
+        with self._sperre:
+            self.titel_wunsch = (uri, titel, index)
             self._sperre.notify_all()
 
     def verbindung_verloren(self, meldung):
@@ -722,6 +732,7 @@ class Steuerung:
         if weiter and (self.fehler >= 1 or self._frisch == uri):
             weiter = uebertragen = False                # Fortsetzen hat nicht geklappt: frisch starten
         self._mit_stelle = None
+        self._soll = None
         self._start_art = "uebertragen" if uebertragen else "weiter" if weiter else "frisch"
         try:
             if uebertragen:
@@ -740,6 +751,9 @@ class Steuerung:
                     status, data = self.sp.abspielen(dev, uri)
                     text = "Spiele"
                 self._mit_stelle = uri if stelle else None
+                self._soll = ([uri, stelle["titel"], stelle.get("position_ms", 0), 0]
+                              if stelle and stelle.get("titel") and uri.split(":")[1] not in ("track", "episode")
+                              else None)
         except Exception as e:
             self._netzfehler(e, jetzt)
             return
@@ -923,6 +937,8 @@ class Steuerung:
             self.ist = ("pause", p["uri"])
             self.naechster_versuch = 0.0
             return
+        if z is not None and self._soll_pruefen(p, z, jetzt):
+            return
         p["proben"].append(probe)
         if z and probe and probe[0] and self.fortschritt is not None and z.get("titel_uri"):
             try:
@@ -956,6 +972,50 @@ class Steuerung:
         # schon einmal frisch gestartet und wieder nichts: Raspotify ist das Problem
         self.naechster_versuch = 0.0
         self._fehlschlag(jetzt, "Box spielt nach dem Start nicht", neustart_ab=2)
+
+    def _soll_pruefen(self, p, z, jetzt):
+        """Start an gemerkter Stelle: läuft wirklich der gemerkte Titel? librespot 0.8.0 findet ihn manchmal nicht
+        ("using fallback index", 17.11.2026) und beginnt woanders; die Prüfung hätte dann die falsche Stelle
+        gemerkt. Zweimal hintereinander falsch -> einmal über die Nummer in der Titelliste neu starten.
+        True = diese Probe nicht werten."""
+        soll = self._soll
+        if not soll or soll[0] != p["uri"] or z.get("leer") or z.get("geraet") != self.dev or not z.get("spielt"):
+            return False
+        kontext = z.get("kontext")
+        if kontext and kontext.split(":")[-1] != soll[0].split(":")[-1]:
+            return False
+        titel = z.get("titel_uri")
+        if not titel:
+            return False
+        if soll[1] in (titel, z.get("titel_von")):
+            self._soll = None
+            return False
+        p["falsch"] = p.get("falsch", 0) + 1
+        if p["falsch"] < 2:                             # Web-API hinkt manchmal: noch einmal ansehen
+            return True
+        if soll[3] >= 1:
+            self.log(f"  Gemerkte Stelle ({soll[1]}) ließ sich auch beim zweiten Versuch nicht anspielen – "
+                     f"Karte läuft ab {titel}.")
+            self._soll = None
+            return False
+        liste = None
+        try:
+            liste = self.titelliste(soll[0])
+        except Exception:
+            pass
+        idx = liste.index(soll[1]) if liste and soll[1] in liste else None
+        self.log(f"  Falscher Titel nach dem Start ({titel} statt {soll[1]}) – neuer Versuch"
+                 f"{f' über Titel Nr. {idx + 1}' if idx is not None else ''}.")
+        soll[3] += 1
+        try:
+            extra = {"index": idx} if idx is not None else {}
+            status, data = self.sp.abspielen(self.dev, soll[0], titel=soll[1], position_ms=soll[2], **extra)
+        except Exception as e:
+            self._netzfehler(e, jetzt, zaehlen=False)
+            return True
+        self.letzter_befehl = self.letzter_start = jetzt
+        p.update(proben=[], anzahl=0, naechste=jetzt + PRUEF_ERSTE, falsch=0)
+        return True
 
     def _fremd(self, z, uri):
         """Nach Weiter/Übertragen: läuft etwas anderes als die Karte? Nur wenn Spotify es eindeutig sagt."""
@@ -997,6 +1057,9 @@ class Steuerung:
         with self._sperre:
             sprung, spul = self.sprung, self.spul_ms
             laeuft = self._laeuft()
+            tw, self.titel_wunsch = self.titel_wunsch, None
+        if tw:
+            return self._titel_setzen(tw, jetzt)
         if not sprung and not spul:
             return False
         if not laeuft:                                  # inzwischen Pause oder Karte weg
@@ -1043,6 +1106,27 @@ class Steuerung:
                 self.dev, self.dev_zeit = None, -1e9
         if self.phase == "pruefen" and self.pruef:       # Titel/Stelle hat sich bewusst geändert:
             self.pruef.update(proben=[], anzahl=0, naechste=jetzt + PRUEF_ERSTE)   # Prüfung neu
+        return True
+
+    def _titel_setzen(self, tw, jetzt):
+        """Titelfolge korrigieren: den richtigen nächsten Titel der Karte spielen (nicht bei Zufallswiedergabe)."""
+        uri, titel, index = tw
+        with self._sperre:
+            gilt = self.ist == ("spielt", uri) and self.wunsch == ("spielen", uri)
+        if not gilt or self.dev is None:
+            return False
+        try:
+            z = self.sp.zustand()
+            if z and z.get("shuffle"):
+                self.log("  Titelfolge: Zufallswiedergabe ist an – keine Korrektur.")
+                return True
+            extra = {"index": index} if index is not None else {}
+            status, data = self.sp.abspielen(self.dev, uri, titel=titel, **extra)
+        except Exception as e:
+            self._netzfehler(e, jetzt, zaehlen=False)
+            return True
+        self.letzter_befehl = jetzt
+        self.log(f"Titelfolge korrigiert: {titel} (Spotify {status})")
         return True
 
     # ------------------------------------------------------------ Reparatur auf Anforderung

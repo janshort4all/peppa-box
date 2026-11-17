@@ -203,13 +203,17 @@ def link_zu_uri(text):
     raise ValueError("Das sieht nicht nach einem Spotify-Link aus: " + text)
 
 
-def abspielen(device_id, uri, titel=None, position_ms=0):
-    """Karte abspielen; mit titel/position_ms an einer gemerkten Stelle (fortschritt.py) weiter."""
+def abspielen(device_id, uri, titel=None, position_ms=0, index=None):
+    """Karte abspielen; mit titel/position_ms an einer gemerkten Stelle (fortschritt.py) weiter. index: Stelle des
+    Titels in der Playlist (0 = erster); robuster als die Titel-URI, die librespot 0.8.0 manchmal nicht findet
+    ("using fallback index", 17.11.2026)."""
     if uri.split(":")[1] in ("track", "episode"):
         body = {"uris": [uri]}
     else:
         body = {"context_uri": uri}
-        if titel:
+        if index is not None:
+            body["offset"] = {"position": int(index)}
+        elif titel:
             body["offset"] = {"uri": titel}
     if position_ms:
         body["position_ms"] = int(max(0, position_ms))
@@ -246,7 +250,8 @@ def zustand():
     item = data.get("item") or {}
     return {"geraet": (data.get("device") or {}).get("id"), "spielt": bool(data.get("is_playing")),
             "titel": item.get("id") or item.get("uri"), "position": data.get("progress_ms") or 0,
-            "titel_uri": item.get("uri"), "kontext": (data.get("context") or {}).get("uri")}
+            "titel_uri": item.get("uri"), "kontext": (data.get("context") or {}).get("uri"),
+            "titel_von": (item.get("linked_from") or {}).get("uri"), "shuffle": bool(data.get("shuffle_state"))}
 
 
 def uebertragen(device_id, spielen=True):

@@ -48,6 +48,8 @@ import klang
 import lautstaerke
 import rueckmeldung
 import sitzungswache
+import titelfolge
+import titelliste
 import spotify
 import toene
 from steuerung import LibrespotLast, Steuerung
@@ -206,7 +208,9 @@ class Player:
         self.rueck = rueckmeldung.Rueckmeldung(log=log)
         # Weiterspielen an der unterbrochenen Stelle (Wunsch Jan 09.11.2026)
         self.fortschritt = fortschritt.Fortschritt(log=log) if sp is spotify else None
-        self.st = Steuerung(sp, geraet=GERAET, log=log,
+        # Titelreihenfolge der Karten (librespot überspringt Titel / falscher Titel beim Weiterspielen, 17.11.2026)
+        self.listen = titelliste.Titellisten(api=spotify.api, log=log) if sp is spotify else None
+        self.st = Steuerung(sp, geraet=GERAET, log=log, titelliste=self.listen.liste if self.listen else None,
                             lokal=lokaler_beleg(self.rueck, LibrespotLast()) if sp is spotify else None,
                             fortschritt=self.fortschritt, zu_ende=self._karte_zu_ende,
                             ton=self._tonfluss if sp is spotify else None,
@@ -214,6 +218,7 @@ class Player:
                             sagen=lambda name: self.ansager.sagen(name))
         # librespot verliert die Verbindung, ohne es zu melden (Befund 17.11.2026): Protokoll mitlesen
         self.sitzung = sitzungswache.Sitzungswache(self.st.verbindung_verloren, log=log) if sp is spotify else None
+        self.titelfolge = titelfolge.Titelfolge(self.st, self.rueck, self.listen, log=log) if self.listen else None
         self._spielte = None                    # Karte, die im letzten Durchlauf lief
         self._link_offen = None                 # (Kartennummer, seit wann): Link der Karte wird noch versucht
         self.auto = automatik.Automatik(SpotifyFuerAutomatik(self.st, sp, GERAET), lautstaerke, einstellungen,
@@ -614,6 +619,11 @@ class Player:
             self._warten_ansagen()
         except Exception as e:
             self.log(f"Rückmeldung: Fehler {e!r}")
+        try:
+            if getattr(self, "titelfolge", None):
+                self.titelfolge.tick()
+        except Exception as e:                      # darf nie die Kartenabfrage stören
+            self.log(f"Titelfolge: Fehler {e!r}")
         try:
             self._stelle_merken()
         except Exception as e:                      # Merken darf nie die Kartenabfrage stören

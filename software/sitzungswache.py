@@ -23,6 +23,8 @@ MUSTER = (
     "Connection to server closed",          # 17.11.2026 17:54:15: danach kein Neuaufbau
     "Spirc shut down unexpectedly",         # 15.11.2026 07:28 und 17.11.2026 18:19:54
     "Audio key response timeout",           # 17.11.2026 18:38: Titel für Titel nicht abspielbar
+    "Websocket peer does not respond",      # 17.11.2026 19:04:21 in der Pause: danach war librespot tot
+    "Websocket connection failed",
 )
 WIEDER_S = 5.0
 JOURNALCTL = shutil.which("journalctl") or "/usr/bin/journalctl"

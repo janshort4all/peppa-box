@@ -132,6 +132,24 @@ class SchluesselWeg(Verloren):
         self.assertEqual(self.st.ist, ("spielt", A))
 
 
+class PauseDannPlay(Verloren):
+    """19:04: Karte in Pause, librespot verliert die Verbindung ("Websocket peer does not respond"). Play um
+    19:12 traf auf das tote librespot. Jetzt: in der Pause neu starten, Play spielt danach frisch."""
+
+    def test_pause_stoerung_play(self):
+        self.st.karte_auf(A)
+        self.lauf(12)
+        self.st.taste_play()                              # Pause
+        self.lauf(5)
+        self.st.verbindung_verloren("Websocket peer does not respond")
+        self.lauf(15)
+        self.assertEqual(self.di.neustarts, ["raspotify"])
+        self.st.taste_play()
+        self.lauf(15)
+        self.assertEqual(self.st.ist, ("spielt", A))
+        self.assertEqual(self.di.neustarts, ["raspotify"])
+
+
 class Vorbeugend(unittest.TestCase):
     """Ohne Musik alle 30 min Raspotify neu (nur Raspotify, nicht der Mischer), damit jede Karte auf eine
     frische Verbindung trifft (librespot 0.8.0 erholt sich nach Verbindungsverlust nicht)."""
@@ -212,8 +230,9 @@ class Wache(unittest.TestCase):
         for z in zeilen:
             w.zeile(z)
         w.zeile("[2026-11-17T17:38:26Z ERROR librespot_core::audio_key] Audio key response timeout")
+        w.zeile("[2026-11-17T18:04:21Z WARN  librespot_core::dealer] Websocket peer does not respond.")
         self.assertEqual(gemeldet, ["Connection to server closed", "Spirc shut down unexpectedly",
-                                    "Audio key response timeout"])
+                                    "Audio key response timeout", "Websocket peer does not respond"])
 
     def test_echter_lauf_mit_ersatzbefehl(self):
         gemeldet = []

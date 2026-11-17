@@ -1151,3 +1151,18 @@ Schutz gegen Fehlbedienung: mehrere Felder gleichzeitig (Hand auf dem Deckel) l�
 - **Zeitlicher Zusammenhang:** Wechsel 18:38:14 / neue Adresse 18:38:20 → 18:38:26 „Audio key response timeout“. 19:04–19:08 schlechte Verbindung, Wechsel 19:08:35. Wechsel 19:12:37 / neue Adresse 19:12:44 → 19:13:45 „Spirc shut down unexpectedly“. Signal beim Auslesen 57 %.
 - **Die Korrekturen von heute greifen:** 19:13:45 Abbruch, 19:13:49 Wächter mit Raspotify-Neustart, 19:13:57 Musik wieder da (12 s, ohne Bedienung).
 - **Offen / nächster Schritt:** Warum die Adresse bei jedem Wechsel neu vergeben wird (Router oder Pi), ist nicht belegt. Vorschlag: im Router der Box eine feste IP-Adresse zuweisen (DHCP-Reservierung), dann prüfen, ob die Verbindungen einen Wechsel überstehen. Alternative: Box an einen Zugangspunkt binden (`wifi.bssid`), Nachteil: fällt dieser aus, kein Heim-WLAN.
+
+## Nachtrag 17.11.2026 (5) – Bekannte librespot-Fehler (0.8.0) und Abdeckung
+Recherche in den offenen Issues und im CHANGELOG von librespot (Stand 17.11.2026, Raspotify 0.48.4 / librespot 0.8.0 99b6088):
+| Fehler | Abgedeckt? |
+| --- | --- |
+| Verbindungsverlust, librespot erholt sich nicht (PR #1692 offen) | ja: Sitzungswache (5 Muster), Wächter mit Raspotify-Neustart, vorbeugender Neustart nach 30 min |
+| „Connection reset by peer (os error 104)“ → „Spirc shut down unexpectedly“ (#1721) | ja, über das Spirc-Muster |
+| Gerät verschwindet aus der Spotify-App (#1700, #1726) | ja: „Gerät fehlt“ → Neustart nach 45 s (Karte wartet) bzw. 180 s (Leerlauf) |
+| login5 503, librespot beendet sich (#1771, Störung bei Spotify) | ja, soweit möglich: systemd startet neu, Box wartet; Ansage sagt dann evtl. „kein Internet“ |
+| Jeder Titel 404 und übersprungen (#1726, Spotify-seitig) | soweit möglich: Wächter gibt nach 2 Versuchen auf, Ansage „Musik geht gerade nicht“ |
+| CDN liefert keinen Ton (behoben nach 0.8.0, unveröffentlicht) | ja: Wächter (12 s Stille) |
+| „Audio key error“ bei neueren Spotify-Konten (#1649, kein Fix) | nicht lösbar; **erklärt vermutlich, warum das Konto des Sohnes (2026 angelegt) an der Box nicht spielt** → bei Jans Konto bleiben |
+| Beim natürlichen Titelende springt librespot 2–3 Titel weiter (#1848, Raspotify 0.48.2) | **nein** (wichtig für Hörspiele) |
+| Start an gemerkter Stelle: Titel nicht gefunden, „using fallback index“ (am 17.11. 18:42:42 im Protokoll; Fix nach 0.8.0 unveröffentlicht) | **nein**: Prüfung kontrolliert nur die Playlist, nicht den Titel |
+| Lautstärke vom Handy (#1686), Titelwahl iOS (#1849) | betrifft die Box nicht (Lautstärke lokal, Start über Web-API) |

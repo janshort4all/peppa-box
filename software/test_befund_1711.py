@@ -7,7 +7,7 @@ from unittest import mock
 
 import peppa_web
 import sitzungswache
-from steuerung import NEUSTART_ABSTAND, Steuerung
+from steuerung import NEUSTART_ABSTAND, VORBEUGEND_S, Steuerung
 from test_steuerung import FakeDienste, FakeSpotify, Uhr
 
 A = "spotify:playlist:AAAAAAAAAA"
@@ -129,6 +129,73 @@ class SchluesselWeg(Verloren):
         self.lauf(12)
         self.assertEqual(self.di.neustarts, ["raspotify"])
         self.lauf(20)
+        self.assertEqual(self.st.ist, ("spielt", A))
+
+
+class Vorbeugend(unittest.TestCase):
+    """Ohne Musik alle 30 min Raspotify neu (nur Raspotify, nicht der Mischer), damit jede Karte auf eine
+    frische Verbindung trifft (librespot 0.8.0 erholt sich nach Verbindungsverlust nicht)."""
+
+    def setUp(self):
+        self.uhr = Uhr()
+        self.sp = FakeSpotify(self.uhr)
+        self.di = FakeDienste(self.sp)
+        self.di.ton_neu = mock.Mock(return_value=(True, ""))
+        self.log = []
+        self.ton = lambda: self.sp.spielend and self.sp.modus == "gut"
+        self.st = Steuerung(self.sp, self.di, jetzt=self.uhr, log=self.log.append, lokal=lambda: self.ton(),
+                            ton=lambda: self.ton(), zu_ende=lambda: False)
+        self.lauf(3)
+
+    def lauf(self, sekunden):
+        ende = self.uhr.t + sekunden
+        while self.uhr.t < ende:
+            self.st.tick()
+            self.uhr.t += 0.25 if sekunden < 120 else 2.0
+
+    def test_leerlauf_alle_30_min(self):
+        self.lauf(VORBEUGEND_S - 60)
+        self.assertEqual(self.di.neustarts, [])
+        self.lauf(120)
+        self.assertEqual(self.di.neustarts, ["raspotify"])
+        self.di.ton_neu.assert_not_called()               # Mischer bleibt (kein Knacken)
+        self.assertTrue(any(t.startswith("Vorbeugend: Raspotify neu") for t in self.log))
+        self.lauf(VORBEUGEND_S)
+        self.assertEqual(self.di.neustarts, ["raspotify", "raspotify"])
+        self.assertEqual(self.st.neustarts, 0)            # keine wachsenden Reparatur-Abstände
+
+    def test_nicht_waehrend_musik(self):
+        self.st.karte_auf(A)
+        self.lauf(12)
+        self.lauf(2 * VORBEUGEND_S)
+        self.assertEqual(self.di.neustarts, [])
+        self.assertEqual(self.st.ist, ("spielt", A))
+
+    def test_nach_musik_zaehlt_neu(self):
+        self.st.karte_auf(A)
+        self.lauf(12)
+        self.lauf(600)
+        self.st.karte_weg()
+        self.lauf(VORBEUGEND_S - 120)
+        self.assertEqual(self.di.neustarts, [])
+        self.lauf(240)
+        self.assertEqual(self.di.neustarts, ["raspotify"])
+
+    def test_karte_in_pause_spielt_danach_frisch(self):
+        self.st.karte_auf(A)
+        self.lauf(12)
+        self.st.taste_play()                              # Pause, Karte bleibt liegen
+        self.lauf(VORBEUGEND_S + 120)
+        self.assertEqual(self.di.neustarts, ["raspotify"])
+        self.st.taste_play()
+        self.lauf(15)
+        self.assertEqual(self.st.ist, ("spielt", A))
+        self.assertTrue(self.sp.spielend)
+
+    def test_karte_nach_vorbeugendem_neustart_spielt(self):
+        self.lauf(VORBEUGEND_S + 60)
+        self.st.karte_auf(A)
+        self.lauf(15)
         self.assertEqual(self.st.ist, ("spielt", A))
 
 

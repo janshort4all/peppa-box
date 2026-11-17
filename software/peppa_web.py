@@ -365,6 +365,8 @@ def diagnose():
                                                  "raspotify", "leser")}, ensure_ascii=False, indent=1)
 
     abschnitt("Version", lambda: " ".join(str(x) for x in version().values()))
+    abschnitt("Raspotify-Version", lambda: befehl(["dpkg-query", "-W", "-f", "${Version}", "raspotify"], zeit=10)[1]
+              + " / " + befehl(["librespot", "--version"], zeit=10)[1])
     abschnitt("Dienste", lambda: befehl([SYSTEMCTL, "show", "-p",
                                          "Id,ActiveState,SubState,NRestarts,ActiveEnterTimestamp", *DIENSTE], zeit=10)[1])
     abschnitt("Tonweg (Helfer)", lambda: mit_root(HELFER, "zeigen")[1]

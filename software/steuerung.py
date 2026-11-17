@@ -44,6 +44,8 @@ Abgefangen wird
                            sitzungswache.py liest das Protokoll mit und ruft verbindung_verloren(). Im
                            Leerlauf (keine Musik) wird Raspotify nach VERLOREN_GNADE_S neu gestartet, damit die
                            nächste Karte sofort spielt. Läuft Musik, übernimmt der Wächter.
+  Vorbeugend               Ohne Musik startet die Steuerung Raspotify alle VORBEUGEND_S neu (nur Raspotify, nicht
+                           den Mischer: kein Knacken), damit jede Karte auf eine frische Verbindung trifft.
   Kopfhörer ein/aus        betrifft die Steuerung nicht mehr: die Tonausgabe (ausgabe.py) wechselt
                            den Ausgang ohne Neustart (seit 09.11.2026). Nur wenn sie hängt, fordert
                            ausgang.py eine Reparatur an (reparatur_anfordern).
@@ -88,6 +90,8 @@ VERLOREN_GNADE_S = 10.0    # librespot meldet "Verbindung verloren" (sitzungswac
 LIBRESPOT_KAPUTT_N = 2      # so viele librespot-Störungen ...
 LIBRESPOT_KAPUTT_S = 30.0   # ... in so vielen Sekunden bei liegender Karte: sofort zurückholen (17.11.2026 18:38)
 LIBRESPOT_FRISCH_S = 120.0  # Störung so kurz vor dem Zurückholen: dabei Raspotify neu starten
+VORBEUGEND_S = 1800.0      # so lange keine Musik und kein frisches Raspotify -> vorbeugend neu starten (17.11.2026:
+                           # librespot 0.8.0 erholt sich nach "Connection to server closed" nicht, bekannter Fehler)
 SPRUNG_MAX = 5             # so viele Titelsprünge werden höchstens vorgemerkt
 SYSTEMCTL = shutil.which("systemctl") or "/usr/bin/systemctl"
 HELFER = "/usr/local/sbin/peppa-ausgang"
@@ -252,6 +256,8 @@ class Steuerung:
         # librespot hat die Verbindung verloren (sitzungswache.py): (seit wann, Meldung) oder None
         self.verloren = None
         self.librespot_stoerungen = []              # Zeitpunkte der letzten librespot-Störungen
+        # Vorbeugender Neustart: seit wann weder Musik lief noch Raspotify frisch gestartet ist
+        self.frisch_seit = jetzt()
 
     # ------------------------------------------------------------ vom Kartenleser / der Automatik
 
@@ -423,6 +429,8 @@ class Steuerung:
 
     def tick(self):
         jetzt = self.jetzt()
+        if self.ist and self.ist[0] in ("spielt", "startet"):
+            self.frisch_seit = jetzt
         self._wache(jetzt)
         self._stumm_pruefen()
         if self.reparatur is not None:
@@ -442,7 +450,7 @@ class Steuerung:
             self._umsetzen(wunsch, nr, jetzt)
         else:
             self._waechter(jetzt)
-            if self._verloren_pruefen(jetzt):
+            if self._verloren_pruefen(jetzt) or self._vorbeugen(jetzt):
                 return
             self._leerlauf(jetzt)
 
@@ -614,6 +622,29 @@ class Steuerung:
             self.verloren = None
         return True
 
+    def _vorbeugen(self, jetzt):
+        """Lange keine Musik: Raspotify vorbeugend neu starten (True = getan). Nur Raspotify, nicht der Mischer
+        (kein Knacken am Lautsprecher), zählt nicht für die wachsenden Abstände der Reparatur-Neustarts."""
+        if not self.bereit or jetzt - self.frisch_seit < VORBEUGEND_S:
+            return False
+        with self._sperre:
+            if (self.wunsch and self.wunsch[0] == "spielen") or (self.ist and self.ist[0] in ("spielt", "startet")):
+                return False
+            pausiert = self.ist[1] if self.ist and self.ist[0] == "pause" else None
+        minuten = int((jetzt - self.frisch_seit) // 60)
+        ok, aus = self.dienste.neu_starten("raspotify")
+        self.log(f"Vorbeugend: Raspotify neu gestartet (seit {minuten} min keine Musik): {'ok' if ok else aus}")
+        self.frisch_seit = jetzt
+        self.raspotify_start = self.dienste.startzeit("raspotify")   # eigener Neustart, keine "Absturz"-Meldung
+        self.verloren = None
+        self.dev, self.dev_zeit, self.dev_fehlt_seit = None, -1e9, None
+        with self._sperre:
+            if pausiert:                            # Karte liegt in Pause: Play startet frisch an der Stelle
+                self._frisch = pausiert
+            self.nach_neustart_uebertragen = False
+        self.neustart_wartet_bis = jetzt + NACH_NEUSTART
+        return True
+
     def _leerlauf(self, jetzt):
         if jetzt < self.naechste_leerlauf:
             return
@@ -644,6 +675,7 @@ class Steuerung:
         """Raspotify ist neu: altes Gerät ungültig. Lief Musik zur liegenden Karte, wieder anstoßen."""
         self.dev, self.dev_zeit = None, -1e9
         self.verloren = None                        # frisches librespot: die alte Meldung ist erledigt
+        self.frisch_seit = jetzt
         with self._sperre:
             lief = self.ist and self.ist[0] in ("spielt", "startet")
             if self.wunsch and self.wunsch[0] == "spielen" and lief:
@@ -1051,6 +1083,7 @@ class Steuerung:
             self._melden(f"Ton neu gestartet: Raspotify und Mischer ({grund}): {'ok' if ok else aus}")
         self.raspotify_start = self.dienste.startzeit("raspotify")   # eigener Neustart, keine "Absturz"-Meldung
         self.verloren = None                            # frisches librespot
+        self.frisch_seit = jetzt
         self.dev, self.dev_zeit = None, -1e9
         self.dev_fehlt_seit = None
         with self._sperre:

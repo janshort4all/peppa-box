@@ -47,6 +47,7 @@ import karten
 import klang
 import lautstaerke
 import rueckmeldung
+import sitzungswache
 import spotify
 import toene
 from steuerung import LibrespotLast, Steuerung
@@ -211,6 +212,8 @@ class Player:
                             ton=self._tonfluss if sp is spotify else None,
                             stumm=lambda an: self.ausgang.zwangsstumm(an),
                             sagen=lambda name: self.ansager.sagen(name))
+        # librespot verliert die Verbindung, ohne es zu melden (Befund 17.11.2026): Protokoll mitlesen
+        self.sitzung = sitzungswache.Sitzungswache(self.st.verbindung_verloren, log=log) if sp is spotify else None
         self._spielte = None                    # Karte, die im letzten Durchlauf lief
         self._link_offen = None                 # (Kartennummer, seit wann): Link der Karte wird noch versucht
         self.auto = automatik.Automatik(SpotifyFuerAutomatik(self.st, sp, GERAET), lautstaerke, einstellungen,
@@ -261,6 +264,7 @@ class Player:
     def starten(self):
         if self.sp is spotify:
             self.rueck.starten()                # vor allem anderen: Meldungen von Raspotify nicht verpassen
+            self.sitzung.starten()
         self.ausgang.start()                    # Umschalten eingerichtet? Beginnt mit dem Lautsprecher
         try:
             if klang.eingerichtet():            # Klang (Equalizer) wie gespeichert
@@ -292,6 +296,8 @@ class Player:
                                     ("Klick", self.klicker.lebt, self.klicker.starten),
                                     ("Rückmeldung", lambda: self.sp is not spotify or self.rueck.lebt(),
                                      self.rueck.starten),
+                                    ("Sitzungswache", lambda: getattr(self, "sitzung", None) is None or self.sitzung.lebt(),
+                                     lambda: self.sitzung.starten()),
                                     ("Drehknopf", lambda: self._dreh_faden is not None and self._dreh_faden.is_alive(),
                                      self._dreh_starten)):
             if not lebt():

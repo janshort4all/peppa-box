@@ -469,8 +469,10 @@ class Seite(unittest.TestCase):
         verboten = {"restart", "stop", "start", "reboot", "poweroff", "sset", "set"}
         for args in aufrufe:                                     # nur lesen
             self.assertFalse(verboten & set(args), args)
-        journale = [a for a in aufrufe if a[0] == "journalctl"]
+        journale = [a for a in aufrufe if a[0] == "journalctl" and "NetworkManager" not in a]
+        self.assertTrue(journale)
         self.assertTrue(all("raspotify" in a and "peppa-stille" in a for a in journale))
+        self.assertIn("== WLAN-Protokoll seit dem Einschalten ==", d["text"])   # Befund 17.11.2026
 
     def test_musik_neu_mit_ton_neustart_und_rueckfall(self):
         aufrufe = []

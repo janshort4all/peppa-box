@@ -45,7 +45,8 @@ STATUS_DATEI = einstellungen.lauf_pfad("status")           # schreibt der Player
 BEDIENUNG_DATEI = einstellungen.lauf_pfad("bedienung")     # Bedienelemente live (Player, bis 5 × je Sekunde)
 EINRICHTUNG = {"software/dienst_einrichten.sh", "software/lautsprecher_einrichten.sh",
                "software/bedienung_einrichten.sh", "software/peppa_ausgang.sh",
-               "software/ausgabe.py", "software/ereignis.py"}     # die beiden laufen als installierte Kopie
+               "software/ausgabe.py", "software/ereignis.py",
+               "software/wlan_suche.sh"}     # die beiden laufen als installierte Kopie
 HELFER = "/usr/local/sbin/peppa-ausgang"
 DIENSTE = ("peppa-player", "peppa-web", "raspotify", "peppa-stille", "peppa-standby")
 KONFIG = os.path.expanduser("~/.config/peppa-box")
@@ -270,6 +271,33 @@ def _journal(*extra, n):
     return befehl(args, zeit=15)[1]
 
 
+# WLAN-Meldungen für die Diagnose (Befund 17.11.2026: ob Router oder Pi schuld war, war nicht zu sehen)
+WLAN_DIENSTE = ("NetworkManager", "wpa_supplicant", "peppa-wlan-suche", "peppa-wlan-rueckfall")
+
+
+def _wlan_journal(*extra, n):
+    args = ["journalctl", "--no-pager", "-o", "short-iso", "-n", str(n), *extra]
+    for d in WLAN_DIENSTE:
+        args += ["-u", d]
+    return befehl(args, zeit=15)[1]
+
+
+def _wlan_jetzt():
+    """Zustand des WLANs, ohne Namen fremder WLANs: Gerät, Funk, Empfang des verbundenen WLANs, Adresse."""
+    zeilen = [befehl(["nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device"], zeit=10)[1],
+              "Funk: " + befehl(["nmcli", "radio", "wifi"], zeit=10)[1]]
+    _, liste = befehl(["nmcli", "-t", "-f", "IN-USE,SIGNAL,CHAN,FREQ", "device", "wifi", "list",
+                       "--rescan", "no"], zeit=10)
+    aktiv = [z.split(":") for z in liste.splitlines() if z.startswith("*")]
+    if aktiv and len(aktiv[0]) >= 4:
+        zeilen.append(f"Empfang: Signal {aktiv[0][1]} %, Kanal {aktiv[0][2]}, {aktiv[0][3]}")
+    else:
+        zeilen.append("Empfang: (kein verbundenes WLAN)")
+    zeilen.append(befehl(["ip", "-4", "-o", "addr", "show", "wlan0"], zeit=5)[1])
+    zeilen.append(befehl(["ip", "route"], zeit=5)[1])
+    return "\n".join(z for z in zeilen if z)
+
+
 def _ausgabe_jetzt():
     """Welche Soundkarte gerade wirklich spielt (Kernel-Sicht)."""
     zeilen = []
@@ -348,6 +376,9 @@ def diagnose():
     abschnitt("Verstärker SD (P16)", lambda: befehl(["pinctrl", "get", "16"], zeit=5)[1])
     abschnitt("Protokoll seit dem Einschalten", lambda: _journal("-b", n=300))
     abschnitt("Protokoll vom vorigen Lauf", vorheriger_lauf)
+    abschnitt("WLAN jetzt", _wlan_jetzt)
+    abschnitt("WLAN-Protokoll seit dem Einschalten", lambda: _wlan_journal("-b", n=150))
+    abschnitt("WLAN-Protokoll vom vorigen Lauf", lambda: _wlan_journal("-b", "-1", n=80))
     return {"ok": True, "text": "\n\n".join(teile)}
 
 

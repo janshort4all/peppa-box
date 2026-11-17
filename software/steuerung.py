@@ -40,6 +40,10 @@ Abgefangen wird
                            bestätigt ist oder wieder gespielt werden soll (Befund 8).
   Fremder Inhalt           Nach "Weiter" wird geprüft, ob wirklich die Playlist der Karte läuft (das Konto
                            kann inzwischen am Handy etwas anderes gespielt haben); sonst frisch (Befund 10).
+  Verbindung still tot     librespot verliert die Verbindung zu Spotify, ohne es zu melden (17.11.2026):
+                           sitzungswache.py liest das Protokoll mit und ruft verbindung_verloren(). Im
+                           Leerlauf (keine Musik) wird Raspotify nach VERLOREN_GNADE_S neu gestartet, damit die
+                           nächste Karte sofort spielt. Läuft Musik, übernimmt der Wächter.
   Kopfhörer ein/aus        betrifft die Steuerung nicht mehr: die Tonausgabe (ausgabe.py) wechselt
                            den Ausgang ohne Neustart (seit 09.11.2026). Nur wenn sie hängt, fordert
                            ausgang.py eine Reparatur an (reparatur_anfordern).
@@ -79,6 +83,11 @@ WAECHTER_ABSTAND = 2.0     # s: so oft sieht der Wächter nach dem Tonfluss
 STILL_NACH_S = 12.0        # so lange kein Ton bei liegender Karte -> Karte neu anspielen
 WAECHTER_VERSUCHE = 2      # höchstens so oft zurückholen (Entscheidung Jan 12.11.2026), dann nur Hinweis
 WAECHTER_RUHE_S = 300.0    # so lange muss wieder Ton fließen, bis die Versuche neu zählen
+VERLOREN_GNADE_S = 10.0    # librespot meldet "Verbindung verloren" (sitzungswache.py): so lange warten, dann im
+                           # Leerlauf Raspotify neu starten (Befund 17.11.2026: Verbindung blieb 25 min tot)
+LIBRESPOT_KAPUTT_N = 2      # so viele librespot-Störungen ...
+LIBRESPOT_KAPUTT_S = 30.0   # ... in so vielen Sekunden bei liegender Karte: sofort zurückholen (17.11.2026 18:38)
+LIBRESPOT_FRISCH_S = 120.0  # Störung so kurz vor dem Zurückholen: dabei Raspotify neu starten
 SPRUNG_MAX = 5             # so viele Titelsprünge werden höchstens vorgemerkt
 SYSTEMCTL = shutil.which("systemctl") or "/usr/bin/systemctl"
 HELFER = "/usr/local/sbin/peppa-ausgang"
@@ -240,6 +249,9 @@ class Steuerung:
         self.stumm = stumm
         self._pause_haengt = False
         self._stumm_ist = False
+        # librespot hat die Verbindung verloren (sitzungswache.py): (seit wann, Meldung) oder None
+        self.verloren = None
+        self.librespot_stoerungen = []              # Zeitpunkte der letzten librespot-Störungen
 
     # ------------------------------------------------------------ vom Kartenleser / der Automatik
 
@@ -335,6 +347,18 @@ class Steuerung:
             self.reparatur = grund
             self._sperre.notify_all()
 
+    def verbindung_verloren(self, meldung):
+        """Von der Sitzungswache: librespot hat die Verbindung zu Spotify verloren."""
+        with self._sperre:
+            jetzt = self.jetzt()
+            if jetzt - self.letzter_neustart < NACH_NEUSTART + VERLOREN_GNADE_S:
+                return                              # Abschiedszeilen des eben neu gestarteten librespot
+            self.librespot_stoerungen = [t for t in self.librespot_stoerungen if jetzt - t <= LIBRESPOT_FRISCH_S]
+            self.librespot_stoerungen.append(jetzt)
+            if self.verloren is None:
+                self.verloren = (jetzt, meldung)
+            self._sperre.notify_all()
+
     def wartezeit(self):
         """Sekunden, die eine Karte schon auf Musik wartet; None, wenn nichts wartet."""
         with self._sperre:
@@ -418,6 +442,8 @@ class Steuerung:
             self._umsetzen(wunsch, nr, jetzt)
         else:
             self._waechter(jetzt)
+            if self._verloren_pruefen(jetzt):
+                return
             self._leerlauf(jetzt)
 
     # ------------------------------------------------------------ Wächter für die laufende Wiedergabe
@@ -435,8 +461,11 @@ class Steuerung:
         if jetzt < self.naechste_waechter:
             return
         self.naechste_waechter = jetzt + WAECHTER_ABSTAND
+        with self._sperre:
+            stoerungen = [t for t in self.librespot_stoerungen if jetzt - t <= LIBRESPOT_KAPUTT_S]
+        kaputt = len(stoerungen) >= LIBRESPOT_KAPUTT_N
         try:
-            ton = self.ton()
+            ton = False if kaputt else self.ton()
         except Exception as e:
             self.log(f"  Wächter: Tonfluss nicht lesbar: {e!r}")
             ton = None
@@ -450,13 +479,16 @@ class Steuerung:
                 self.waechter_versuche = 0
             return
         self.fluss_seit = None
-        if self.still_seit is None:
-            self.still_seit = jetzt
-            return
-        if jetzt - self.still_seit < STILL_NACH_S:
-            return
-        still = int(jetzt - self.still_seit)
+        if not kaputt:
+            if self.still_seit is None:
+                self.still_seit = jetzt
+                return
+            if jetzt - self.still_seit < STILL_NACH_S:
+                return
+        still = int(jetzt - self.still_seit) if self.still_seit is not None else 0
         self.still_seit = None
+        with self._sperre:
+            librespot = any(jetzt - t <= LIBRESPOT_FRISCH_S for t in self.librespot_stoerungen)
         try:
             ende = bool(self.zu_ende and self.zu_ende())
         except Exception as e:
@@ -478,10 +510,18 @@ class Steuerung:
                 self.erledigt_nr = self.wunsch_nr - 1
                 self.fehler = 0
                 self.wunsch_zeit = jetzt                # Wartezeit neu: „Einen Moment …“, „kein Internet“ (15.11.)
-                text = (f"Musik ist ausgegangen (seit {still} s kein Ton, Karte liegt) – wird zurückgeholt "
-                        f"(Versuch {self.waechter_versuche} von {WAECHTER_VERSUCHE}).")
+                grund = ("librespot meldet Störungen" if kaputt else f"seit {still} s kein Ton")
+                text = (f"Musik ist ausgegangen ({grund}, Karte liegt) – wird zurückgeholt "
+                        f"(Versuch {self.waechter_versuche} von {WAECHTER_VERSUCHE}"
+                        f"{', mit Raspotify-Neustart' if librespot else ''}).")
         if text:
             self.log(text)
+            if librespot and not ende:
+                # librespot selbst ist gestört (keine Schlüssel, Verbindung weg): nur neu anspielen hilft
+                # nicht (17.11.2026 18:39), deshalb Raspotify neu; danach an der gemerkten Stelle weiter.
+                with self._sperre:
+                    self.librespot_stoerungen = []
+                self._raspotify_neu(jetzt, "librespot gestört", abstand=False)
         else:
             if self.sagen:
                 try:
@@ -556,6 +596,24 @@ class Steuerung:
                 self._melden(f"Spotify kennt die Box gerade nicht (Gerät '{self.geraet}' fehlt).", "geraet")
         return self.dev
 
+    def _verloren_pruefen(self, jetzt):
+        """librespot meldete eine verlorene Verbindung: im Leerlauf Raspotify neu starten (True = getan)."""
+        with self._sperre:
+            v = self.verloren
+            if v is None or jetzt - v[0] < VERLOREN_GNADE_S:
+                return False
+            lief = bool(self.ist and self.ist[0] in ("spielt", "startet"))
+            if lief:
+                self.verloren = None                # Musik läuft: das ist Sache des Wächters
+        if lief:
+            self.log(f"librespot: \"{v[1]}\" – Musik läuft, der Wächter passt auf.")
+            return False
+        if not self._raspotify_neu(jetzt, f"librespot meldete \"{v[1]}\", keine Musik"):
+            return False                            # Mindestabstand: später erneut
+        with self._sperre:
+            self.verloren = None
+        return True
+
     def _leerlauf(self, jetzt):
         if jetzt < self.naechste_leerlauf:
             return
@@ -585,6 +643,7 @@ class Steuerung:
     def _nach_raspotify_neustart(self, jetzt, grund):
         """Raspotify ist neu: altes Gerät ungültig. Lief Musik zur liegenden Karte, wieder anstoßen."""
         self.dev, self.dev_zeit = None, -1e9
+        self.verloren = None                        # frisches librespot: die alte Meldung ist erledigt
         with self._sperre:
             lief = self.ist and self.ist[0] in ("spielt", "startet")
             if self.wunsch and self.wunsch[0] == "spielen" and lief:
@@ -706,8 +765,15 @@ class Steuerung:
 
     def _fehlschlag(self, jetzt, grund, neustart_ab=3):
         """Leiter: 1. kurz wiederholen  2. frisch abspielen  3. Raspotify (und ggf. Mischer) neu
-        starten  danach mit wachsendem Abstand weiter versuchen, solange die Karte liegt."""
+        starten  danach mit wachsendem Abstand weiter versuchen, solange die Karte liegt.
+        Meldete librespot kurz vorher Störungen (sitzungswache.py), gleich Raspotify neu (17.11.2026)."""
         self.fehler += 1
+        with self._sperre:
+            gestoert = any(jetzt - t <= LIBRESPOT_FRISCH_S for t in self.librespot_stoerungen)
+        if gestoert and self._raspotify_neu(jetzt, f"{grund}, librespot gestört"):
+            with self._sperre:
+                self.librespot_stoerungen = []
+            return
         if self.fehler == 1 and neustart_ab == 2:     # Prüfung: sofort einmal frisch abspielen
             self.naechster_versuch = jetzt
             return
@@ -984,6 +1050,7 @@ class Steuerung:
         else:
             self._melden(f"Ton neu gestartet: Raspotify und Mischer ({grund}): {'ok' if ok else aus}")
         self.raspotify_start = self.dienste.startzeit("raspotify")   # eigener Neustart, keine "Absturz"-Meldung
+        self.verloren = None                            # frisches librespot
         self.dev, self.dev_zeit = None, -1e9
         self.dev_fehlt_seit = None
         with self._sperre:

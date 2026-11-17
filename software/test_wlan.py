@@ -250,5 +250,80 @@ esac
         self.assertNotIn("rescan", log)
 
 
+class Anstoss(unittest.TestCase):
+    """wlan_suche.sh, Befund 17.11.2026: lange ohne Verbindung und bekanntes WLAN in Reichweite -> WLAN neu
+    anstossen (Funk aus/an, beim naechsten Mal NetworkManager neu), hoechstens alle 300 s."""
+
+    def lauf(self, zustand="disconnected", sicht="Nachbar\\nHeimnetz\\n", funk="enabled", runden=14,
+             sleep_kill=False):
+        with tempfile.TemporaryDirectory() as d:
+            log = os.path.join(d, "log")
+            open(log, "w").close()
+            def skript(name, inhalt):
+                p = os.path.join(d, name)
+                with open(p, "w") as f:
+                    f.write("#!/bin/sh\n" + inhalt + "\n")
+                os.chmod(p, 0o755)
+            skript("nmcli", f"""echo "nmcli $*" >> {log}
+case "$*" in
+  *"-f TYPE,STATE device"*) printf 'wifi:{zustand}\\nloopback:connected (externally)\\n' ;;
+  "radio wifi") echo {funk} ;;
+  *"-f SSID device wifi list"*) printf '{sicht}' ;;
+  *"-f NAME,TYPE connection show"*) printf 'peppa-wlan:802-11-wireless\\nHandy\\\\:Jan:802-11-wireless\\nlo:loopback\\n' ;;
+  *"wireless.ssid connection show peppa-wlan") echo Heimnetz ;;
+  *"wireless.ssid connection show Handy:Jan") echo JanHotspot ;;
+esac""")
+            skript("systemctl", f'echo "systemctl $*" >> {log}')
+            skript("sleep", f'echo "sleep $*" >> {log}' + ('\n[ "$1" = 3 ] && kill -TERM $PPID' if sleep_kill else ""))
+            env = dict(os.environ, PATH=d + ":" + os.environ["PATH"], PEPPA_SUCHE_RUNDEN=str(runden))
+            r = subprocess.run(["sh", os.path.join(HIER, "wlan_suche.sh")], env=env, capture_output=True,
+                               text=True, timeout=20)
+            with open(log) as f:
+                return r, [z for z in f.read().splitlines() if "radio wifi o" in z or z.startswith("systemctl")]
+
+    def test_erst_nach_120_s_funk_aus_an(self):
+        r, log = self.lauf(runden=12)                    # T = 0 … 110 s
+        self.assertEqual(log, [])
+        r, log = self.lauf(runden=13)                    # T = 120 s
+        self.assertEqual(log, ["nmcli radio wifi off", "nmcli radio wifi on"])
+        self.assertIn("Funk aus und wieder an", r.stdout)
+
+    def test_danach_networkmanager_mit_abstand(self):
+        r, log = self.lauf(runden=43)                    # bis T = 420 s
+        self.assertEqual(log, ["nmcli radio wifi off", "nmcli radio wifi on", "systemctl restart NetworkManager"])
+        r, log = self.lauf(runden=42)                    # T = 410 s: Abstand 300 s noch nicht um
+        self.assertEqual(len(log), 2)
+
+    def test_hotspot_mit_doppelpunkt_im_namen(self):
+        r, log = self.lauf(sicht="JanHotspot\\n", runden=13)
+        self.assertEqual(len(log), 2)
+
+    def test_nur_fremde_wlans_kein_anstoss(self):
+        r, log = self.lauf(sicht="Nachbar\\nCafe\\n", runden=40)
+        self.assertEqual(log, [])
+
+    def test_gar_kein_wlan_zu_sehen_anstoss(self):
+        r, log = self.lauf(sicht="", runden=13)
+        self.assertEqual(len(log), 2)
+
+    def test_funk_aus_sparzustand_nichts(self):
+        r, log = self.lauf(zustand="unavailable", funk="disabled", runden=40)
+        self.assertEqual(log, [])
+
+    def test_verbunden_nichts(self):
+        r, log = self.lauf(zustand="connected", runden=40)
+        self.assertEqual(log, [])
+
+    def test_haengende_anmeldung_zaehlt(self):
+        r, log = self.lauf(zustand="connecting (getting IP configuration)", runden=13)
+        self.assertEqual(len(log), 2)
+
+    def test_beendet_waehrend_funk_aus_schaltet_wieder_ein(self):
+        r, log = self.lauf(runden=100, sleep_kill=True)
+        self.assertEqual(r.returncode, 0)
+        self.assertEqual(log, ["nmcli radio wifi off", "nmcli radio wifi on"])
+        self.assertNotIn("Funk aus und wieder an.\nWLAN", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
